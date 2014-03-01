@@ -1,0 +1,6 @@
+This is an implementation of Concurrent C built in 1986, 1987 at the Research
+Institute of Computer Science (RIACS) at NASA Ames Research Center. Authors are
+William Lynch, Joe Barerra, and Bob Brown.
+
+This was built on Sun Microsystems Sun 3 workstations.  It probably doesn't
+even compile any more.
