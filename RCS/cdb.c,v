@@ -1,0 +1,163 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    lynch:1.1; strict;
+comment  @ * @;
+
+
+1.1
+date     86.07.28.16.47.36;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Not working, but about to change with use of rexec[d] code.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/*---------------------------------------------------------------------------
+ * This module is the front end for the concurrent debugger, cdb.  The
+ * usage is 
+ * 		cdb [options] rcmd
+ * 
+ * The currently implemented options are 
+ * 
+ * 	-h remotehost     (default hydra)
+ * 
+ * option to be added include
+ * 
+ * 	-d		start the remote program under dbx for complete debugging
+ * 
+ * and rcmd is the command (the file and options compiled with the -G
+ * option on the remote host, default a.out).
+ * 
+ * William L. Lynch 		Mon Jul 28 11:00:17 1986
+ * 
+ *---------------------------------------------------------------------------
+ */
+
+
+/*---------------------------------------------------------------------------
+ * The communication protocol is for the front end (this cdb process) to
+ * connect to the hosts cdb port, listen on that port, then start the user
+ * process and accept on that port.  In this way, the user process needs
+ * to know nothing about where the front end is.
+ *---------------------------------------------------------------------------
+ */
+
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <stdio.h>
+
+
+char *programName;
+char *remoteHost[20] = "hydra";
+char *remoteCommand = "a.out";
+
+int userStd, userErr;		/* the user-program's (stdin, stdout), and stderr */
+int cdbSocket;
+
+
+
+main (argc,argv)
+int argc;
+char *argv[];
+{
+
+	programName = argv[0];
+	argv++; argc--;	
+	while ( argc > 0 ) {
+		if ( argv[0][0] = '-' )
+			switch ( argv[0][1] ) {
+			case 'h':
+				argv++; argc--;
+				remoteHost = argv[0];
+			        break;
+			case 'd':
+				fprintf(stderr, "-d unimplemented.\n");
+			        break;
+			default:
+				fprintf(stderr, "%s option unknown.\n", argv[0]);
+			        break;
+			}
+		else 
+			remoteCommand = argv[0];
+
+		argv++; argc--;
+	}
+	
+	makeConnections();
+	debug();
+}
+
+
+
+
+
+makeConnections()
+{
+	struct servent *service;
+	struct sockaddr_in cdbAddress;
+	struct hostent *host;
+	unsigned addressSize = size of cdbAddress;
+	
+
+	if ( (host = gethostbyname(remoteHost)) == NULL )
+		fatal(1, "%s is not a valid remote host.", remoteHost);
+	
+	if ( (service = getservbyname( "cdb", "tcp" )) == NULL )
+		fatal(1, "cdb/tcp not a registered service");
+
+	if ( (socket = socket(AF_INET, SOCK_STREAM, 0)) < 0 )
+		fatal(1, "Can't aquire cdb socket.");
+	
+	cdbAddress.sin_family		= host->h_addrtype;
+	cdbAddress.sin_port		= service->s_port;
+	cdbAddress.sin_addr.s_addr	= host->h_addr;
+	
+	if ( bind(socket, &cdbAddress, sizeof cdbAddress) == -1 )
+		fatal(1, "Can't bind to host port %d", cdbAddress.sin_port);
+		
+	if ( listen(socket, 1) == -1 )
+		fatal(1, "Can't listen to host");
+		
+	/* now start user process */
+	if ( (service = getservbyname( "exec", "tcp" )) == NULL )
+		fatal(1, "exec/tcp not a registered service");
+
+	if ( userStd = rexec( &remoteHost, service->s_port, 0, 0, remoteCommand, &userErr) == -1 ) 
+		fatal(1, "%s is not a valid remote host.", remoteHost);
+	
+	
+	if ( (cdbSocket = accept(socket, cdbAddress, addressSize)) == -1 ) 
+		fatal(1, "Cannot accept");
+	
+	close(socket);
+	
+}
+
+
+
+
+
+
+fatal(code, f, p0, p1, p2, p3, p4)
+int code;
+char *f;
+{
+	fprintf(stderr, "%s: ", programName);
+	fprintf(stderr, f, p0, p1, p2, p3, p4);
+	exit(code);
+}
+
+@

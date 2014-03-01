@@ -1,0 +1,271 @@
+head     1.4;
+branch   ;
+access   ;
+symbols  ;
+locks    lynch:1.4;
+comment  @@;
+
+
+1.4
+date     86.06.24.08.39.28;  author lynch;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     86.06.20.15.31.21;  author lynch;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     86.06.18.17.25.26;  author lynch;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.06.18.16.19.43;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@first draft factorial program.
+@
+
+
+1.4
+log
+@new style: put type of function on different line for cleaner code.
+@
+text
+@/*---------------------------------------------------------------------------
+ * This factorial uses a given number of processes.  The parent
+ * process divides the multiplication evenly among the  other processes,
+ * then waits (with accepts) for all
+ * the processes to respond with their answers, which are multiplied
+ * into the final result as they are received.
+ * 
+ * Fri Jun 20 09:54:28 1986 Added strides for equalizing magnitude of
+   answers, and doubles for helping with size.
+
+ * William L. Lynch		Wed Jun 18 15:03:49 1986
+ *---------------------------------------------------------------------------
+ */
+
+#define DEBUG 1
+
+#include <stdio.h>
+
+#define PROCESSES	4
+
+
+process spec
+parent(long int)
+{
+	trans void result(double);
+};
+
+
+
+process spec
+product(long int, long int, process parent);	/* start, stride */
+
+
+
+
+/* parent will create process products, and receive their results by trans */
+process body 
+parent(n)
+{
+	int started;	/* count of number of children */
+	double factorial;
+	long int start;
+	int stride;
+	
+	start=n;	/* start of stride */
+	stride = PROCESSES;
+	
+	for (started = 0; started < PROCESSES; started++) {
+		create product(start--, stride, c_mypid());
+	}
+
+	/* Now, wait for the answers to come rolling in */
+	factorial = 1;
+	for (; started > 0; started--) {
+		accept result(p) {
+
+#ifdef DEBUG
+			fprintf(stderr,"Returning child: %.0f\n",p);
+#endif			
+
+			factorial *= p;
+			treturn;
+		}
+	}
+	printf("%1d factorial is %.0f.\n", n, factorial);
+}
+
+	
+
+
+/* product takes the product of all integers between upper and lower,
+   inclusive. */
+process body 
+product(start, stride, mom)
+{
+	long int i;
+	double answer;
+	
+#ifdef DEBUG
+	fprintf(stderr,"starting child, %ld, %ld\n", start, stride);
+#endif	
+
+	answer = 1.0;
+	for (i=start; i > 0; i -= stride) {
+		answer *= i;
+	}
+	mom.result(answer);
+}
+
+
+main (argc,argv)
+int argc;
+char *argv[];
+{
+	long int n;
+	
+	if (argc>1) {
+		sscanf(argv[1], "%d", &n);
+		create parent(n);
+	} else {
+		fprintf(stderr,"Usage: fact n\n");
+	}
+}
+
+@
+
+
+1.3
+log
+@added doubles and striding for better performance.
+@
+text
+@d4 3
+a6 3
+ * then calculates any leftovers itself, and waits (with accepts) for all
+ * the processes to respond with their answers, which are then multiplied
+ * together.
+d22 2
+a23 1
+process spec parent(long int)
+d30 2
+a31 1
+process spec product(long int, long int, process parent);	/* start, stride */
+d37 2
+a38 1
+process body parent(n)
+d73 2
+a74 1
+process body product(start, stride, mom)
+@
+
+
+1.2
+log
+@add double float output to handle somewhat bigger numbers.  more work could be 
+done, like constant stride.  Probably a compiler bug somewhere not letting
+doubles work inside product processes.
+@
+text
+@d7 4
+a10 1
+ *
+d19 1
+a19 1
+#define PROCESSES	10
+d24 1
+a24 1
+	trans void result(long int);
+d29 1
+a29 1
+process spec product(long int, long int, process parent);	/* upper, lower */
+a37 2
+	long int range;	/* range of upper to lower */
+	long int high,low;
+d39 2
+d42 5
+a46 8
+	started = 0;
+	range = n / PROCESSES;		/* integer divide */
+	for (	(high = n, low = n-range);
+		low > 1;
+		(high = low-1, low = high - range)	) {
+
+		create product(high, low, c_mypid());
+		started++;
+a47 5
+	if (high > 1) {
+		create product(high, 1, c_mypid());
+		started++;
+	}
+	
+d55 1
+a55 1
+			fprintf(stderr,"Returning child: %d\n",p);
+d62 1
+a62 1
+	printf("%1d factorial is %1.f.\n", n, factorial);
+d70 1
+a70 1
+process body product(upper, lower, mom)
+d73 1
+a73 1
+	long int answer;
+d76 1
+a76 1
+	fprintf(stderr,"starting child, %d, %d\n", upper, lower);
+d79 2
+a80 3
+	answer = upper >= lower;	/* pseudo error message: result is zero	
+					   if something happened in call */	
+	for (i=lower; i <= upper; i++) {
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d19 1
+a19 1
+process spec parent(int)
+d21 1
+a21 1
+	trans void result(long);
+d26 1
+a26 1
+process spec product(int, int, process parent);		/* upper, lower */
+a33 1
+	int i;
+d35 3
+a37 3
+	int range;	/* range of upper to lower */
+	int high,low;
+	long factorial;
+d56 1
+a56 1
+	for (i=0; i < started; i++) {
+d67 1
+a67 1
+	printf("%1d factorial is %1d.\n", n, factorial);
+d77 2
+a78 2
+	int i;
+	long answer;
+d84 1
+a84 1
+	answer = upper >= lower ? 1 : 0;/* pseudo error message: result is zero
+d97 1
+a97 1
+	int n;
+@

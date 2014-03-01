@@ -1,0 +1,273 @@
+head     3.0;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+3.0
+date     86.09.18.16.09.11;  author lynch;  state Exp;
+branches ;
+next     2.2;
+
+2.2
+date     86.09.11.14.02.18;  author lynch;  state Exp;
+branches ;
+next     2.1;
+
+2.1
+date     86.07.25.14.37.17;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Version which works up to printing out buffer messages in commun.
+@
+
+
+3.0
+log
+@working final version
+@
+text
+@/*---------------------------------------------------------------------------
+ * William L. Lynch 		Fri Jun 27 10:49:09 1986
+ *---------------------------------------------------------------------------
+ */
+/*#define Debug
+#define Debug2*/
+
+#include <stdio.h>
+#include <signal.h>
+#include "DD_semaphore.h"
+#include "bool.h"
+
+#define SIGSEM	SIGUSR1
+#define SIGALL 0xffffffff
+
+#define listAdd(x, el) \
+		if ( (x)->head == NULL )  (x)->head = (el);\
+		else (x)->tail->next = (el);\
+		(x)->tail = (el)
+
+#define listRm(x, el)\
+		(el) = (x)->head;\
+		if ( (x)->head == (x)->tail )	(x)->head = (x)->tail = NULL;\
+		else (x)->head = (x)->head->next
+ 
+
+#define shInstances(n, t)	(t *)shmalloc((n) * sizeof (t))
+#define shInstance(t)		shInstances(1, t)
+
+
+static bool sigsem = FALSE;
+
+DD_sem_sig( sig )
+int sig;
+{
+#ifdef Debug
+	DD_debug_printf("signalled %d\n", getpid());
+#endif
+	sigsem = TRUE;
+}
+
+DD_semaphore_init()
+{
+	signal(SIGSEM, DD_sem_sig);
+}
+
+
+semaphore
+DD_sem_create( initialValue )
+int initialValue;
+{
+	semaphore sem;
+	
+	sem = shInstance(Semaphore);
+	sem->count = initialValue;
+	sem->lock = shInstance(slock_t);
+	s_init_lock(sem->lock); s_unlock(sem->lock);
+	sem->head = sem->tail = NULL;
+#ifdef Debug
+	DD_debug_printf("semcreate 0x%x\n", sem);
+#endif
+	return sem;
+}
+
+
+void
+DD_sem_ask( sem )
+semaphore sem;
+{
+	static waiting *wait;
+	int mask;
+	
+#ifdef Debug
+	DD_debug_printf("semask 0x%x\n", sem);
+#endif
+	mask = sigblock(sigmask(SIGSEM));
+	s_lock(sem->lock);
+	if ( --sem->count < 0 ) {
+		wait = shInstance(waiting);
+		wait->pid = getpid();
+		wait->next = NULL;
+		
+		listAdd(sem, wait);
+		
+		s_unlock(sem->lock);
+
+		sigsem = FALSE;
+		while ( !sigsem )
+			sigpause(mask & ~sigmask(SIGSEM));
+/*SIGALL & ~(sigmask(SIGSEM) | sigmask(SIGINT) | sigmask(SIGSEGV)));*/
+
+		shfree(wait);
+	} else
+		s_unlock(sem->lock);
+}
+
+
+
+void
+DD_sem_tell( sem )
+semaphore sem;
+{
+	waiting *wait;
+
+#ifdef Debug
+	DD_debug_printf("semtell 0x%x\n", sem);
+#endif
+	s_lock(sem->lock);
+	if ( sem->count++ < 0 ) {
+		listRm(sem, wait);
+		kill(wait->pid, SIGSEM);
+#ifdef Debug2
+	DD_debug_printf("signalling %d\n", wait->pid);
+#endif
+	}
+	s_unlock(sem->lock);
+}
+
+
+void
+DD_sem_tell_num( sem, number )
+semaphore sem;
+int number;
+{
+	int i;
+	
+	for ( i=0; i < number; i++ )
+		DD_sem_tell(sem);
+}
+
+
+
+@
+
+
+2.2
+log
+@
+@
+text
+@a1 14
+ * Semaphore handling routines.  Much simplified version of the Dynix
+ * semaphores are made available.  The available functions are DD_sem_create,
+ * DD_sem_ask (subtract 1), and sem_tell (add 1), and sem_free.  
+ * The type semaphore is also defined.  
+ * 
+ * If you are using semaphores, you MUST free them when you are done.
+ * They do not dissapear when the process exits, or even when you logout.
+ * 
+ * At the moment, a semid is allocated for each request.  This method
+ * provides a much simpler interface.  However, it is
+ * somewhat inefficient because you could allocate many semaphores per
+ * semid.  These would have to be all allocated in one call from the
+ * outer world, though.
+ * 
+d5 2
+a7 1
+
+d9 1
+a9 4
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/sem.h>
+
+d11 1
+d13 2
+a14 1
+#define KEY IPC_PRIVATE
+d16 4
+d21 5
+d27 2
+d31 4
+a34 3
+struct sembuf **
+DD_sem_command( comm )
+int comm;
+d36 5
+a40 2
+/* okay, its bad here, but  the rest looks better because of it. */
+	static struct sembuf commbuf[1][1] = {0,0,0};
+d42 3
+a44 2
+	(**commbuf).sem_op  = comm;
+	return commbuf;
+a47 5
+
+
+
+
+
+d53 9
+a61 7
+
+	sem = semget( KEY , 1, IPC_CREAT | SEM_A | SEM_R ); 
+	if (sem == -1) {
+		perror("Semaphore allocation problem");
+		return -1;
+	}
+	semctl( sem, 0, SETVAL, initialValue );		
+a65 1
+
+d70 25
+a94 1
+	while ( semop( sem, DD_sem_command( -1 ), 1) == -1 );
+d103 14
+a116 1
+	while ( semop( sem, DD_sem_command( 1 ), 1) == -1 );
+a119 1
+
+d121 1
+a121 1
+DD_sem_free( sem )
+d123 1
+d125 4
+a128 1
+	semctl( sem, 0, IPC_RMID, 0 );
+@
+
+
+2.1
+log
+@Version which works up to printing out buffer messages in commun.
+@
+text
+@d38 3
+a40 4
+	static struct sembuf commbuf[1][1];	/* okay, its bad here, but
+						 the rest looks better
+						 because of it. */
+	(**commbuf).sem_num = 0;
+a41 1
+	(**commbuf).sem_flg = 0;
+d72 1
+a72 1
+	semop( sem, DD_sem_command( -1 ), 1);
+d81 1
+a81 1
+	semop( sem, DD_sem_command( 1 ), 1);
+@

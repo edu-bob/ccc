@@ -1,0 +1,4 @@
+#
+foreach file ($*)
+cc -g -o $file $file.o ../libccd.a -lpps
+end

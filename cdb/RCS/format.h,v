@@ -1,0 +1,130 @@
+head     3.0;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+3.0
+date     86.09.18.16.05.17;  author lynch;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     86.09.11.13.47.20;  author lynch;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.08.19.16.02.02;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@saving, still uses tables
+@
+
+
+3.0
+log
+@ working version, last day
+@
+text
+@#define CHANNEL 5
+#define LINESpERpROCESS 2
+#define CLOCKrOW 3
+#define CLOCKcOL 60
+
+#define COLS		85
+#define LINES		64
+
+#define USEReRRlINES	3+1
+#define USERiolINES	10+1
+#define CDBeRRlINES 	2+1
+#define CONTROLlINES	3+1
+
+#define CDBlINES	LINES-(USEReRRlINES+USERiolINES+CDBeRRlINES+CONTROLlINES)
+
+#define USEReRRsTART	1
+#define USERiosTART	USEReRRsTART+USEReRRlINES
+#define CONTROLsTART	USERiosTART+USERiolINES
+#define CDBeRRsTART	CONTROLsTART+CONTROLlINES
+#define CDBsTART	CDBeRRsTART+CDBeRRlINES
+@
+
+
+1.2
+log
+@works
+@
+text
+@@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 4
+a4 1
+#define number(x) (sizeof x / sizeof x[0])
+d6 2
+a7 8
+typedef struct {
+	int	row, col;
+	string	text;
+	int	length;
+	int	(*func)();
+	int	arg;
+} button;
+typedef button buttons[];
+d9 4
+a12 6
+typedef struct {
+	string	text;
+	int	(*func)();
+	int	arg;
+} menuEntry;
+typedef menuEntry menuEntries[];
+d14 1
+a14 8
+typedef struct {
+	int	row, col;
+	string	title;
+	int	length;
+	int	numEntries;
+	menuEntry *entries;
+} menu;
+typedef menu menus[];
+d16 5
+a20 26
+typedef struct {
+	string text;
+	int arg;
+} cycleEntry;
+typedef cycleEntry cycleEntries[];
+
+typedef struct {
+	int row, col;
+	string title;
+	int length;
+	int	(*func)();
+	int arg;
+	int numEntries;
+	cycleEntry *entries;
+} cycle;
+
+typedef struct 	{
+	int	row, col, rows, cols;
+	int	numButtons;
+	button	*buttons;
+	int	numMenus;
+	menu	*menus;
+	int	numCycles;
+	cycle	*cycles;
+} window;
+typedef window windows[];
+@

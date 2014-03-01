@@ -1,0 +1,454 @@
+head     3.0;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+3.0
+date     86.09.18.16.08.22;  author lynch;  state Exp;
+branches ;
+next     2.2;
+
+2.2
+date     86.09.12.10.06.28;  author lynch;  state Exp;
+branches ;
+next     2.1;
+
+2.1
+date     86.07.25.14.38.49;  author lynch;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.06.30.16.09.49;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@original
+@
+
+
+3.0
+log
+@working final version
+@
+text
+@/* CC_fork.c -- concurrent c intrinsic functions, plus CC_fork()  */
+
+#include <stdio.h>
+#include "CC_include.h"
+#include "DD_kernel.h"
+
+extern int DD_me;
+
+
+#define s_destroylock(l) shfree(l)
+
+/*
+ *  Priorities are currently ignored. Problems to be addressed:
+ *	(1) What should the default priority be?
+ *	(2) How do we allow users to better their priorities?
+ *  A straightforward implementation would make starting priority zero,
+ *  and users could only worsen their priorities. Maybe some smarter person
+ *  can think of something better. Or maybe the same sort of person can
+ *  add something so that we can bump our priorities up (to 0).
+ */
+
+int CC_core_dump_on_error=0;
+
+c_core_dump_on_error(whether)
+int whether;
+{
+	CC_core_dump_on_error=whether;
+}
+
+/*
+** Common shared memory allocator
+*/
+char *
+CC_shmalloc(bytes)
+int bytes;
+{
+	char *result;
+	result = (char *)shmalloc(bytes);
+	if ( result==(char *)0 ) {
+		CC_perror("Shared memory allocation of %d bytes failed, aborting",bytes);
+		perror("shmalloc");
+		exit(1);
+	}
+	return result;
+}
+CC_perror(s,p0,p1,p2,p3,p4)
+char *s;
+{
+	fprintf(stderr,"###CC runtime error, PID %d (%s): ",getpid(),me->name);
+	fprintf(stderr,s,p0,p1,p2,p3,p4);
+	fprintf(stderr,"\n");
+	if (CC_core_dump_on_error) {
+		printf("*** core dump follows ***\n");
+		kill(getpid(),3);
+	}
+}
+
+lock makelock()
+{
+	lock templock;
+
+	templock=(lock)CC_shmalloc(sizeof(*templock));
+	s_init_lock(templock);
+	s_unlock(templock);
+	return templock;
+}
+
+CC_fork(name,number_of_transactions,prio, id)
+char *name;
+int number_of_transactions;
+int prio;
+unsigned id;
+{
+	pid newborn;
+	int j,unixpid;
+
+	newborn = (pid)CC_shmalloc(sizeof(*newborn));
+	newborn->life=makelock();
+	s_lock(pp->statelock);
+	s_lock(me->statelock);
+	if ((unixpid=fork())== -1) {
+		CC_perror("failed fork");
+		s_unlock(pp->statelock);
+		s_unlock(me->statelock);
+		CC_childpid=nullpid;
+		s_destroylock(newborn->life);
+		shfree(newborn);
+		return 1;
+	} else if (unixpid) {
+		CC_childpid=newborn;
+		CC_block(DD_WAITbORN, id);
+		return 1;
+	} else {
+		mypid=newborn;
+		gp=pp;
+		pp=me;
+		me=(task)CC_shmalloc(sizeof(*me));
+		mypid->task=me;
+		numtrans=number_of_transactions;
+
+		me->name = name;
+		me->queuelock=makelock();
+		me->client=nulltask;
+		me->tblock=(char *)CC_shmalloc(CC_maxtblocksize);
+		me->selectcase=(int *)CC_shmalloc(numtrans * sizeof(int));
+
+		me->unixpid=DD_me=getpid();
+		me->statelock=makelock();
+		me->firstchild=nulltask;
+		me->completed=0;
+		me->aborted=0;
+		me->choseterm=0;
+		me->prepared=0;
+		me->numloans=0;
+		me->numchildren=0;
+		me->numprepared=0;
+		me->numgrandchildren=0;
+
+		me->tqueue=(queue *)CC_shmalloc(numtrans * sizeof(queue));
+
+		for (j=0;j<numtrans;j++) {
+			me->tqueue[j].count=0;
+			me->selectcase[j]=0;
+		}
+
+		gp->numgrandchildren++;
+		if (pp->numchildren++) {
+			pp->firstchild->prevsibling=me;
+			me->nextsibling=pp->firstchild;
+		} else
+			me->nextsibling=nulltask;
+		pp->firstchild=me;
+
+		mytblock=me->tblock;
+		s_unlock(gp->statelock);
+		s_unlock(pp->statelock);
+		CC_unblock(pp, DD_ISbORN, id);
+		return 0;
+	}
+}
+
+CC_make_elder_tasks()
+{
+
+	me=(task)CC_shmalloc(sizeof(*me));
+	me->statelock=makelock();
+	me->firstchild=nulltask;
+	me->nextsibling=nulltask;
+	me->completed=0;
+	me->numloans=0;
+	me->numchildren=0;
+	me->numprepared=0;
+	me->numgrandchildren=0;
+	me->unixpid=DD_me=getpid();
+	me->tblock=(char *)CC_shmalloc(CC_maxtblocksize);
+	mytblock=me->tblock;
+
+	pp=(task)CC_shmalloc(sizeof(*pp));
+	pp->statelock=makelock();
+	pp->firstchild=me;
+	pp->nextsibling=nulltask;
+	pp->completed=0;
+	pp->numloans=0;
+	pp->numchildren=1;
+	pp->numprepared=0;
+	pp->numgrandchildren=0;
+
+	mypid=(pid)CC_shmalloc(sizeof(*main_pid));
+	main_task=me;
+	main_pid=mypid;
+	main_pid->task=main_task;
+	main_pid->life=makelock();
+}
+
+CC_free(t)
+task t;
+{
+	s_destroylock(t->statelock);
+	s_destroylock(t->queuelock);
+	shfree(t->tblock);
+	shfree(t->selectcase);
+	shfree(t->tqueue);
+	shfree(t);
+}
+
+int c_unixpid(p)
+pid p;
+{
+	return p->task->unixpid; /* NOT very safe! */
+}
+
+int c_getpriority(p,prio)
+pid p;
+int prio;
+{
+	/* not implemented */
+	return 0;
+}
+
+c_changepriority(p,prio)
+pid p;
+int prio;
+{
+	/* not implemented */
+}
+
+c_associate()
+{
+	/* not implemented */
+}
+
+/*
+int c_count(p,n)
+pid p;
+int n;
+{
+    task t;
+    int count;
+
+    if ((t=CC_checkout(p)) == nulltask)
+	return 0;
+    s_lock(t->queuelock);
+    count=CC_queuecount(t,n);
+    s_unlock(t->queuelock);
+    CC_checkin(t);
+    return count;
+}
+
+int c_active(p)
+pid p;
+{
+    task t;
+    int active;
+
+    if ((t=CC_checkout(p)) == nulltask)
+	return 0;
+    s_lock(t->statelock);
+    active= !t->aborted && !t->completed;
+    s_unlock(t->statelock);
+    CC_checkin(t);
+    return active;
+}
+
+int c_completed(p)
+pid p;
+{
+    task t;
+    int completed;
+
+    if ((t=CC_checkout(p)) == nulltask)
+	return 0;
+    s_lock(t->statelock);
+    completed= !t->aborted && t->completed;
+    s_unlock(t->statelock);
+    CC_checkin(t);
+    return completed;
+}
+
+int c_invalid(p)
+pid p;
+{
+    task t;
+    int terminated;
+
+    if ((t=CC_checkout(p)) == nulltask)
+	return 1;
+    s_lock(t->statelock);
+    terminated= t->aborted;
+    s_unlock(t->statelock);
+    CC_checkin(t);
+    return terminated;
+}
+*/
+
+pid c_mypid()
+{
+	return mypid;
+}
+@
+
+
+2.2
+log
+@about to change the occurs.
+@
+text
+@a7 1
+int (*DD_conversion)() = NULL;
+d68 1
+a68 1
+CC_fork(name,number_of_transactions,prio, id, conversion)
+a72 1
+int (*conversion)();
+a76 1
+	DD_conversion = conversion;
+@
+
+
+2.1
+log
+@Version working up to printing out at the communicator.
+@
+text
+@d8 1
+a8 1
+int (*DD_conversion)();
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+/* CC_fork.c -- concurrent c intrinsic functions, plus CC_fork() and main() */
+d3 1
+d5 1
+a5 1
+#include <stdio.h>
+d7 2
+a8 2
+#define shfree()
+#define p_destroylock(l)
+d10 3
+d39 1
+a39 1
+	result = (char *)p_shmalloc(bytes);
+d42 1
+a42 1
+		perror("p_shmalloc");
+d64 2
+a65 1
+	p_init_lock(templock);
+d69 1
+a69 1
+CC_fork(name,number_of_transactions,prio)
+d73 2
+d79 1
+d82 2
+a83 2
+	p_lock(pp->statelock);
+	p_lock(me->statelock);
+d86 2
+a87 2
+		p_unlock(pp->statelock);
+		p_unlock(me->statelock);
+d89 1
+a89 1
+		p_destroylock(newborn->life);
+d94 1
+a94 1
+		CC_block();
+d110 1
+a110 1
+		me->unixpid=getpid();
+d138 3
+a140 3
+		p_unlock(gp->statelock);
+		p_unlock(pp->statelock);
+		CC_unblock(pp);
+d157 1
+a157 1
+	me->unixpid=getpid();
+d181 2
+a182 2
+	p_destroylock(t->statelock);
+	p_destroylock(t->queuelock);
+d225 1
+a225 1
+    p_lock(t->queuelock);
+d227 1
+a227 1
+    p_unlock(t->queuelock);
+d240 1
+a240 1
+    p_lock(t->statelock);
+d242 1
+a242 1
+    p_unlock(t->statelock);
+d255 1
+a255 1
+    p_lock(t->statelock);
+d257 1
+a257 1
+    p_unlock(t->statelock);
+d270 1
+a270 1
+    p_lock(t->statelock);
+d272 1
+a272 1
+    p_unlock(t->statelock);
+a280 20
+}
+
+main(argc, argv, envp)
+int argc;
+char **argv, **envp;
+{
+
+	/*
+	 *  CC_maxtblocksize should really be calculated from sizeof()s of trans structs.
+	 */
+	CC_maxtblocksize=512;
+	CC_install_handler();
+	if (p_init(0,0x800000)!=0) {
+		perror("CC_fork: p_init");
+		exit(1);
+	}
+	CC_make_elder_tasks();
+	CC_shinit();
+	CC_main(argc, argv, envp);
+	CC_complete();
+@

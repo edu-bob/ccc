@@ -1,0 +1,160 @@
+head     3.0;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+3.0
+date     86.09.18.16.15.03;  author lynch;  state Exp;
+branches ;
+next     2.1;
+
+2.1
+date     86.07.25.14.37.23;  author lynch;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.07.16.16.08.35;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@does the setup of the static data at the end of the object doce.
+@
+
+
+3.0
+log
+@working final version
+@
+text
+@/*--------------------------------------------------------------------------------*/
+/* TYPE CHASING FUNCTIONS */
+
+
+typedef struct {
+    unsigned short num:12;	/* namespace number			*/
+    unsigned short obj:4;	/* see defines below			*/
+} t_typespec;
+
+typedef struct {
+    unsigned chain;		/* pointer and function chain		*/
+    t_typespec typespec;	/* type specifier			*/
+} t_type;
+
+typedef struct {
+    short a,z;
+    t_type t;
+} t_trap;
+
+typedef union {
+    t_type y_type;
+    t_trap y_trap;
+    int y_int;
+} yystype;
+
+#include "objs.h"
+
+t_type ref(),func(),deref(),defunc(),addr(),maketype();
+t_type arithassign(),add(),subtract(),inc();
+t_type assign(),compare(),internal_lookup(),lookup();
+t_type condition(),arith(),addassign(),array();
+t_type lookup_tag(),lookup_var(),lookup_last();
+t_type half_declare_tag(),half_declare_func();
+int declare_tag();
+
+#define declare_typedef(name,type)	declare(name,e_typedef,type,0)
+#define declare_var(name,num,t)		declare(name,num,t,0)
+
+
+/*---------------------------------------------------------------------------
+ * Symbol table defs.
+ *---------------------------------------------------------------------------
+ */
+
+
+
+typedef struct {
+	char	*name;			/* identifier name			*/
+	unsigned short num:14;		/* number which identifies namespace	*/
+	unsigned short typedefp:2;	/* is this a typedef declaration?	*/
+	short	halfdec;		/* is this an incomplete declaration?	*/
+
+	t_type	t;			/* type					*/
+	char	*alias;			/* name printed on output		*/
+} symbol;
+
+struct table_tag {
+	struct btree *table;	/* table for a particular scope level	*/
+	struct table_tag *prev;	/* more global scope level		*/
+	struct table_tag *next;	/* more local scope level		*/
+};
+
+symbol *slookup();
+@
+
+
+2.1
+log
+@Version which works up to printing out buffer messages in commun.
+@
+text
+@d26 1
+a26 24
+#define e_var     0		/* unfielded var and typedef namespace	*/
+#define e_complex 1		/* namespace for struct, etc. tags	*/
+#define e_typedef 2		/* used only by ident() and declare()	*/
+#define e_halfdec 3		/* used only by dec1/2tag and declare()	*/
+#define e_anytype 4		/* can be assigned any process type	*/
+#define e_nullpid 5		/* can be assigned to any process	*/
+#define e_badtag  6		/* illegal namespace, for bad tag	*/
+
+#define e_basic	  0		/* values for obj field in typespec	*/
+#define e_struct  1
+#define e_union	  2
+#define e_process 3
+#define e_unsigned	4	/* New ones to do full typing of basic types */
+#define e_unsignedint	5
+#define e_unsignedchar	6
+#define e_unsignedshort	7
+#define e_unsignedlong	8
+#define e_longint	9
+#define e_double	10
+#define e_short		11
+#define e_char		12
+#define e_float		13
+#define e_int		14
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@a67 5
+typedef struct parm  {
+	char	*formal;
+	char	*typeString;
+	struct	parm *next;
+} parameters;
+a69 11
+
+typedef struct occur_tag {
+	int	id;			/* unique source id number */
+	unsigned lineNumber;		/* source location	*/
+	parameters *param;		/* formals on create and accept */
+	parameters *paramTail;		
+	int	numParams;
+	struct	occur_tag *next;
+} occur;
+
+
+a77 1
+	occur	*occurrence;		/* source information		        */
+@

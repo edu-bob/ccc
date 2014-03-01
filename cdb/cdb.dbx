@@ -1,0 +1,6 @@
+use ..
+ignore segv
+ignore tstp
+ignore cont
+stop in main
+run > /dev/null

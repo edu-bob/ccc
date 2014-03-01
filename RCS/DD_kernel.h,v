@@ -1,0 +1,345 @@
+head     3.0;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+3.0
+date     86.09.18.16.13.35;  author lynch;  state Exp;
+branches ;
+next     2.3;
+
+2.3
+date     86.09.11.14.02.41;  author lynch;  state Exp;
+branches ;
+next     2.2;
+
+2.2
+date     86.08.28.14.50.29;  author lynch;  state Exp;
+branches ;
+next     2.1;
+
+2.1
+date     86.07.25.14.35.36;  author lynch;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     86.07.17.12.19.22;  author lynch;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.07.16.11.15.44;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@first level.  Hereafter this will be a hard link to /usr/include/ccc
+@
+
+
+3.0
+log
+@working final version
+@
+text
+@/*---------------------------------------------------------------------------
+ * The following pertains to the addition of the symbol table information
+ * to the end of the .c file.
+ *---------------------------------------------------------------------------
+ */
+
+typedef char *DD_formal;		/* for accept and create */
+typedef DD_formal DD_formals[];
+
+typedef struct {
+	char	 *name;
+	unsigned line;			/* source location */
+#ifndef CDB
+	unsigned tblockSize;
+	void	(*convert)();
+#endif
+	unsigned numFormals;		/* number of entries in following field */
+	DD_formal *formals;
+} DD_occur;			
+
+
+typedef struct {		/* info about an occurrence of a un-named event */
+	unsigned	line;
+} DD_otherOccur;
+
+typedef struct {
+	unsigned	line;
+	unsigned	termLine;		/* location of a select terminate */
+	unsigned	immedLine;		/* location of a select immediate */
+} DD_selectOccur;
+
+typedef struct {
+	unsigned	line;
+#ifndef CDB
+	unsigned	valueSize;
+	void		(*convert)();
+#endif
+} DD_treturnOccur;
+	
+typedef DD_occur DD_occurs[];
+typedef DD_otherOccur DD_otherOccurs[];
+typedef DD_selectOccur DD_selectOccurs[];
+typedef DD_treturnOccur DD_treturnOccurs[];
+
+typedef struct {
+	char	*name;
+	unsigned short space;		/* namespace */
+	unsigned short num;		/* namespace of subelements */
+	unsigned chain;
+	unsigned short obj;		/* type */
+} DD_symEntry;  
+
+
+typedef struct {
+	unsigned	numAccepts;
+	DD_occur	*accept;
+	unsigned	numCreates;
+	DD_occur	*create;
+	unsigned	numTransacts;
+	DD_occur	*transact;
+	unsigned	numSelects;
+	DD_selectOccur	*select;
+	unsigned	numDelays;
+	DD_otherOccur	*delay;
+	unsigned	numTerminates;
+	DD_otherOccur	*terminate;
+	unsigned	numTreturns;
+	DD_treturnOccur	*treturn;
+} DD_ProcessTable;
+
+typedef struct {
+	char *name;
+	DD_ProcessTable *table;
+} DD_globalOccurs;
+
+#ifndef CDB
+typedef enum {
+	DD_askTable, DD_askCreate, DD_askAccept, DD_askTrans, DD_askTreturn
+} DD_question;
+
+#define DD_numAnd(x)	sizeof x / sizeof x[0], x
+
+DD_ProcessTable *DD_processTable;
+
+char *DD_dummy;			/* for the treturn sizeof */
+extern char *DD_createArgs;
+#endif
+@
+
+
+2.3
+log
+@
+@
+text
+@d13 1
+a13 1
+	unsigned space;			/* which process type */
+d15 2
+a23 1
+	unsigned	space;			/* which process type */
+a27 1
+	unsigned	space;			/* which process type */
+d34 1
+a34 1
+	unsigned	space;			/* which process type */
+d36 2
+a50 5
+/*
+	unsigned typedefp:2;
+	short	halfdec;
+	char	*alias;
+*/
+a54 2
+	unsigned	numSymbols;
+	DD_symEntry	*symbolTable;
+d69 1
+a69 1
+} DD_specTable;
+d71 6
+d78 1
+a78 1
+	DD_askSpec, DD_askCreate, DD_askAccept, DD_askTrans, DD_askTreturn
+a80 1
+#define DD_Acc(x)	x + sizeof DD_transacts / sizeof *DD_transacts
+d83 2
+a84 2
+#ifndef CDB
+static DD_convert();
+@
+
+
+2.2
+log
+@about to add namespace for occurrences.
+@
+text
+@d11 1
+a11 1
+	char *name;
+d13 1
+d22 1
+d27 1
+d34 1
+d45 2
+a46 2
+	unsigned short space:14;	/* namespace */
+	unsigned short num:12;		/* namespace of subelements */
+d48 1
+a48 1
+	unsigned short obj:4;		/* type */
+a75 2
+static DD_convert();
+
+d78 1
+a78 1
+} question;
+d81 1
+d83 2
+d87 1
+a87 2
+
+#define DD_numAnd(x)	sizeof x / sizeof x[0], x
+@
+
+
+2.1
+log
+@Version which works up to printing out buffer messages in commun.
+@
+text
+@d14 1
+d20 1
+a20 1
+	int	line;
+d24 3
+a26 3
+	int	line;
+	int	termLine;		/* location of a select terminate */
+	int	immedLine;		/* location of a select immediate */
+d30 2
+a31 2
+	int	line;
+	int	valueSize;
+d54 1
+a54 1
+	int		numSymbols;
+d56 1
+d58 1
+d60 1
+d62 1
+d64 1
+d66 1
+d68 1
+d82 2
+@
+
+
+1.2
+log
+@just before modifying to remove symbol table output and inserte id tables output.
+@
+text
+@a6 4
+#define DD_numberOf(x)	sizeof x / sizeof *x
+#define DD_sizeAnd(x)	DD_numberOf(x), x
+
+
+d11 1
+a11 1
+	int	id;
+d13 1
+a13 1
+	unsigned numFormals;		/* size of following array */
+d17 16
+d34 3
+d42 1
+a43 1
+
+a48 4
+
+	unsigned tblockSize;		/* in bytes, for bcopy */
+	unsigned numOccurs;		/* size of following array */
+	DD_occur *occurs;		/* entries for uses */
+a50 4
+typedef struct {		/* info about an occurrence of a un-named event */
+	int	id;
+	int	line;
+} DD_spec;
+d53 1
+a53 11
+	DD_spec	spec;
+	int	termLine;		/* location of a select terminate */
+	int	immedLine;		/* location of a select immediate */
+} DD_selectSpec;
+
+typedef DD_spec DD_specs[];
+
+typedef DD_selectSpec DD_selectSpecs[];
+
+typedef struct {
+	unsigned	numSymbols;
+d55 7
+a61 8
+	unsigned	numSelects;
+	DD_selectSpec	*select;
+	unsigned	numDelays;
+	DD_spec		*delay;
+	unsigned	numTerminates;
+	DD_spec		*terminate;
+	unsigned	numTreturns;
+	DD_spec		*treturn;
+d64 1
+d66 3
+a68 4
+typedef struct {
+	char		*create;   /* pointer to the DD_create_%name structure*/
+	DD_specTable	*specTable;
+} DD_info;
+d70 1
+d72 2
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d7 4
+d17 1
+d35 2
+a36 1
+	int	tblockSize;		/* in bytes, for bcopy */
+d40 1
+a40 3
+typedef struct {
+	char	*name;
+	int	context;
+d47 2
+a48 2
+	int	termLine;
+	int	immedLine;
+d56 1
+d58 1
+d60 1
+d62 1
+d64 1
+a64 1
+	DD_spec		*transaction;
+d66 4
+a69 1
+	
+d71 1
+d73 1
+@

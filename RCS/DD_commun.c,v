@@ -1,0 +1,638 @@
+head     3.0;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+3.0
+date     86.09.18.16.08.45;  author lynch;  state Exp;
+branches ;
+next     2.2;
+
+2.2
+date     86.09.11.14.01.33;  author lynch;  state Exp;
+branches ;
+next     2.1;
+
+2.1
+date     86.07.25.14.37.04;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Version which works up to printing out buffer messages in commun.
+
+@
+
+
+3.0
+log
+@working final version
+@
+text
+@/*---------------------------------------------------------------------------
+ * These routines are the communication link between the front/back end of
+ * the debugger, which resides on the ouput host, and the user processes.
+ * Buffers are received over  circulating queues, and translated into
+ * front end messages, which are sent to the front end over a socket.
+ * 
+ * There is a very subtle bug here, which occurs because ccc uses pointers
+   as its pids, and cdb uses unix pid numbers.  These cannot be
+   translated here because the task structure could already have been
+   deleted and the process died.  So, a lookup table must be kept either
+   here or in the remote debugger (kept there, at the moment).  But, if an
+   out of order request should happen to contain a pointer to an old task
+   structure, which has been overwritten by a create which happened to
+   create to the same memory location, the debugger cannot interpret this
+   correctly.  This bug could be overcome with conversion in the monitor
+   routine, but this would add greatly to the monitor routine complexity,
+   which now simply bcopys the tblocks.
+ * 
+ * William L. Lynch		Fri Jul 11 10:37:20 1986
+ *---------------------------------------------------------------------------
+ */
+
+/*#define Debug*/
+/*#define Debug2*/
+
+
+#include <stdio.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/file.h>
+#include <sys/wait.h>
+#include "bool.h"
+#include "DD_include.h"
+#include "DD_kernel.h"
+#include "DD_buffers.h"
+
+#define RESOLUTION 10000		/* of timer */
+
+#define instances(n,t)	(t *)calloc((n), sizeof (t))
+#define instance(t)	instances(1,t)
+
+#ifdef Debug
+extern char *eventString[];
+#endif
+
+extern int DD_cdbs;
+shared bool Tracing = TRUE;
+
+static int sigGroup;
+
+static bool finished;
+static bool first = TRUE;
+
+static int (*conversion)();
+static DD_occur		*accepts;
+static DD_occur		*creates;
+static DD_occur		*transacts;
+static DD_selectOccur	*selects;
+static DD_otherOccur	*delays;
+static DD_otherOccur	*terminates;
+static DD_treturnOccur	*treturns;
+static DD_symEntry	*symbols;
+static int		symbolSize, acceptSize, transactSize, selectSize, delaySize;
+static int		terminateSize, treturnSize, createSize;
+
+static long seconds;				/* time of last buffer */
+static long microSeconds;
+
+
+DD_perror(s, p0, p1, p2, p3, p4, p5)
+char *s;
+{
+	fprintf(stderr, "CDB ERROR: ");
+	fprintf(stderr, s, p0, p1 , p2, p3, p4, p5);
+}
+
+
+DD_commun_sigPipe(sig)
+int sig;
+{
+	buffer *bp;
+
+	killpg(sigGroup, SIGCONT);
+	killpg(sigGroup, SIGTERM);
+	sleep(2);
+	killpg(sigGroup, SIGKILL);
+	sleep(1);
+#ifdef Debug
+	fprintf(stderr, "sigpipe\n");
+#endif
+	DD_buffers_forceEnd();
+}
+
+
+DD_commun_sigTstp(sig)
+int sig;
+{
+	killpg(sigGroup, SIGSTOP);
+}
+
+DD_commun_sigCont(sig)
+int sig;
+{
+	killpg(sigGroup, SIGCONT);
+}
+
+
+DD_commun_sigChld(sig)
+int sig;
+{
+	union wait status;
+	
+#ifdef Debug
+	fprintf(stderr, "sigchild");
+#endif
+	if ( wait3(&status, WNOHANG, 0) != 0 && WIFEXITED(status) )
+		DD_commun_sigPipe(sig);
+}
+
+DD_commun_init()
+{
+	struct timezone tz;
+	struct timeval tv;
+		
+	gettimeofday(&tv, &tz);
+	seconds = tv.tv_sec;
+	microSeconds = tv.tv_usec;
+
+	signal(SIGPIPE, DD_commun_sigPipe);
+	signal(SIGTSTP, DD_commun_sigTstp);
+	signal(SIGCONT, DD_commun_sigCont);
+	signal(SIGCHLD, DD_commun_sigChld);
+
+	sendTables();
+
+}
+
+
+
+#define sendTable(size, table,type) \
+	DD_packet_sendSize(size);\
+	for ( i=0; i < size; i++) DD_packet_send/**/type(table[i])
+
+
+
+extern int DD_symbolSize;
+extern DD_symEntry DD_SymbolTable[];
+extern int DD_numberGlobals;
+extern DD_globalOccurs DD_globalOccurTable[];
+
+static
+sendTables()
+{
+	int i;
+	
+	sendTable(DD_symbolSize, DD_SymbolTable,Symbol);
+	DD_packet_sendSize(DD_numberGlobals);
+	for ( i=0; i < DD_numberGlobals; i++ ) {
+		DD_packet_sendName(DD_globalOccurTable[i].name);
+		sendProcessTables(DD_globalOccurTable[i].table);
+	}
+}
+
+
+
+
+static
+sendProcessTables( pt )
+DD_ProcessTable *pt;
+{
+	int i;
+
+	sendTable(pt->numAccepts, pt->accept,Occur);
+	sendTable(pt->numCreates, pt->create,Occur);
+	sendTable(pt->numTransacts, pt->transact,Occur);
+	sendTable(pt->numSelects, pt->select,SelectOccur);
+	sendTable(pt->numDelays, pt->delay,OtherOccur);
+	sendTable(pt->numTerminates, pt->terminate,OtherOccur);
+	sendTable(pt->numTreturns, pt->treturn,TreturnOccur);
+}
+
+
+DD_communicate(processGroup)
+int processGroup;
+{
+	buffer *bp;
+
+	sigGroup = processGroup;
+	DD_commun_init();
+	
+	while ( !finished ) {
+		bp = DD_buffers_getFull();
+		if ( Tracing )
+			DD_commun_send(bp);
+
+		switch ( bp-> event ) {
+		case DD_WAITbORN:
+		case DD_WAITtRANS:	
+		case DD_TRETURN:
+			DD_buffers_freeTblock(bp->tblock);
+		        break;
+		case DD_COMMUN:
+			finished = TRUE;
+		        break;
+		}
+
+		DD_buffers_addEmpty(bp);
+	}
+}
+
+
+long
+DD_commun_timeStamp(time)
+struct timeval time;
+{
+	long sec, microSec, diff, i;
+		
+	sec = time.tv_sec - seconds;
+	microSec = time.tv_usec - microSeconds;
+
+	seconds = time.tv_sec;
+	microSeconds = time.tv_usec;
+
+	diff =  sec * 1000000/RESOLUTION + microSec / RESOLUTION;
+
+	return diff;
+}
+
+char *
+DD_commun_parms(bp)
+buffer *bp;
+{
+	static char answer[200];
+	
+	switch ( bp->event ) {		/* id-1 converts to CC_%d%s_id
+					 defines in program */
+	case DD_WAITbORN:
+		(*bp->convert)(DD_askCreate, bp->id-1, bp->tblock, answer);
+	        break;
+	case DD_WAITtRANS:
+		(*bp->convert)(DD_askTrans, bp->id-1, bp->tblock, answer);
+	        break;
+	case DD_TRETURN:
+		(*bp->convert)(DD_askTreturn, bp->id-1, bp->tblock, answer);
+	        break;
+	}
+	return answer;
+}
+
+
+DD_commun_send(bp)
+buffer *bp;
+{
+	switch (bp->event) {
+	case DD_WAITaCCEPT:
+	case DD_WAITsELECT:
+	case DD_DELAY:
+#ifdef Debug
+		DD_debug_printf("sending P1: %s, from: %d, id: %d...",
+				eventString[(int)bp->event], bp->fromId, bp->id);
+#endif
+		DD_packet_sendP1(	(unsigned)bp->event,
+					DD_commun_timeStamp(bp->time), 
+					bp->fromId, 
+					bp->id);
+#ifdef Debug
+		DD_debug_printf("sent\n");
+#endif
+		break;
+	case DD_ACCEPT:
+	case DD_TRETURNED:
+	case DD_IMMEDsERV:
+#ifdef Debug
+		DD_debug_printf("sending P2: %s, from: %d, to:%d, id: %d...",
+			eventString[(int)bp->event], bp->fromId, bp->toId, bp->id);
+#endif
+		DD_packet_sendP2(	(unsigned)bp->event,
+					DD_commun_timeStamp(bp->time), 
+					bp->fromId, 
+					bp->toId,
+					bp->id);
+#ifdef Debug
+		DD_debug_printf("sent\n");
+#endif
+		break;
+	case DD_WAITbORN:
+	case DD_WAITtRANS:
+	case DD_TRETURN:
+#ifdef Debug
+		DD_debug_printf("sending P3: %s, from: %d, to:%d, id: %d...",
+			eventString[(int)bp->event], bp->fromId, bp->toId, bp->id);
+#endif
+		DD_packet_sendP3(	(unsigned)bp->event,
+					DD_commun_timeStamp(bp->time), 
+					bp->fromId, 
+					bp->id, 
+					bp->toId,
+					DD_commun_parms(bp));
+#ifdef Debug
+		DD_debug_printf("sent\n");
+#endif
+		break;
+	case DD_WAITaBORT:
+	case DD_SELECTtERM:
+	case DD_WAITcHILDdIE:
+	case DD_WAITtIME:
+	case DD_EATtIMER:
+	case DD_EATtRANS:
+	case DD_EATtERM:
+	case DD_EXITING:
+	case DD_TIMEOUT:
+#ifdef Debug
+		DD_debug_printf("sending P4: %s, from: %d...",
+				eventString[(int)bp->event], bp->fromId);
+#endif
+		DD_packet_sendP4(	(unsigned)bp->event,
+					DD_commun_timeStamp(bp->time), 
+					bp->fromId);
+#ifdef Debug
+		DD_debug_printf("sent\n");
+#endif
+		break;
+	case DD_LASTcHILD:
+	case DD_LASTuSERkILL:
+	case DD_CHILDkILL:
+	case DD_IMdYING:
+	case DD_ABORTINGyOU:
+#ifdef Debug
+		DD_debug_printf("sending P4: %s, from: %d, to:%d...",
+			eventString[(int)bp->event], bp->fromId, bp->toId);
+#endif
+		DD_packet_sendP5(	(unsigned)bp->event,
+					DD_commun_timeStamp(bp->time), 
+					bp->fromId, 
+					bp->toId);
+#ifdef Debug
+		DD_debug_printf("sent\n");
+#endif
+		break;
+	case DD_ISbORN:
+#ifdef Debug
+		DD_debug_printf("sending P6: %s, from: %d, to: %d...",
+				eventString[(int)bp->event], bp->fromId, bp->toId);
+#endif
+		DD_packet_sendP6(	(unsigned)bp->event,
+					DD_commun_timeStamp(bp->time), 
+					bp->fromId, 
+					bp->toId,
+					(unsigned)bp->tblock);
+#ifdef Debug
+		DD_debug_printf("sent\n");
+#endif
+		break;
+	case DD_COMMUN:
+		DD_packet_sendCommun((unsigned)bp->event);
+		break;
+	default:
+		DD_perror("Commun: undefined buffer.\n");
+	        break;
+	}
+}
+@
+
+
+2.2
+log
+@working.
+about to change buffers.
+@
+text
+@d24 1
+d26 1
+d47 1
+a47 2
+int DD_cdbs = 3;
+
+a83 6
+#ifdef Debug
+	fprintf(stderr, "sigpipe\n");
+#endif
+	bp = instance(buffer);
+	bp->event = DD_COMMUN;
+	DD_buffers_addFull(bp);
+d88 5
+d126 4
+d135 2
+a136 3
+	gettimeofday(&tv, &tz);
+	seconds = tv.tv_sec;
+	microSeconds = tv.tv_usec;
+d141 3
+a143 3
+#define sendTable(x,type) \
+	DD_packet_sendSize(x/**/Size);\
+	for ( i=0; i < x/**/Size; i++) DD_packet_send/**/type(x/**/s[i])
+d145 7
+d157 6
+a162 8
+	sendTable(symbol,Symbol);
+	sendTable(accept,Occur);
+	sendTable(create,Occur);
+	sendTable(transact,Occur);
+	sendTable(select,SelectOccur);
+	sendTable(delay,OtherOccur);
+	sendTable(terminate,OtherOccur);
+	sendTable(treturn,TreturnOccur);
+d166 5
+a170 2
+DD_commun_tableInit(bp)
+buffer *bp;
+d172 9
+a180 33
+	DD_specTable *specTable;
+	
+	switch (bp->event) {
+	case DD_WAITbORN:	/* most likely, this is the first fork */
+	case DD_WAITaBORT:
+	case DD_WAITcHILDdIE:
+	case DD_EATtIMER:
+	case DD_EATtRANS:
+	case DD_WAITtIME:
+	case DD_EATtERM:
+	case DD_TIMEOUT:
+	case DD_WAITaCCEPT:
+		conversion = (int (*)())bp->toId;
+		first = FALSE;
+		(*conversion)(DD_askSpec, 0, 0, &specTable);
+		accepts		= specTable->accept;
+		acceptSize	= specTable->numAccepts;
+		creates		= specTable->create;
+		createSize	= specTable->numCreates;
+		transacts	= specTable->transact;
+		transactSize	= specTable->numTransacts;
+		selects		= specTable->select;
+		selectSize	= specTable->numSelects;
+		delays		= specTable->delay;
+		delaySize	= specTable->numDelays;
+		terminates	= specTable->terminate;
+		terminateSize	= specTable->numTerminates;
+		treturns	= specTable->treturn;
+		treturnSize	= specTable->numTreturns;
+		symbols		= specTable->symbolTable;
+		symbolSize	= specTable->numSymbols;
+		sendTables();
+	}
+d183 1
+d194 1
+a194 6
+		if ( first ) {
+			DD_commun_sigTstp(SIGTSTP);
+			DD_commun_tableInit(bp);	/* changes first */
+		}
+		if ( Tracing && !first )	/* first will still be
+						 true if not initialized */
+d200 1
+a200 1
+		case DD_TRETURNED:
+d217 1
+a217 1
+	long sec, microSec;
+d225 3
+a227 1
+	return sec * 1000000/RESOLUTION + microSec / RESOLUTION;
+d236 2
+a237 1
+	switch ( bp->event ) {
+d239 1
+a239 1
+		(*conversion)(DD_askCreate, bp->id, bp->tblock, answer);
+d242 1
+a242 1
+		(*conversion)(DD_askTrans, bp->id, bp->tblock, answer);
+d244 2
+a245 2
+	case DD_TRETURNED:
+		(*conversion)(DD_askTreturn, bp->id, bp->tblock, answer);
+d259 4
+d268 1
+a268 2
+		DD_debug_printf("sending P1: %s, from: %d, id: %d\n",
+				eventString[(int)bp->event], bp->fromId, bp->id);
+d272 1
+a272 1
+	case DD_TRETURN:
+d274 4
+d284 1
+a284 2
+		DD_debug_printf("sending P2: %s, from: %d, to:%d, id: %d\n",
+			eventString[(int)bp->event], bp->fromId, bp->toId, bp->id);
+d289 5
+a293 1
+	case DD_TRETURNED:
+d301 1
+a301 2
+		DD_debug_printf("sending P3: %s, from: %d, to:%d, id: %d\n",
+			eventString[(int)bp->event], bp->fromId, bp->toId, bp->id);
+d313 4
+d321 1
+a321 2
+		DD_debug_printf("sending P4: %s, from: %d\n",
+				eventString[(int)bp->event], bp->fromId);
+d329 4
+d338 1
+a338 2
+		DD_debug_printf("sending P4: %s, from: %d, to:%d\n",
+			eventString[(int)bp->event], bp->fromId, bp->toId);
+d342 4
+d352 1
+a352 2
+		DD_debug_printf("sending P6: %s, from: %d, to: %d\n",
+				eventString[(int)bp->event], bp->fromId, bp->toId);
+@
+
+
+2.1
+log
+@Version which works up to printing out buffer messages in commun.
+@
+text
+@d7 12
+a21 1
+extern char *eventString[];
+d23 2
+d27 6
+a32 1
+#include "CC_include.h"
+d36 2
+d41 3
+a43 3
+#define TRUE 1
+#define FALSE 0
+typedef unsigned short bool;
+d45 6
+d63 2
+a64 1
+static int		symbolSize;
+d66 2
+d69 1
+d83 3
+a86 1
+	finished = TRUE;
+d89 4
+d96 25
+d123 23
+a145 1
+	struct sigvec sv;
+d147 8
+a154 4
+	sv.sv_handler = DD_commun_sigPipe;
+	sv.sv_mask = SIGBIT(SIGPIPE);
+	sv.sv_onstack = 0;
+	sigvec(SIGPIPE, &sv, 0);
+d164 1
+a164 1
+	case DD_WAITbORN:
+a170 1
+	case DD_WAITtRANS:
+d173 1
+a173 2
+	case DD_TRETURNED:
+		conversion = (int (*)())bp->fromId;
+d177 1
+d179 1
+d181 1
+d183 1
+d185 1
+d187 1
+d189 1
+d192 1
+a192 1
+		break;
+d196 2
+a197 1
+DD_communicate()
+d201 4
+a204 1
+	while (!finished) {
+d206 19
+a224 3
+		if (first)
+			DD_commun_tableInit(bp);
+		DD_commun_send(bp);
+d230 17
+a246 1
+DD_commun_send(bp)
+d249 3
+a251 4
+	char answer[200];
+
+/***/printf("packet arrived: %d at %2.2d, %s\n", bp->toId, bp->time.tv_usec, eventString[(int)bp->event]);
+	switch (bp->event) {
+a253 2
+		printf("line: %d\n", creates[bp->id].line);
+		printf("Create parms: %s\n", answer);
+a256 2
+		printf("line: %d\n", transacts[bp->id].line);
+		printf("Transaction parms: %s\n", answer);
+a259 1
+		printf("Return value: %s\n", answer);
+d262 1
+d265 94
+@

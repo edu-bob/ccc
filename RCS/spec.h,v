@@ -1,0 +1,377 @@
+head     3.0;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+3.0
+date     86.09.18.16.15.19;  author lynch;  state Exp;
+branches ;
+next     2.2;
+
+2.2
+date     86.09.12.10.01.30;  author lynch;  state Exp;
+branches ;
+next     2.1;
+
+2.1
+date     86.07.25.14.35.19;  author lynch;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     86.07.17.12.19.19;  author lynch;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     86.07.16.15.51.28;  author lynch;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     86.07.14.16.11.59;  author lynch;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.07.09.14.51.49;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@working dump version.
+@
+
+
+3.0
+log
+@working final version
+@
+text
+@/*---------------------------------------------------------------------------
+ * In the following structures, id refers to the unique id given for each
+ * interaction appearing in the source code.  context refers to the namespace
+ * for the interaction, such as tblocks for accept and trans specs.
+ *---------------------------------------------------------------------------
+ */
+
+
+/*---------------------------------------------------------------------------
+ * the following deal with ordering structure field entries in the symbol
+ * table 
+ *---------------------------------------------------------------------------
+ */
+typedef struct spec_fieldTag  {		/* holds a structure field entry */
+	symbol	*symbol;
+	struct spec_fieldTag *next;
+} spec_field;
+
+typedef struct {			/* array [namespace] of these */
+	spec_field *fields;
+	spec_field *fieldsTail;
+} spec_structSpace;
+
+
+/*---------------------------------------------------------------------------
+ * specs
+ *---------------------------------------------------------------------------
+ */
+
+typedef struct parm_tag {
+	char	*name;
+	struct	parm_tag *next;
+} spec_parameters;
+
+typedef struct spec_processTag  {
+	char	*name;
+	int	num;
+	spec_parameters *formal;
+	spec_parameters *formalTail;
+	spec_parameters *typeString;
+	spec_parameters *typeStringTail;
+	spec_field	*trans;
+	spec_field	*transTail;
+	struct spec_processTag *next;	/* used to access processes linearly */
+} spec_process;	
+
+
+
+typedef struct {			/* for accept */
+	int	id;			/* unique source id number */
+	unsigned lineNumber;		/* source location	*/
+	unsigned space;			/* for cdb to associate with process */
+	symbol	*symbol;		/* entry in the symbol table */
+	spec_parameters *formal;	/* formals on create and accept */
+	spec_parameters *formalTail;		
+} spec_accept;
+
+typedef struct {
+	int	id;
+	unsigned lineNumber;
+	unsigned space;			/* for cdb to associate with process */
+	spec_process *params;
+} spec_create;
+
+typedef struct {
+	int	id;
+	unsigned lineNumber;
+	unsigned space;			/* for cdb to associate with process */
+	symbol	*symbol;
+} spec_transact;
+
+typedef spec_transact spec_treturn;
+
+typedef struct{
+	int	id;
+	unsigned lineNumber;
+	unsigned space;			/* for cdb to associate with process */
+	int	termLine;		/* location of terminate in select */
+	int	immedLine;		/* location of immediate in select */
+} spec_select  ;
+
+typedef struct {			/* for delay, terminate */
+	int	id;
+	int	context;		/* namespace of the process	*/
+	int	lineNumber;
+	unsigned space;			/* for cdb to associate with process */
+} spec_other;
+
+#define PARMsIZE 1000
+#define FORMsIZE 100
+
+#define listAdd(head,entry) if (head == NULL) head = entry;\
+				 else head/**/Tail->next = entry;\
+				 head/**/Tail = entry;
+
+
+spec_process *spec_lookupByNum();
+@
+
+
+2.2
+log
+@about to make sweeping changes to occurs.
+@
+text
+@d97 1
+a97 1
+
+@
+
+
+2.1
+log
+@Version which works up to printing out buffer messages in commun.
+@
+text
+@d52 1
+d61 1
+d68 1
+d77 1
+d86 1
+@
+
+
+1.4
+log
+@just before modifying to remove symbol table output and inserte id tables output.
+@
+text
+@d9 49
+a57 2
+struct spec {
+	int	context;		/* namespace of the process	*/
+d59 3
+a61 2
+	int	lineNumber;
+	};
+d63 5
+d69 5
+a73 2
+struct spec_select {
+	struct	spec spec;
+d76 17
+a92 1
+	} ;
+@
+
+
+1.3
+log
+@working added static arrays of compile time data.
+@
+text
+@a9 1
+	char	*name;			/* currently only used by tcall */
+@
+
+
+1.2
+log
+@save before large revision.
+@
+text
+@d3 1
+a3 1
+ * interaction appearing in the source code.  num refers to the namespace
+a7 5
+struct spec_param {
+	char	*typeString;			/* name of the data type       */
+	char	*formal;			/* name of the formal argument */
+	struct	spec_param *next;
+	};
+d9 3
+a11 28
+struct spec_oneCreate {			/* info about a create in the source */
+	char	*name;			/* name of creation */
+	unsigned id;
+	int	num;			/* id number of creation */
+	int	lineNumber;		/* source location */
+	struct	spec_oneCreate *next;
+	};
+
+struct spec_oneAccept {			/* info about an accept in the source */
+	char	*name;
+	unsigned id;
+	int	num;
+	int	lineNumber;		/* source code line number */
+	struct	spec_param *param;	/* head of parameter list */
+	struct	spec_param *paramTail;	/* tail of parameter list */
+	int	numParams;		/* number in parameter list */
+	struct	spec_oneAccept *next;
+	};
+	
+struct spec_oneTrans {			/* info about a transaction call */
+	char	*name;		
+	int	id;			/* transaction identifier */
+	int	num;			/* transaction namespace */
+	int	lineNumber;
+	struct	spec_oneTrans *next;
+	};
+	
+struct spec_oneSelect {
+a13 3
+	int	immediateLine;	        /*location of an immediate in a select */
+	int	termLine;		/* location of a terminate in a select */
+	struct	spec_oneSelect *next;
+a14 6
+	
+struct spec_oneTerminate {
+	unsigned id;
+	int	lineNumber;
+	struct	spec_oneTerminate *next;
+	};
+a15 12
+struct spec_oneDelay {
+	unsigned id;
+	int	lineNumber;
+	struct	spec_oneDelay *next;
+	};
+	
+struct spec_oneTreturn {
+	unsigned id;
+	int	num;
+	int	lineNumber;
+	struct	spec_oneTreturn *next;
+	};
+a16 19
+
+struct spec_create {
+	struct	spec_oneCreate *head;	/* head of list of creates */
+	struct	spec_oneCreate *tail;	/* tail of list */
+	int	number;			/* number of creates */
+	};
+	
+struct spec_accept {
+	struct	spec_oneAccept *head;	/* head of list of accepts */
+	struct	spec_oneAccept *tail;	/* tail of list of accepts */
+	int	number;			/* number of accepts */	
+	};
+	
+struct spec_trans {
+	struct	spec_oneTrans *head;	/* head of list of transaction calls */
+	struct	spec_oneTrans *tail;	/* tail of trans calls */
+	int	number;			/* number of trans calls */
+	};
+	
+d18 4
+a21 42
+	struct	spec_oneSelect *head;	/* head of list of select statements */
+	struct	spec_oneSelect *tail;	/* tail of same */
+	int	number;			/* number of selects */
+	};
+	
+struct spec_terminate {
+	struct	spec_oneTerminate *head; /* head of list of terminate statements */
+	struct	spec_oneTerminate *tail;	/* tail of same */
+	int	number;				/* number of terminates */
+	};
+	
+	
+struct spec_delay {
+	struct	spec_oneDelay *head;	/* head of list of delay statements */
+	struct	spec_oneDelay *tail;	/* tail of same */
+	int	number;			/* number of delays */
+	};
+	
+	
+struct spec_treturn {
+	struct	spec_oneTreturn *head;	/* head of list of treturn statements */
+	struct	spec_oneTreturn *tail;	/* tail of same */
+	int	number;			/* number of treturns */
+	};
+	
+
+
+struct spec {
+	char	*name;			/* name of the process		*/
+	int	context;		/* namespace of the process	*/
+	unsigned short isProcess;	/* could be a function 		*/
+	int	numParams;
+	struct	spec_param *param;	/* head of list of formals	*/
+	struct	spec_param *paramTail;	/* tail of list of formals	*/
+	struct	spec_create create;
+	struct	spec_accept accept;
+	struct	spec_trans transaction;
+	struct	spec_select select;
+	struct	spec_delay delay;
+	struct	spec_terminate terminate;
+	struct	spec_treturn treturn;
+	};
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 7
+d16 2
+a17 1
+	int	context;		/* id number of creation */
+d24 2
+a25 1
+	int	acceptNum;
+d35 2
+a36 2
+	int	transNum;		/* transaction namespace */
+	int	transId;		/* transaction identifier */
+d42 1
+a42 1
+	int	selectNum;
+d44 2
+d50 1
+a50 1
+	int	terminateNum;
+d56 1
+a56 1
+	int	delayNum;
+d61 6
+d107 5
+d128 1
+@

@@ -1,0 +1,35 @@
+	/usr/local/bin/bigyacc -d gram.y;cc -O -c y.tab.c;rm y.tab.c;mv y.tab.o gram.o
+
+conflicts: 183 shift/reduce, 1 reduce/reduce
+	lex  scan.l;cc -O -c lex.yy.c;rm lex.yy.c;mv lex.yy.o scan.o &21425
+	cc -O -c main.c &21426
+	cc -O -c btree.c &21429
+	cc -O -c cctypes.c &21435
+	cc -O -c aux.c &21457
+	cc -O -c spec.c &21464
+	cc -O -c capture.c &21466
+	cc -O -c depend.c &21473
+	cc -O -c specPrint.c &21478
+1137/1250 nodes(%e), 5642/6000 positions(%p), 512/1250 (%n), 23977 transitions
+, 301/1000 packed char classes(%k), 1644/2000 packed transitions(%a), 1429/3000 output slots(%o)
+	ld -r scan.o main.o btree.o cctypes.o aux.o spec.o capture.o depend.o specPrint.o -o other.o
+	cc -O gram.o other.o -o cccom
+	cc -O -c DD_monitor.c &21703
+	cc -O -c DD_semaphore.c &21705
+	cc -O -c DD_buffers.c &21707
+	cc -O -c DD_commun.c &21715
+	cc -O -c DD_packet.c &21727
+	cc -O -c DD_debug.c &21734
+	cc -O -c CC_accept.c &21741
+	cc -O -c CC_death.c &21747
+	cc -O -c CC_signal.c &21749
+	cc -O -c CC_queue.c &21768
+	cc -O -c CC_tcall.c &21770
+	cc -O -c CC_fork.c &21778
+	ar cr libccd.a DD_monitor.o DD_semaphore.o DD_buffers.o DD_commun.o DD_packet.o DD_debug.o CC_accept.o CC_death.o CC_signal.o CC_queue.o CC_tcall.o CC_fork.o
+	ranlib libccd.a
+	rm -f DD_nulMonitor.c
+	ln -s DD_monitor.c DD_nulMonitor.c
+	cc -O -DDD_NULL -c DD_nulMonitor.c &21790
+	ar cr libccc.a CC_accept.o CC_death.o CC_signal.o CC_queue.o CC_tcall.o CC_fork.o DD_nulMonitor.o
+	ranlib libccc.a

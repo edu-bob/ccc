@@ -1,0 +1,575 @@
+head     3.0;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+3.0
+date     86.09.18.16.08.17;  author lynch;  state Exp;
+branches ;
+next     2.1;
+
+2.1
+date     86.07.25.14.34.46;  author lynch;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     86.07.10.16.28.27;  author lynch;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     86.07.02.11.00.47;  author lynch;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.06.30.17.30.22;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@original.
+@
+
+
+3.0
+log
+@working final version
+@
+text
+@/*  Qdeath.c -- functions concerning aborts, termination, and completion. */
+
+#include "CC_include.h"
+
+
+/*
+ *  should I use a variant of memory marking here?
+ *  we should probably do something like that because c_invalid() uses this
+ *  routine and would die on a pid value like ((pid)17), which a check
+ *  for validity should not do.
+ */
+
+/*
+ *  if checking out self and already aborted, then we wait here to die.
+ *  ((I hope [not checked out] => [in block mode]))!
+ *  otherwise nulltask on checking out already aborted pid.
+ */
+task CC_checkout(p)
+pid p;
+{
+    task t;
+
+    if (p==nullpid)
+	return nulltask;
+    s_lock(p->life);
+    t=p->task;
+    if (!t) {
+	s_unlock(p->life);
+	if (p==mypid)
+	    CC_block(DD_WAITaBORT, 0); /* wait to be aborted, *** no id */
+	else
+	    return nulltask;
+    }
+    s_lock(t->statelock);
+    if (t->completed || t->aborted)
+	t=nulltask;
+    else
+	t->numloans++;
+    s_unlock(p->task->statelock);
+    s_unlock(p->life);
+    if (!t && p==mypid)
+	CC_block(DD_WAITaBORT, 0); /* wait to be aborted */
+    else
+	return t;
+}
+
+CC_checkin(t)
+task t;
+{
+    int shouldkill;
+
+    s_lock(t->statelock);
+    shouldkill=(!--t->numloans && t->aborted);
+    s_unlock(t->statelock);
+    if (!shouldkill)
+	return;
+    else if (t==me)
+	CC_selfabort();
+    else
+	CC_kill(t, DD_LASTuSERkILL, 0);
+}
+
+CC_children_select_terminate(t)
+task t;
+{
+    task ch;
+
+    if (t->numchildren)
+	for (ch=t->firstchild;ch!=nulltask;ch=ch->nextsibling) {
+	    ch->choseterm=1;
+	    if (ch != me)
+		CC_kill(ch, DD_CHILDkILL, 0);
+	}
+}
+
+CC_terminateifokay()
+{
+    int selected;
+
+    s_lock(pp->statelock);
+    s_lock(me->statelock);
+    if (selected=(pp->completed && pp->numchildren==pp->numprepared+1
+    && !pp->numgrandchildren)) {
+	me->prepared=1;
+	pp->numprepared++;
+	CC_children_select_terminate(pp);
+    }
+    s_unlock(me->statelock);
+    s_unlock(pp->statelock);
+    if (selected) {
+	CC_select_cleanup();
+	c_abort(mypid);
+	CC_block(DD_SELECTtERM, 0);
+    }
+}
+
+/*
+ *  CC_preparedtoterm() is called only by CC_select(), while in message mode.
+ *  Thus the CC_kill() sends a message rather than actually forcing an abort.
+ */
+CC_preparedtoterm()
+{
+    int selected;
+
+    s_lock(pp->statelock);
+    s_lock(me->statelock);
+    me->prepared=1;
+    pp->numprepared++;
+    if (selected=(pp->completed && pp->numchildren==pp->numprepared
+    && !pp->numgrandchildren))
+	CC_children_select_terminate(pp);
+    s_unlock(me->statelock);
+    s_unlock(pp->statelock);
+    if (selected)
+	CC_kill(me, DD_SELECTtERM, 0);
+}
+
+/*
+ *  CC_selfabort() is called by a process when it receives an abort signal.
+ *  At this point I am all checked in.
+ *
+ *  things like the following indicate that there should be an anonymous
+ *  parent ... and grandparent!... for "main" (the initial process).
+ */
+
+
+CC_selfabort()
+{
+    task ch;
+
+    if (me == main_task) {
+	s_lock(me->statelock);
+	if (me->numchildren) {	/* abort any children */
+	    for (ch=me->firstchild;ch!=nulltask;ch=ch->nextsibling)
+		CC_abort(ch);
+	    CC_block(DD_WAITcHILDdIE, 0);/* wait for last child to die, *** no id */
+	}
+	s_unlock(me->statelock);
+	DD_event( DD_EXITING, 0 );	/*** no id */
+	exit();
+    }
+    CC_flushqueues();
+    CC_flushclients();
+    s_lock(pp->statelock);
+    s_lock(me->statelock);
+    me->completed=1;		/* force completion */
+    if (me != main_task)
+	s_unlock(pp->statelock);
+    if (me->numchildren) {	/* abort any children */
+	for (ch=me->firstchild;ch!=nulltask;ch=ch->nextsibling)
+	    CC_abort(ch);
+	CC_block(DD_WAITcHILDdIE, 0);	/* wait for last child to die, *** no id */
+    }
+    s_unlock(me->statelock);
+    s_lock(gp->statelock);	/* order is important to prevent deadlock */
+    s_lock(pp->statelock);
+    s_lock(me->statelock);
+    
+    /* remove ourselves from child list. */
+    if (pp->firstchild==me)
+	pp->firstchild=me->nextsibling;
+    else
+	me->prevsibling->nextsibling=me->nextsibling;
+
+    /* detach our task from our pid */
+    mypid->task=nulltask;
+
+    /* update various counts */
+    gp->numgrandchildren--;
+    pp->numchildren--;
+    if (me->choseterm)
+	pp->numprepared--;
+
+    /* inform anyone who is interested of our death and release locks */
+    if ((pp->completed || pp->sickofkids) && !pp->numchildren)
+	CC_unblock(pp, DD_LASTcHILD, 0);	/*** no id */
+    else if (pp->completed && pp->numchildren==pp->numprepared
+	&& !pp->numgrandchildren)
+	CC_children_select_terminate(pp);
+    s_unlock(me->statelock);
+    s_unlock(pp->statelock);
+    s_unlock(gp->statelock);
+
+    /* deallocate storage bound to our task and exit */
+    CC_free(me);
+    DD_event( DD_EXITING, 0 );	/*** no id */
+    exit();
+}
+
+CC_flushclients()
+{
+    task t;
+
+    for (t=me->client;t!=nulltask;t=t->prevclient) {
+	t->tsuccess=0;
+	CC_unblock(t, DD_IMdYING, 0);	/*** no id */
+    }
+}
+
+c_abort(p)
+pid p;
+{
+    task t;
+    int shouldkill;
+
+    s_lock(p->life);
+    t=p->task;
+    if (!t) {
+	s_unlock(p->life);
+	return;
+    }
+    s_lock(t->statelock);
+    shouldkill=(!t->aborted && !t->numloans);
+    t->aborted=1;
+    s_unlock(t->statelock);
+    s_unlock(p->life);
+    if (shouldkill)
+	if (t==me)
+	    CC_selfabort();
+	else
+	    CC_kill(t, DD_ABORTINGyOU, 0);
+}
+
+CC_abort(t)
+task t;
+{
+    int shouldkill;
+
+    s_lock(t->statelock);
+    shouldkill=(!t->aborted && !t->numloans);
+    t->aborted=1;
+    s_unlock(t->statelock);
+    if (shouldkill)
+	if (t==me)
+	    CC_selfabort();
+	else
+	    CC_kill(t, DD_CHILDkILL, 0);
+}
+
+CC_complete()
+{
+    /* shouldn't we use checkout/checkin? */
+
+    s_lock(pp->statelock);
+    s_lock(me->statelock);
+    me->completed=1;
+    if (me->numchildren) {	/* if there are any children, notify them */
+	if (me->numchildren==me->numprepared && !me->numgrandchildren)
+	    CC_children_select_terminate(me);
+	s_unlock(me->statelock);
+	s_unlock(pp->statelock);
+	CC_block(DD_WAITcHILDdIE, 0);  /* wait for last child to say all are dead */
+    } else {
+	s_unlock(me->statelock);
+	s_unlock(pp->statelock);
+    }
+    c_abort(mypid);		/* selfabort() when all checked out */
+    CC_block(DD_WAITaBORT, 0); 	/* wait to be aborted */
+}
+
+c_wait()
+{
+    CC_checkout(mypid);
+    s_lock(pp->statelock);
+    s_lock(me->statelock);
+    if (me->numchildren) {	/* if there are any children */
+	me->sickofkids=1;
+	s_unlock(me->statelock);
+	s_unlock(pp->statelock);
+	CC_block(DD_WAITcHILDdIE, 0);  /* wait for last child to say all are dead */
+	me->sickofkids=0;
+    } else {
+	s_unlock(me->statelock);
+	s_unlock(pp->statelock);
+    }
+    CC_checkin(me);
+}
+@
+
+
+2.1
+log
+@Version which works up to printing out buffer messages in commun.
+@
+text
+@d42 1
+a42 1
+	CC_block(DD_WAITaBORT, 0); /* wait to be aborted, *** no id */
+d60 1
+a60 1
+	CC_kill(t, DD_LASTuSERkILL, 0);	/*** no id */
+d72 1
+a72 1
+		CC_kill(ch, DD_CHILDkILL, 0); /*** no id */
+d93 1
+a93 1
+	CC_block(DD_SELECTtERM, 0);	/*** no id */
+d115 1
+a115 1
+	CC_kill(me, DD_SELECTtERM, 0);	/*** no id */
+d221 1
+a221 1
+	    CC_kill(t, DD_ABORTINGyOU, 0);	/*** no id */
+d237 1
+a237 1
+	    CC_kill(t, DD_CHILDkILL, 0);	/*** no id */
+@
+
+
+1.3
+log
+@just before updating parallel library.
+@
+text
+@d25 1
+a25 1
+    p_lock(p->life);
+d28 1
+a28 1
+	p_unlock(p->life);
+d34 1
+a34 1
+    p_lock(t->statelock);
+d39 2
+a40 2
+    p_unlock(p->task->statelock);
+    p_unlock(p->life);
+d52 1
+a52 1
+    p_lock(t->statelock);
+d54 1
+a54 1
+    p_unlock(t->statelock);
+d80 2
+a81 2
+    p_lock(pp->statelock);
+    p_lock(me->statelock);
+d88 2
+a89 2
+    p_unlock(me->statelock);
+    p_unlock(pp->statelock);
+d105 2
+a106 2
+    p_lock(pp->statelock);
+    p_lock(me->statelock);
+d112 2
+a113 2
+    p_unlock(me->statelock);
+    p_unlock(pp->statelock);
+d132 1
+a132 1
+	p_lock(me->statelock);
+d138 1
+a138 1
+	p_unlock(me->statelock);
+d144 2
+a145 2
+    p_lock(pp->statelock);
+    p_lock(me->statelock);
+d148 1
+a148 1
+	p_unlock(pp->statelock);
+d154 4
+a157 4
+    p_unlock(me->statelock);
+    p_lock(gp->statelock);	/* order is important to prevent deadlock */
+    p_lock(pp->statelock);
+    p_lock(me->statelock);
+d180 3
+a182 3
+    p_unlock(me->statelock);
+    p_unlock(pp->statelock);
+    p_unlock(gp->statelock);
+d206 1
+a206 1
+    p_lock(p->life);
+d209 1
+a209 1
+	p_unlock(p->life);
+d212 1
+a212 1
+    p_lock(t->statelock);
+d215 2
+a216 2
+    p_unlock(t->statelock);
+    p_unlock(p->life);
+d229 1
+a229 1
+    p_lock(t->statelock);
+d232 1
+a232 1
+    p_unlock(t->statelock);
+d244 2
+a245 2
+    p_lock(pp->statelock);
+    p_lock(me->statelock);
+d250 2
+a251 2
+	p_unlock(me->statelock);
+	p_unlock(pp->statelock);
+d254 2
+a255 2
+	p_unlock(me->statelock);
+	p_unlock(pp->statelock);
+d264 2
+a265 2
+    p_lock(pp->statelock);
+    p_lock(me->statelock);
+d268 2
+a269 2
+	p_unlock(me->statelock);
+	p_unlock(pp->statelock);
+d273 2
+a274 2
+	p_unlock(me->statelock);
+	p_unlock(pp->statelock);
+@
+
+
+1.2
+log
+@first working version
+@
+text
+@d30 1
+a30 1
+	    CC_block(DD_WAITaBORT); /* wait to be aborted */
+d42 1
+a42 1
+	CC_block(DD_WAITaBORT); /* wait to be aborted */
+d60 1
+a60 1
+	CC_kill(t, DD_LASTuSERkILL);
+d72 1
+a72 1
+		CC_kill(ch, DD_CHILDkILL);
+d93 1
+a93 1
+	CC_block(DD_SELECTtERM);
+d115 1
+a115 1
+	CC_kill(me, DD_SELECTtERM);
+d136 1
+a136 1
+	    CC_block(DD_WAITcHILDdIE);		/* wait for last child to die */
+d139 1
+a139 1
+	DD_event( DD_EXITING );
+d152 1
+a152 1
+	CC_block(DD_WAITcHILDdIE);		/* wait for last child to die */
+d176 1
+a176 1
+	CC_unblock(pp, DD_LASTcHILD);
+d186 1
+a186 1
+    DD_event( DD_EXITING );
+d196 1
+a196 1
+	CC_unblock(t, DD_IMdYING);
+d221 1
+a221 1
+	    CC_kill(t, DD_ABORTINGyOU);
+d237 1
+a237 1
+	    CC_kill(t, DD_CHILDkILL);
+d252 1
+a252 1
+	CC_block(DD_WAITcHILDdIE);  /* wait for last child to say all are dead */
+d258 1
+a258 1
+    CC_block(DD_WAITaBORT); 	/* wait to be aborted */
+d270 1
+a270 1
+	CC_block(DD_WAITcHILDdIE);  /* wait for last child to say all are dead */
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d30 1
+a30 1
+	    CC_block(); /* wait to be aborted */
+d42 1
+a42 1
+	CC_block(); /* wait to be aborted */
+d60 1
+a60 1
+	CC_kill(t);
+d72 1
+a72 1
+		CC_kill(ch);
+d93 1
+a93 1
+	CC_block();
+d115 1
+a115 1
+	CC_kill(me);
+d136 1
+a136 1
+	    CC_block();		/* wait for last child to die */
+d139 1
+d152 1
+a152 1
+	CC_block();		/* wait for last child to die */
+d176 1
+a176 1
+	CC_unblock(pp);
+d186 1
+d196 1
+a196 1
+	CC_unblock(t);
+d221 1
+a221 1
+	    CC_kill(t);
+d237 1
+a237 1
+	    CC_kill(t);
+d252 1
+a252 1
+	CC_block();		/* wait for last child to say all are dead */
+d258 1
+a258 1
+    CC_block();			/* wait to be aborted */
+d270 1
+a270 1
+	CC_block();		/* wait for last child to say all are dead */
+@

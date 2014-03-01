@@ -1,0 +1,67 @@
+head     3.0;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+3.0
+date     86.09.18.16.13.38;  author lynch;  state Exp;
+branches ;
+next     2.1;
+
+2.1
+date     86.07.25.14.37.33;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Version which works up to printing out buffer messages in commun.
+
+@
+
+
+3.0
+log
+@working final version
+@
+text
+@#include <parallel/parallel.h>
+
+typedef struct pidTag {
+	int pid;
+	struct pidTag *next;
+} waiting;
+
+
+typedef struct {
+	int count;
+	slock_t *lock;
+	waiting *head;
+	waiting *tail;
+} Semaphore;
+typedef Semaphore *semaphore;
+void DD_sem_ask(), DD_sem_tell(), DD_sem_tell_num();
+semaphore DD_sem_create();
+
+@
+
+
+2.1
+log
+@Version which works up to printing out buffer messages in commun.
+@
+text
+@d1 1
+a1 1
+/* semaphores */
+d3 4
+a6 1
+typedef int semaphore;
+d8 9
+a16 1
+void DD_sem_ask(), DD_sem_tell(), DD_sem_free();
+d18 1
+@

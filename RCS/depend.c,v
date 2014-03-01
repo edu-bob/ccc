@@ -1,0 +1,288 @@
+head     3.0;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+3.0
+date     86.09.18.16.09.33;  author lynch;  state Exp;
+branches ;
+next     2.1;
+
+2.1
+date     86.07.25.14.36.06;  author lynch;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.07.07.10.46.55;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@first working version of code to determine which types must be sent to the 
+debugger.
+
+@
+
+
+3.0
+log
+@working final version
+@
+text
+@/*---------------------------------------------------------------------------
+ * This code is added for the use of the debugger.  It saves a tree of
+ * dependencies of the lowest level symbol table (which is the only place
+ * that typedefs can occur which affect transaction and create types) so
+ * that the debugger only need transfer the used portions of the symbol
+ * table to the output process.
+ * 
+ * The method is to create a btree with two entries per record.  The first
+ * is the current namespace, and the second is the namespace depending on
+ * this one.  When the table is to be sent, the array "used" is marked to
+ * show which symbols the debugger needs (currently, this is create and
+ * transaction types).  The print routine is then run
+ * which adds records to the static data at the end of the object c code.
+ * 
+ * William L. Lynch		Thu Jul  3 10:13:35 1986
+ *---------------------------------------------------------------------------
+ */
+
+
+#include <stdio.h>
+#include "btree.h"
+#include "cctypes.h"
+#include "bool.h"
+
+#define MATCHaLL	-1
+#define TREEoRDER	10
+ 
+#define instances(n, t)		(t *)calloc((n), sizeof (t))
+#define instance(t)		instances(1, t)
+
+typedef struct {
+	int space;		/* current namespace */
+	int dependsOn;		/* namespace depending on preceeding */
+} entry;
+
+struct btree *depend;
+
+
+	
+
+
+entry *
+depend_Entry( space, dependsOn )
+int space, dependsOn;
+{
+	entry *e;
+	
+	e = instance(entry);
+	e->space = space;
+	e->dependsOn = dependsOn;
+	return e;
+}
+
+
+
+depend_s( name, space, dependsOn )	/* read "depends", as in depends on */
+int space, dependsOn;
+char *name;
+
+{
+	if (strcmp(name, "0")) {  /* get rid of this entry, which uses the
+				   num field for a transaction parameter
+				   counter */
+		btinsert(depend, depend_Entry(space, dependsOn));		
+	}
+}
+
+
+
+int
+depend_Compare( x, y )
+entry *x, *y;
+{
+	int i;
+	
+	if (i = (x->space - y->space)) 
+		return i;
+	if (x->dependsOn == MATCHaLL || y->dependsOn == MATCHaLL ) 
+		return 0;
+	return (x->dependsOn - y->dependsOn);
+}
+
+
+bool *used;
+
+markSubTree(nameSpace)
+int nameSpace;
+{
+	entry *e, *newE;
+	
+	used[nameSpace] = TRUE;
+	e = depend_Entry(nameSpace, MATCHaLL);
+	while (newE = (entry *)btdelete(depend, e)) {
+		used[newE->dependsOn] = TRUE;
+		markSubTree(newE->dependsOn);
+		cfree(newE);
+	}
+}
+
+
+extern int namespace;
+
+depend_Output( symbolTree )
+struct btree *symbolTree;
+{
+	int maxSpaces = namespace;
+	int depend_OutputNode();
+
+	used = instances(maxSpaces, bool);
+	used[1] = TRUE;
+	spec_markProcesses();
+	printf("DD_symEntry DD_SymbolTable[] = {\n");
+	btprint( symbolTree, depend_OutputNode ); 
+	printf("};\n");
+}
+
+
+ 
+ 
+
+depend_OutputNode( s )
+symbol *s;
+{
+	static unsigned space = -1;  /* illegal space to start */
+
+	if (space == s->num)	/* has already been printed by spec ordered */
+		return;
+
+	if (used[s->num]) 		
+		if (spec_isOrdered(s->num)) {
+			space = s->num;
+			spec_printOrdered(space);
+		} else 
+			spec_printSymbolEntry(s);
+}
+
+
+depend_Init()
+{
+	int depend_Compare();
+	
+	depend = (struct btree *)btnew(TREEoRDER, depend_Compare);
+}
+@
+
+
+2.1
+log
+@Version which works up to printing out buffer messages in commun.
+@
+text
+@d23 1
+a30 6
+typedef unsigned short bool;
+#ifndef TRUE
+#define TRUE 1
+#define FALSE 0
+#endif
+
+a83 1
+
+d91 1
+d111 2
+a112 2
+	markSubTree(1);
+	printf("static DD_symEntry DD_SymbolTable[] = {\n");
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d13 1
+a13 1
+ * which sends all used records over the socket (eventually).
+d27 1
+a27 1
+#define instances(n, t)		(t *)calloc(n, sizeof (t))
+d30 5
+d48 1
+a48 1
+dependEntry( space, dependsOn )
+d61 1
+a61 1
+depends( name, space, dependsOn )
+d69 1
+a69 1
+		btinsert(depend, dependEntry(space, dependsOn));		
+d76 1
+a76 1
+dependCompare( x, y )
+d83 1
+a83 1
+	if (x->dependsOn == MATCHaLL || y->dependsOn == MATCHaLL) 
+d90 1
+a91 5
+
+unsigned short *used;
+	
+
+
+d96 2
+a97 2
+
+	e = dependEntry(nameSpace, MATCHaLL);
+d99 1
+a99 1
+		used[newE->dependsOn] = 1;
+d106 1
+d108 2
+a109 2
+dependPrintEntry(e)
+entry *e;
+d111 9
+a119 1
+	fprintf(stderr, "%d depends on %d\n", e->space, e->dependsOn);
+d123 2
+d126 2
+a127 3
+dependOutput( symbolTree, maxSpaces )
+struct btree *symbolTree;
+int maxSpaces;
+d129 1
+a129 1
+	int dependOutputNode();
+d131 9
+a139 8
+	used = instances(maxSpaces, unsigned short);
+	used[1] = 1;
+	markSubTree(1);
+/* temporary, this is where the symbol table info is sent out to the debugger */
+	printf("/*\n");
+	btprint( symbolTree, dependOutputNode );  /*dependOutputNode in
+						   cctypes.c */
+	printf("*/\n");
+d143 1
+a143 2
+
+dependInit()
+d145 1
+a145 1
+	int dependCompare();
+d147 1
+a147 1
+	depend = (struct btree *)btnew(TREEoRDER, dependCompare);
+a148 3
+
+ 
+ 
+@

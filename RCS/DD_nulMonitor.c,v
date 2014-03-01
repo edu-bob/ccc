@@ -1,0 +1,452 @@
+head     3.0;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+3.0
+date     86.09.18.16.09.00;  author lynch;  state Exp;
+branches ;
+next     2.2;
+
+2.2
+date     86.09.11.14.02.02;  author lynch;  state Exp;
+branches ;
+next     2.1;
+
+2.1
+date     86.07.25.14.36.35;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Version which works up to printing out buffer messages in commun.
+
+@
+
+
+3.0
+log
+@working final version
+@
+text
+@/*---------------------------------------------------------------------------
+ * The debugging system for the Concurrent C compiler.  The stages of
+ * development are:
+ * 	trace run-time-system events on the screen.
+ * 	trace RTS events to a separate monitor process.
+ * 	dump compile time symbol table information to the monitor.
+ * 	fork the ccc program from the debugger.
+ * 	connect debugger and monitor with sockets.
+ * 	graphical output of debugger.
+ * 
+ * The final configuration:
+ * 
+ * 	-----------------   ------------	-----------------
+ * 	| 		|   | buffer   | socket |		|
+ * 	|   monitor	|---| system + |------->|  debugger	|
+ * 	|		|   | commun   |	|		|
+ * 	-----^----^------   ------------	-----------------
+ * 	|		|
+ * 	|    RTS	|
+ * 	|		|
+ * 	-----------------
+ * 	|		|
+ *	| user program 	|
+ * 	|		|
+ *	-----------------
+ * 
+ * The debugger may reside on another machine, such as a sun workstation,
+ * and will format all of the raw data from the monitor.  The debugger
+ * will start the monitor and other programs on the host machine.
+ * 
+ * William L. Lynch		Mon Jun 30 17:04:45 1986
+ * 
+ * The basic hooks into the run time system consist of extra parameters on
+ * CC_block,  CC_unblock, and CC_kill calls which indicate the nature of
+ * the call.  There are also a couple of renegade hooks for exiting and
+ * delay statements  (and for CC_shmalloc, if that is added in).  To
+ * compile without the debugger, simply link with null routines for
+ * DD_event*.
+ * 
+ * The important information about the processes consists of transaction
+ * and create parameters, and most everything else.  The transaction
+ * parameters will be read into a buffer at accept time from the tblock,
+ * and the result will be extracted at a treturn.  The create paramters
+ * are more difficult, as they bypass the RTS.  
+ *---------------------------------------------------------------------------
+ */
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <stdio.h>
+#include <ctype.h>
+#include "CC_include.h"
+#include "DD_kernel.h"
+#include "DD_buffers.h"
+
+int DD_cdbs = 3;
+int DD_me;
+extern char *CC_mytblock;
+extern char **CC_tblock_ptr;	/* for returns */
+char *DD_createArgs;
+
+
+extern DD_ProcessTable *DD_processTable;
+
+#define Accept(id,type)		DD_processTable->accept[id].type
+#define Create(id,type)		DD_processTable->create[id].type
+#define Transact(id,type)	DD_processTable->transact[id].type
+#define Select(id,type)		DD_processTable->select[id].type
+#define Delay(id,type)		DD_processTable->delay[id].type
+#define Terminate(id,type)	DD_processTable->terminate[id].type
+#define Treturn(id,type)	DD_processTable->treturn[id].type
+
+
+
+
+
+void
+DD_event( event, id )
+DD_eventType event;
+unsigned id;
+{
+#ifndef DD_NULL
+	if ( event != DD_NONE )
+		DD_sendBuf(event, id, 0);
+#endif
+}
+
+
+
+void
+DD_event2( event, toPid, id )
+DD_eventType event;
+unsigned toPid;
+unsigned id;	
+{
+#ifndef DD_NULL
+	DD_sendBuf(event, id, toPid);
+#endif
+}
+
+
+
+#ifndef DD_NULL
+DD_main(argc, argv, envp)
+#else
+main(argc, argv, envp)
+#endif
+int argc;
+char **argv, **envp;
+{
+	/*
+	 *  CC_maxtblocksize should really be calculated from sizeof()s of trans structs.
+	 */
+	CC_maxtblocksize=512;
+	CC_install_handler();
+	CC_make_elder_tasks();
+	CC_shinit();
+	CC_main(argc, argv, envp);
+	CC_complete();
+}
+
+
+
+#ifndef DD_NULL
+
+DD_init()
+{
+	DD_buffers_init();
+	setlinebuf(stdout);
+}
+
+DD_end()
+{
+	DD_buffers_end();
+	
+}
+
+
+extern shared bool Tracing;
+
+DD_sendBuf (event, id, to )
+DD_eventType event;
+unsigned id;
+unsigned to;
+{
+	static bool first = TRUE;
+	buffer *bp;
+	struct timezone tz;
+	extern unsigned DD_tcallPid;		/* global set in
+						 CC_tcallinit (hack) */
+
+	if ( Tracing ) {
+		bp = DD_buffers_getEmpty();
+		bp->event = event;
+		bp->id = id;
+		gettimeofday(&(bp->time), &tz);
+		bp->fromId = DD_me;
+		bp->toId = to;
+		switch (event) {
+		case DD_ISbORN:
+			bp->tblock = (char *)CC_mypid;
+		        break;
+		case DD_WAITbORN:
+			bp->tblock = DD_buffers_getTblock(Create(id, tblockSize));
+			bcopy(DD_createArgs, bp->tblock, Create(id, tblockSize));
+			bp->convert = Create(id, convert);
+			break;
+		case DD_WAITtRANS:
+			bp->tblock = DD_buffers_getTblock(Transact(id, tblockSize));
+			bcopy(CC_mytblock, bp->tblock, Transact(id, tblockSize));
+			bp->convert = Transact(id, convert);
+			bp->toId = DD_tcallPid;
+			break;
+		case DD_TRETURN:
+			bp->tblock = DD_buffers_getTblock(Treturn(id, valueSize));
+			bcopy(*CC_tblock_ptr, bp->tblock, Treturn(id, valueSize));
+			bp->toId = DD_tcallPid;
+			bp->convert = Treturn(id, convert);
+			break;
+		}
+		DD_buffers_addFull(bp);
+	}
+	
+}
+
+#define newstr(s)	(char *)strcpy(malloc(strlen(s)+1),s)
+
+char *
+DD_unctrl(ch)
+char ch;
+{
+	char answer[3];
+	
+	if ( isascii(ch) && isprint(ch) ) {
+		answer[0] = ch;
+		answer[1] = '\0';
+	} else {
+		answer[0] = '^';
+		answer[1] = ch == '' ? '?' : ch & '\0177' | '@@';
+		answer[2] = '\0';
+	}
+	
+	return newstr(answer);
+}
+
+
+main(argc, argv, envp)
+int argc;
+char **argv, **envp;
+{
+	int childPid;
+	struct stat buf;
+
+	fstat(3, &buf);
+	if ( (buf.st_mode & S_IFMT) == S_IFREG ) {	/* if not started by cdb */
+		Tracing = FALSE;
+		DD_main(argc, argv, envp);
+		CC_complete();			/* just for safety */
+		exit();
+	}
+
+	DD_init();
+	/* fork off a process for user program */
+	if ((childPid = fork()) == -1) {
+		DD_perror("failed fork\n");
+	} else if (childPid == 0) {
+		setpgrp(0, getpid());
+		kill(getpid(), SIGTSTP);
+		DD_main(argc, argv, envp);	/* does not return */
+		CC_complete();			/* but just in case */
+		exit();
+	}
+	DD_communicate(childPid);
+	DD_end();
+}
+
+#endif
+@
+
+
+2.2
+log
+@working.
+@
+text
+@d44 1
+a44 3
+ * are more difficult, as they bypass the RTS.  The overall state will be
+ * dumped by a killpg signal from the monitor process into shared buffers
+ * and transferred out through the monitor process.
+d56 1
+a56 2
+
+
+d59 1
+a61 8
+extern int (*DD_conversion)();			 /* in CC_fork */
+static DD_occur		*accepts;
+static DD_occur		*creates;
+static DD_occur		*transacts;
+static DD_selectOccur	*selects;
+static DD_otherOccur	*delays;
+static DD_otherOccur	*terminates;
+static DD_treturnOccur	*treturns;
+d63 1
+d65 7
+a71 7
+#define Accept(id,type)		accepts[id].type
+#define Create(id,type)		creates[id].type
+#define Transact(id,type)	transacts[id].type
+#define Select(id,type)		selects[id].type
+#define Delay(id,type)		delays[id].type
+#define Terminate(id,type)	terminates[id].type
+#define Treturn(id,type)	treturns[id].type
+a75 4
+bool
+DD_monitor_init()
+{
+	DD_specTable *DD_SpecTable;
+a76 15
+	if (DD_conversion == NULL)	/* if calls before CC_fork, like CC_delay */
+		return TRUE;
+	(*DD_conversion)(DD_askSpec, 0, 0, &DD_SpecTable);
+	accepts		= DD_SpecTable->accept;
+	creates		= DD_SpecTable->create;
+	transacts	= DD_SpecTable->transact;
+	selects		= DD_SpecTable->select;
+	delays		= DD_SpecTable->delay;
+	terminates	= DD_SpecTable->terminate;
+	treturns	= DD_SpecTable->treturn;
+	return FALSE;
+}
+
+
+
+d83 2
+a84 1
+	DD_sendBuf(event, id, (unsigned)DD_conversion);
+a152 2
+		if (first)
+			first = DD_monitor_init();
+d156 1
+a158 1
+		gettimeofday(&bp->time, &tz);
+d166 1
+d171 1
+d174 1
+a174 1
+		case DD_TRETURNED:
+d176 1
+a176 1
+			bcopy(CC_mytblock, bp->tblock, Treturn(id, valueSize));
+d178 1
+d228 1
+@
+
+
+2.1
+log
+@Version which works up to printing out buffer messages in commun.
+@
+text
+@d50 2
+d53 1
+d58 2
+a81 27
+char *eventString[] = {
+	"waiting for childbirth",
+	"I am born",
+	"waiting for abortion",
+	"chose termination",
+	"last user finished",
+	"killing a child",
+	"waiting for children to die",
+	"last child dying",
+	"I\'m exiting",
+	"I\'m dying, you shouldn't be waiting",
+	"I\'m aborting you",
+	"eating a late timer signal",
+	"eating a late transaction signal",
+	"eating a late termination signal",
+	"serve me",
+	"waiting on a transaction",
+	"waiting for a possible timeout",
+	"tcall time out",
+	"accept waiting",
+	"select waiting",
+	"delaying",
+	"accepting a client",
+	"treturn",
+	"I got a return",
+	"debugger ending"
+};
+d85 1
+a85 1
+
+d89 3
+a91 1
+	
+d100 1
+a100 1
+	
+d111 1
+a111 29
+	static bool first = TRUE;
+	buffer *bp;
+	struct timezone tzp;
+	
+	if (first) {
+		DD_monitor_init();
+		first = FALSE;
+	}
+	bp = DD_buffers_getEmpty();
+	bp->event = event;
+	bp->id = id;
+	bp->fromId = (int)DD_conversion;	/* passed every time */
+	bp->toId = DD_me;
+	gettimeofday(&bp->time, &tzp);
+	switch (event) {
+	case DD_WAITbORN:
+		bp->tblock = DD_buffers_getTblock(Create(id, tblockSize));
+		bcopy(DD_createArgs, bp->tblock, Create(id, tblockSize));
+	        break;
+	case DD_WAITtRANS:
+		bp->tblock = DD_buffers_getTblock(Transact(id, tblockSize));
+		bcopy(CC_mytblock, bp->tblock, Transact(id, tblockSize));
+	        break;
+	case DD_TRETURNED:
+		bp->tblock = DD_buffers_getTblock(Treturn(id, valueSize));
+		bcopy(CC_mytblock, bp->tblock, Treturn(id, valueSize));
+	        break;
+	}
+	DD_buffers_addFull(bp);
+d118 1
+a118 1
+DD_event2( event, toTask, id )	/* and event with a destination */
+d120 1
+a120 1
+task toTask;
+d124 1
+a124 1
+	DD_event( event, id );
+a137 1
+
+a154 1
+	DD_commun_init();
+d156 1
+a156 1
+
+d165 68
+d238 1
+d240 8
+d253 1
+d258 1
+a258 1
+	DD_communicate();
+@

@@ -1,0 +1,577 @@
+head     3.0;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+3.0
+date     86.09.18.16.08.39;  author lynch;  state Exp;
+branches ;
+next     2.4;
+
+2.4
+date     86.09.16.11.40.17;  author lynch;  state Exp;
+branches ;
+next     2.3;
+
+2.3
+date     86.09.12.20.16.13;  author lynch;  state Exp;
+branches ;
+next     2.2;
+
+2.2
+date     86.09.11.14.01.14;  author lynch;  state Exp;
+branches ;
+next     2.1;
+
+2.1
+date     86.07.25.14.37.27;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Version which works up to printing out buffer messages in commun.
+
+
+@
+
+
+3.0
+log
+@working final version
+@
+text
+@/*---------------------------------------------------------------------------
+ * This codes provides communication between the user processes and the
+ * debug process by means of a circulating queue of buffers, locked with
+   semaphores.  Transmit order is preserved in terms of buffer request
+   order.
+ *  
+   The buffers are shuffled in the queues to try
+ * to prevent mass write-flushing by the snoopy caches.
+ * 
+ * If there are fewer buffers than processes, than there can be a slight
+   race condition as the empty pointer circulates completely around the
+   buffer and two processes are accessing the same semaphore.
+ *  
+ * William L. Lynch		Thu Jul 10 13:11:13 1986
+ *---------------------------------------------------------------------------
+ */
+
+/*#define Debug*/
+
+#include "DD_include.h"
+#include "bool.h"
+#include "DD_buffers.h"
+#include "DD_semaphore.h"
+
+#define BUFFERS		50
+
+#ifdef Debug
+#include <stdio.h>
+#endif
+ 
+
+#define shInstances(n, t)	(t *)shmalloc((n) * sizeof (t))
+#define shInstance(t)		shInstances(1, t)
+
+#define circle(bufInt)	((bufInt)%BUFFERS)
+#define pred(bufInt)	((bufInt) == 0 ? BUFFERS-1 : (bufInt)-1)
+#define succ(bufInt)	((bufInt) == BUFFERS-1 ? 0 : (bufInt)+1)
+
+
+
+static shared struct bufTag {
+	buffer *buf;
+	semaphore fullSem, emptySem;
+} buffers[BUFFERS];
+
+static slock_t	*emptyLock, *fullLock;
+shared int full = 0, empty = 0;		/* points to next available buffer */
+
+
+
+DD_buffers_init()
+{
+	int i, start, bufr;
+	
+	DD_semaphore_init();
+	
+	emptyLock = shInstance(slock_t);s_init_lock(emptyLock); s_unlock(emptyLock);
+	fullLock = shInstance(slock_t); s_init_lock(fullLock);  s_unlock(fullLock);
+
+	for (i=0, bufr=start=0; i < BUFFERS; i++) {
+		buffers[bufr].buf = shInstance(buffer);
+		buffers[bufr].buf->bufNum = bufr;
+		buffers[bufr].fullSem = DD_sem_create(0);
+		buffers[bufr].emptySem = DD_sem_create(1);
+		bufr = circle(bufr + 7);
+		if ( bufr >= BUFFERS )
+			bufr = ++start;
+	}
+}
+
+DD_buffers_forceEnd()
+{
+	buffers[empty].buf->event = DD_COMMUN;
+	DD_buffers_addFull(buffers[empty].buf);
+}
+
+
+DD_buffers_end()
+{
+	int i;
+	shfree(emptyLock);
+	shfree(fullLock);
+
+	for ( i=0; i < BUFFERS; i++ ) {
+		shfree(buffers[i].fullSem);
+		shfree(buffers[i].emptySem);
+		shfree(buffers[i].buf);
+	}
+}
+
+
+
+buffer *
+DD_buffers_getEmpty()
+{
+	int myEmpty;
+
+	s_lock(emptyLock);
+	myEmpty = empty;
+	empty = succ(empty);
+	s_unlock(emptyLock);
+
+	DD_sem_ask(buffers[myEmpty].emptySem);
+
+	return buffers[myEmpty].buf;
+}
+
+
+
+buffer *
+DD_buffers_getFull()
+{
+	int myFull;
+
+	s_lock(fullLock);
+	myFull = full;
+	full = succ(full);
+	s_unlock(fullLock);
+
+	DD_sem_ask(buffers[myFull].fullSem);
+
+	return buffers[myFull].buf;
+}
+
+
+void
+DD_buffers_addFull( buf )
+buffer *buf;
+{
+	DD_sem_tell(buffers[buf->bufNum].fullSem);
+}
+
+void
+DD_buffers_addEmpty( buf )
+buffer *buf;
+{
+	DD_sem_tell(buffers[buf->bufNum].emptySem);
+}
+
+
+char *
+DD_buffers_getTblock(size)
+int size;
+{
+	return shmalloc(size);		/* this may be inefficient */
+}
+
+
+
+DD_buffers_freeTblock(tp)
+char *tp;
+{
+	shfree(tp);
+}
+
+/*
+static
+#include "cdb/eventString.h"
+
+DD_buffers_dump(s)
+char *s;
+{
+	int i;
+	waiting *wait;
+
+	s_lock(fullLock); s_lock(emptyLock);
+	for ( i=0; i<BUFFERS; i++ ) {
+#define BP buffers[i]
+	DD_debug_printf("%d told %d, full%d, time %d, event %s, from %d to %d id %d\n", 
+		i, BP.told, BP.full, BP.buf->time.tv_usec,
+		eventString[(int)BP.buf->event], BP.buf->fromId, BP.buf->toId,
+		BP.buf->id);
+	}
+	DD_debug_printf("%s full %d, empty %d, count %d, %d.\n", s, full, empty, fullSem->count, emptySem->count);
+	for ( wait = emptySem->head; wait != NULL; wait= wait->next ) {
+		DD_debug_printf("waiting %d\n", wait->pid);
+	}
+	s_unlock(fullLock); s_unlock(emptyLock);
+}
+
+*/@
+
+
+2.4
+log
+@might not be working.
+@
+text
+@d5 2
+a6 3
+   order, and some semaphore optimization is accomplished by signalling more 
+   than  one ready buffer at once.	
+ 
+d10 4
+d18 1
+a18 1
+#define Debug
+a19 2
+#include <parallel/parallel.h>
+#include "DD_semaphore.h"
+d23 1
+d28 1
+a28 3
+extern char *eventString[];
+shared int DD_numBuffers = BUFFERS;
+shared int fullSignals=0, fullAdds=0, emptySignals=0, emptyAdds=0, exFull=0, exEm=0;
+d30 1
+a38 2
+static semaphore emptySem, fullSem;
+static slock_t	*emptyLock, *fullLock;
+d40 1
+a41 1
+	bool full;
+d43 1
+a43 1
+	unsigned short told:1;		/* has be sem_tell'ed */
+d45 2
+d55 4
+a58 4
+	if ((emptySem = DD_sem_create(0)) == -1)
+		exit(-1);
+	if ((fullSem = DD_sem_create(0)) == -1)
+		exit(-1);
+a59 5
+	emptyLock = shInstance(slock_t);
+	fullLock = shInstance(slock_t);
+	s_init_lock(emptyLock); s_unlock(emptyLock);
+	s_init_lock(fullLock);  s_unlock(fullLock);
+
+a60 1
+		buffers[bufr].full = FALSE;
+d63 2
+a64 1
+		buffers[bufr].told = TRUE;
+a68 2
+	buffers[0].told = FALSE;
+	DD_sem_tell_num(emptySem, BUFFERS);
+d73 2
+a74 8
+	int bp = full;
+	
+	while ( buffers[bp].full && buffers[bp].told )
+		bp++;
+	buffers[bp].buf->event = DD_COMMUN;
+	buffers[bp].full = TRUE;
+	buffers[bp].told = TRUE;
+	DD_sem_tell(fullSem);
+d84 5
+a88 5
+	for ( i=0; i < BUFFERS; i++ )
+		shfree(buffers[i]);
+
+	DD_sem_free( emptySem );
+	DD_sem_free( fullSem );
+d96 1
+a96 1
+	buffer *temp;
+a97 1
+	DD_sem_ask(emptySem);
+d99 1
+a99 2
+	temp = buffers[empty].buf;
+	buffers[empty].told = FALSE;
+d103 3
+a105 1
+	return temp;
+d113 1
+a113 2
+	buffer *temp;
+	
+a114 1
+	DD_sem_ask(fullSem);
+d116 1
+a116 2
+	temp = buffers[full].buf;
+	buffers[full].told = FALSE;
+d119 4
+a122 1
+	return temp;
+d130 1
+a130 12
+	int numFull = 0, i;
+
+	s_lock(fullLock);
+	buffers[buf->bufNum].full = TRUE;
+	if ( full == buf->bufNum && !buffers[buf->bufNum].told || buffers[pred(buf->bufNum)].told )
+		for ( i=buf->bufNum; buffers[i].full && i != empty; i = succ(i) ) {
+			numFull++;
+			buffers[i].told = TRUE;
+		}
+	s_unlock(fullLock);
+	if ( numFull != 0 )
+		DD_sem_tell_num(fullSem, numFull);
+d137 1
+a137 15
+	int numEmpty = 0, i;
+
+	/* of course, all this really isn't necessary as there is only one
+	 processing clling this routine */
+	s_lock(emptyLock);
+	buffers[buf->bufNum].full = FALSE;
+	if ( empty == buf->bufNum && !buffers[buf->bufNum].told 
+				|| buffers[pred(buf->bufNum)].told )
+		for ( i=buf->bufNum; !buffers[i].full && i != full; i = succ(i) ) {
+			numEmpty++;
+			buffers[i].told = TRUE;
+		}
+	s_unlock(emptyLock);
+	if ( numEmpty != 0 )
+		DD_sem_tell_num(emptySem, numEmpty);
+d155 26
+@
+
+
+2.3
+log
+@updated version, might not be working.
+@
+text
+@d5 2
+a6 1
+   order.  
+d15 1
+a15 2
+/*#define Debug
+#define Debug2*/
+d23 2
+d27 2
+a30 2
+#define BUFFERS		50
+
+d41 1
+a41 1
+shared static struct bufTag {
+a47 3
+#ifdef Debug2
+shared int DD_numBuffers = BUFFERS;
+#endif
+d49 1
+d73 1
+d77 11
+a89 1
+
+a91 1
+	buffer *bp;
+a92 1
+	
+a116 4
+#ifdef Debug2
+	DD_debug_printf("buffers %d, empty = %d\n", --DD_numBuffers, empty);
+#endif
+
+d127 1
+a133 5
+#ifdef Debug
+	DD_debug_printf("getting buffer %d ev: %s, id: %d, from: %d, to: %d\n",
+			temp->bufNum, eventString[(int)temp->event], temp->id,
+			temp->fromId, temp->toId);
+#endif
+d144 1
+d146 1
+a146 2
+	s_lock(fullLock);
+	if ( full == buf->bufNum || buffers[pred(buf->bufNum)].told == TRUE )
+a153 6
+#ifdef Debug
+	DD_debug_printf("adding buffer %d ev: %s, id: %d, from: %d, to: %d, full: %d\n",
+			buf->bufNum, eventString[(int)buf->event], buf->id,
+			buf->fromId, buf->toId, numFull);
+#endif
+
+d162 3
+d166 2
+a167 2
+	s_lock(emptyLock);
+	if ( empty == buf->bufNum || buffers[pred(buf->bufNum)].told == TRUE )
+a174 5
+
+#ifdef Debug2
+	DD_debug_printf("buffers %d addempty %d signalled %d\n", 
+			buf->bufNum, ++DD_numBuffers, numEmpty);
+#endif
+@
+
+
+2.2
+log
+@working.
+about to change buffers.
+@
+text
+@d4 4
+a7 3
+ * semaphores.  Then empty queue is actually a pushdown stack, so that only one
+ * pointer is needed.  The queue heads MUST be locked by an additional
+ * lock before use.  The buffers should be shuffled in the queues to try
+d14 2
+a15 5
+/*#define Debug*/
+/*#define Debug2*/
+#ifdef Debug2
+shared int DD_numBuffers = 0;
+#endif
+d32 3
+a34 3
+#define listAdd(head,entry) if (head == NULL) head = entry;\
+				 else head/**/Tail->next = entry;\
+				 head/**/Tail = entry;
+d36 1
+a36 3
+
+static semaphore	emptySem, fullSem;
+shared static buffer	*empty, *full, *fullTail;
+d39 6
+d46 4
+d52 1
+a52 3
+	int i;
+	buffer *startup, *startupTail;
+
+d64 8
+a71 5
+	
+	/* create buffers */
+	startup = startupTail = shInstance(buffer);
+	for (i=0; i < BUFFERS-1; i++) {
+		startupTail = startupTail->next = shInstance(buffer);
+d73 1
+a73 10
+	full = NULL;  fullTail = NULL; empty = NULL;
+	startupTail->next = startup;		/* make circular */
+	for (i=0; i < BUFFERS; i++) {
+		buffer *tmp;
+		/* number of ->next's is the skip factor */
+		startup = startup->next->next->next->next->next->next->next->next;
+		tmp = startup->next;
+		startup->next = startup->next->next;
+		DD_buffers_addEmpty( tmp );
+	}
+d82 1
+d87 2
+a88 8
+	while (bp = empty) {
+		empty = empty->next;
+		shfree(bp);		
+	}
+	while (bp = full) {
+		full = full->next;
+		shfree(bp);
+	}
+d103 5
+a107 2
+	temp = empty;
+	empty = temp->next;
+d109 1
+a109 1
+	DD_debug_printf("buffers %d\n", --DD_numBuffers);
+d111 1
+a111 1
+	s_unlock(emptyLock);
+d124 3
+a126 2
+	temp = full;
+	full = full->next;
+d129 3
+a131 2
+	DD_debug_printf("getting buffer ev: %s, id: %d, from: %d, to: %d\n",
+		eventString[(int)temp->event], temp->id, temp->fromId, temp->toId);
+d141 1
+a141 6
+	buf->next = NULL;
+	
+#ifdef Debug
+	DD_debug_printf("adding buffer ev: %s, id: %d, from: %d, to: %d\n",
+		eventString[(int)buf->event], buf->id, buf->fromId, buf->toId);
+#endif
+d143 1
+d145 5
+a149 1
+	listAdd(full, buf);
+d151 7
+a157 2
+	DD_sem_tell(fullSem);
+}
+a158 4
+bool
+DD_buffers_areFull()
+{
+	return full != NULL;
+a160 2
+
+
+d165 3
+d169 9
+a177 2
+	buf->next = empty;		/* pushdown stack */
+	empty = buf;
+d179 2
+a180 1
+	DD_debug_printf("buffers %d\n", ++DD_numBuffers);
+a181 2
+	s_unlock(emptyLock);
+	DD_sem_tell(emptySem);
+@
+
+
+2.1
+log
+@Version which works up to printing out buffer messages in commun.
+@
+text
+@d13 7
+d21 2
+a22 1
+#include "CC_include.h"
+d25 4
+d41 1
+a41 1
+static lock	emptyLock, fullLock;
+a43 1
+
+d68 1
+a68 1
+	for (i=0; i < BUFFERS-1; i++) {
+d112 3
+d131 4
+d145 5
+d156 5
+d162 2
+d171 3
+@

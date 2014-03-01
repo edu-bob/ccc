@@ -1,0 +1,94 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     86.08.05.14.40.23;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@bugged.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#include <ccc/CC_kernel.h>
+static char *DD_convert;
+
+# line 1 min.cc
+
+# line 1 /usr/include/stdio.h
+
+extern struct _iobuf {
+	int _cnt ;
+	char *_ptr ;
+	char *_base ;
+	int _bufsiz ;
+	short _flag ;
+	char _file ;
+}
+_iob [20
+# line 26 /usr/include/stdio.h
+];
+
+struct _iobuf *fopen ()
+# line 55 /usr/include/stdio.h
+;
+struct _iobuf *fdopen ();
+struct _iobuf *freopen ()
+# line 57 /usr/include/stdio.h
+;
+long	 ftell ();
+char *gets ()
+# line 59 /usr/include/stdio.h
+;
+char *fgets ();
+char *sprintf ()
+# line 61 /usr/include/stdio.h
+;
+
+# line 2 min.cc
+
+/* PROCESS SPEC foo */
+CC_pid CC_foo();
+#define CC_foo_numtrans 0
+
+/* PROCESS BODY foo */
+
+CC_pid CC_foo( CC_priority, DD_createId)
+int CC_priority;
+unsigned DD_createId;
+{
+
+	if (CC_fork("foo",CC_foo_numtrans,CC_priority,DD_createId,DD_convert))
+		return CC_childpid;
+	CC_complete();
+}
+
+CC_main ()
+{
+	setbuf ((&_iob [1]),0);
+	printf ("main starting\n");
+	CC_delay((double)((10)), 1);
+
+	CC_foo (0, 1 );
+}
+
+CC_shinit()
+{
+	int CC_j,CC_n,CC_ss;
+	char *CC_s;
+
+}
+@

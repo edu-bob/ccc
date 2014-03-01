@@ -1,0 +1,5 @@
+#
+foreach i (*.cc)
+    echo $i
+    /bin/rm $i:r.c $i:r.o $i:r
+end

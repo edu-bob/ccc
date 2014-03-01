@@ -1,0 +1,183 @@
+head     2.1;
+branch   ;
+access   ;
+symbols  ;
+locks    lynch:2.1; strict;
+comment  @ * @;
+
+
+2.1
+date     86.07.25.14.34.22;  author lynch;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.07.03.11.16.38;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@original
+@
+
+
+2.1
+log
+@Version which works up to printing out buffer messages in commun.
+@
+text
+@D	[0-9]
+L	[a-zA-Z_]
+H	[a-fA-F0-9]
+E	[Ee][+-]?{D}+
+LS	(l|L)
+US	(u|U)
+W	[ \t\v\f]
+ASP	(">>"|"<<"|"*"|"/"|"%"|"&"|"^"|"|")
+ID	{L}({L}|{D})*
+PR	("pragma"{W}+)
+SEMI	({W}*\;)
+
+%{
+#include <stdio.h>
+#include "common.h"
+#include "y.tab.h"
+
+
+/* external variables for pragmas */
+extern int yydebug;
+extern int map;
+extern int linesynchp;
+
+/* export of input() */
+int exportinput()
+{
+    return input();
+}
+
+%}
+%p 6000
+%n 1250
+%e 1250
+
+%%
+"/*"			{ comment(); }
+^"# "{D}+.*$		{ sscanf(yytext+2,"%d \"%[^\"]",&Linenum,Filename);
+			  forcelinesynch();
+			}
+^"#"$|^"#"[^ ].*$	{ count(); /* ignore other preprocessor commands */ }
+{PR}yydebug{SEMI}	{ yydebug=1; count(); }
+{PR}noyydebug{SEMI}	{ yydebug=0; count(); }
+{PR}map{SEMI}		{ map=1; count(); }
+{PR}nomap{SEMI}		{ map=0; count(); }
+{PR}linesynch{SEMI}	{ linesynchp=1; count(); }
+{PR}nolinesynch{SEMI}	{ linesynchp=0; count(); }
+{PR}linesynch{W}*{D}+{SEMI} { sscanf(yytext+6,"%*s%d",&linesynchp); count(); }
+"accept"		{ count(); return(ACCEPT); }
+"body"			{ count(); return(BODY); }
+"break"			{ count(); return(BREAK); }
+"by"			{ count(); return(BY); }
+"c_count"		{ count(); return(C_COUNT); }
+"c_transcount"		{ count(); return(C_COUNT); }
+"case"			{ count(); return(CASE); }
+"continue"		{ count(); return(CONTINUE); }
+"create"		{ count(); return(CREATE); }
+"default"		{ count(); return(DEFAULT); }
+"delay"			{ count(); return(DELAY); }
+"do"			{ count(); return(DO); }
+"else"			{ count(); return(ELSE); }
+"enum"			{ count(); return(ENUM); }
+"for"			{ count(); return(FOR); }
+"goto"			{ count(); return(GOTO); }
+"if"			{ count(); return(IF); }
+"is"{W}+"new"		{ count(); return(IS_NEW); }
+"immediate"		{ count(); return(IMMEDIATE); }
+"or"			{ count(); return(OR); }
+"otherwise"		{ count(); return(OTHERWISE); }
+"priority"		{ count(); return(PRIORITY); }
+"process"		{ count(); return(PROCESS); }
+"return"		{ count(); return(RETURN); }
+"select"		{ count(); return(SELECT); }
+"shared"		{ count(); return(SHARED); }
+"sizeof"		{ count(); return(SIZEOF); }
+"spec"			{ count(); return(SPEC); }
+"switch"		{ count(); return(SWITCH); }
+"terminate"		{ count(); return(TERMINATE); }
+"trans"			{ count(); return(TRANS); }
+"treturn"		{ count(); return(TRETURN); }
+"typedef"		{ count(); return(TYPEDEF); }
+"void"			{ count(); return(VOID); }
+"while"			{ count(); return(WHILE); }
+"with"			{ count(); return(WITH); }
+"within"		{ count(); return(WITHIN); }
+
+struct			{ count(); return(STRUCT); }
+union			{ count();  return(UNION); }
+
+auto|extern		|
+static|register		{ count(); return(SSC); }
+
+unsigned		{ count(); return(UNSIGNED); }
+unsigned{W}+int		{ count(); return(UNSIGNEDINT); }
+unsigned{W}+char	{ count(); return(UNSIGNEDCHAR); }
+unsigned{W}+short({W}+int)?	{ count(); return(UNSIGNEDSHORT); }
+unsigned{W}+long({W}+int)?	{ count(); return(UNSIGNEDLONG); }
+long{W}+(int)?		{ count(); return(LONGINT); }
+long{W}+(float)?	{ count(); return(DOUBLE); }
+short({W}+int)?		{ count(); return(SHORT); }
+char			{ count(); return(CHAR); }
+double			{ count(); return(DOUBLE); }
+float			{ count(); return(FLOAT); }
+int			{ count(); return(INT); }
+
+"main"/{W}*:		{ count(); fixCC_(); return(label()); }
+"main"			{ count(); fixCC_(); return(ident()); }
+CC_{ID}/{W}*:		{ count(); fixCC_(); return(label()); }
+CC_{ID}			{ count(); fixCC_(); return(ident()); }
+{ID}/{W}*:		{ count(); return(label()); }
+{ID}			{ count(); return(ident()); }
+
+0[xX]{H}+{LS}?{US}?	{ count(); return(CONSTANT); }
+0[xX]{H}+{US}?{LS}?	{ count(); return(CONSTANT); }
+0{D}+{LS}?{US}?		{ count(); return(CONSTANT); }
+0{D}+{US}?{LS}?		{ count(); return(CONSTANT); }
+{D}+{LS}?{US}?		{ count(); return(CONSTANT); }
+{D}+{US}?{LS}?		{ count(); return(CONSTANT); }
+'[^'\n]*'		{ count(); return(CONSTANT); }
+
+{D}+{E}{LS}?		{ count(); return(CONSTANT); }
+{D}*"."{D}+({E})?{LS}?	{ count(); return(CONSTANT); }
+{D}+"."{D}*({E})?{LS}?	{ count(); return(CONSTANT); }
+
+\"(\\\"|[^"])*\"	{ count(); return(STRING_LITERAL); }
+
+{ASP}"="		{ count(); return(X_ASSIGN); }
+("+"|"-")"="		{ count(); return(A_ASSIGN); }
+(">>"|"<<")		{ count(); return(SHIFT_OP); }
+("++"|"--")		{ count(); return(INC_OP); }
+"->"			{ count(); return(PTR_OP); }
+"&&"			{ count(); return(AND_OP); }
+"||"			{ count(); return(OR_OP); }
+("<"|">")("=")?		{ count(); return(REL_OP); }
+("="|"!")"="		{ count(); return(EQ_OP); }
+{W}			{ count(); }
+"\n"			{ ECHO; nextline(); }
+.			{ count(); return(*yytext); }
+%%
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d92 12
+a103 5
+unsigned({W}+(int|char|(short|long)({W}+int)?))? |
+long({W}+(int|float))?	|
+short({W}+int)?		|
+char|double		|
+float|int		{ count(); return(BTYPE); }
+@

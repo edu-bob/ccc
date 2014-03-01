@@ -1,0 +1,279 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    lynch:1.3; strict;
+comment  @ * @;
+
+
+1.3
+date     86.06.27.10.49.34;  author lynch;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     86.06.27.10.29.31;  author lynch;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.06.25.18.59.58;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@first draft.  serious problems with semaphores, because you can't release them
+just by exiting.  Any kind of termination has to be sure to let them go.
+@
+
+
+1.3
+log
+@Works. Still only allocates one semaphore per semid.
+@
+text
+@/*---------------------------------------------------------------------------
+ * Semaphore handling routines.  Much simplified version of the Dynix
+ * semaphores are made available.  The available functions are sem_create,
+ * sem_ask (subtract 1), and sem_tell (add 1), and sem_free.  
+ * The type semaphore is also defined.  
+ * 
+ * If you are using semaphores, you MUST free them when you are done.
+ * They do not dissapear when the process exits, or even when you logout.
+ * 
+ * At the moment, a semid is allocated for each request.  This method
+ * provides a much simpler interface.  However, it is
+ * somewhat inefficient because you could allocate many semaphores per
+ * semid.  These would have to be all allocated in one call from the
+ * outer world, though.
+ * 
+ * William L. Lynch 		Fri Jun 27 10:49:09 1986
+ *---------------------------------------------------------------------------
+ */
+
+
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/sem.h>
+
+#include "semaphore.h"
+
+#define KEY IPC_PRIVATE
+
+
+
+
+
+struct sembuf **
+command( comm )
+int comm;
+{
+	static struct sembuf commbuf[1][1];	/* okay, its bad here, but
+						 the rest looks better
+						 because of it. */
+	(**commbuf).sem_num = 0;
+	(**commbuf).sem_op  = comm;
+	(**commbuf).sem_flg = 0;
+	return commbuf;
+}
+
+
+
+
+
+
+
+semaphore
+sem_create( initialValue )
+int initialValue;
+{
+	semaphore sem;
+
+	sem = semget( KEY , 1, IPC_CREAT | SEM_A | SEM_R ); 
+	if (sem == -1) {
+		perror("Semaphore allocation problem");
+		return -1;
+	}
+	semctl( sem, 0, SETVAL, initialValue );		
+	return sem;
+}
+
+
+
+void
+sem_ask( sem )
+semaphore sem;
+{
+	semop( sem, command( -1 ), 1);
+}
+
+
+
+void
+sem_tell( sem )
+semaphore sem;
+{
+	semop( sem, command( 1 ), 1);
+}
+
+
+
+void
+sem_free( sem )
+semaphore sem;
+{
+	semctl( sem, 0, IPC_RMID, 0 );
+}
+
+
+
+
+
+
+
+
+#ifndef main 
+main (){}
+#endif main 
+@
+
+
+1.2
+log
+@it works!  but cleaning up dangling semaphores is still a problem.
+@
+text
+@d5 1
+a5 1
+ * The type semaphore is also defined.
+d7 10
+a16 1
+ * William L. Lynch 		Wed Jun 25 14:31:14 1986
+a20 1
+
+d25 1
+a28 1
+#define	MAXsEMiD	256
+d30 4
+a47 17
+ 
+/* This is an incredible hack, but there is no documented way of doing it.
+ Of course, this can really screw up anything else with your user id
+ which is using unprotected semaphores. */
+void
+sem_clean()
+{
+	int i;
+	int count = 0;
+	
+	for ( i=0; i < MAXsEMiD; i++) {
+		if (semctl( i, 0, IPC_RMID, 0 ) != -1) {
+			count++;
+		}
+	}
+	fprintf(stderr, "%d semaphores freed.\n");
+}
+a52 3
+
+
+
+d62 1
+a62 4
+		sem_clean();
+		exit(-1);
+	} else {
+		semctl( sem, 0, SETVAL, initialValue );		
+d64 1
+a97 10
+#ifndef main 
+main (argc,argv)
+int argc;
+char *argv[];
+{
+	semaphore sem1, sem2;
+	int arg;
+	int i;
+	
+	
+a98 8
+	if (argc<1) {
+		printf("No arguments\n");
+	} else {
+		for (i=0;i < 100; i++) {
+			printf("%d ", sem1=sem_create(0));
+			printf("%d\n", sem_free(sem1));
+		}
+	}
+a99 1
+}
+d101 3
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@a10 1
+#include <stdio.h>
+d13 1
+d20 1
+a21 1
+
+d37 16
+d55 6
+d70 1
+a70 1
+		 sem_clean();  /*  Why can't this be compiled? */
+d80 1
+a80 1
+semaphore
+a105 16
+/* This is an incredible hack, but there is no documented way of doing it.
+ Of course, this can really screw up anything else with your user id
+ which is using unprotected semaphores. */
+/* void  Why can't this void be compiled? */
+sem_clean()
+{
+	int i;
+	int count = 0;
+	
+	for (i=0;i<120;i++) {
+		if (semctl(i,0,IPC_RMID,0) != -1) {
+			count++;
+		}
+	}
+	fprintf(stderr, "%d semaphores freed.\n");
+}
+a107 2
+
+
+d115 1
+d117 1
+d122 5
+a126 6
+		sem1 = sem_create( 4 );
+		sem2 = sem_create( 0 );
+		printf("sem1,sem2: %d %d\n", sem1,sem2);
+		
+		printf("Sem1, Sem2: %d %d\n", semctl (sem1,0,GETVAL,arg),semctl (sem2,0,GETVAL,arg));
+		
+a127 14
+		sem_tell( sem2 ); sem_ask( sem1 );
+		printf("Sem1, Sem2: %d %d\n", semctl (sem1,0,GETVAL,arg),semctl (sem2,0,GETVAL,arg));
+
+		sem_ask( sem2 ); sem_tell( sem1 );
+		printf("Sem1, Sem2: %d %d\n", semctl (sem1,0,GETVAL,arg),semctl (sem2,0,GETVAL,arg));		
+		
+		fprintf(stderr,"Prepare to block...\n");
+		sem_ask( sem2 );
+		
+		sem_free( sem1 );
+		sem_free( sem2 );
+	}
+	
+	
+@

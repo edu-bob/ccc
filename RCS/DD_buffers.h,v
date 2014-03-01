@@ -1,0 +1,94 @@
+head     3.0;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+3.0
+date     86.09.18.16.13.27;  author lynch;  state Exp;
+branches ;
+next     2.3;
+
+2.3
+date     86.09.12.20.18.07;  author lynch;  state Exp;
+branches ;
+next     2.2;
+
+2.2
+date     86.09.11.14.02.23;  author lynch;  state Exp;
+branches ;
+next     2.1;
+
+2.1
+date     86.07.25.14.37.43;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Version which works up to printing out buffer messages in commun.
+@
+
+
+3.0
+log
+@working final version
+@
+text
+@#include <sys/time.h>
+
+typedef struct buf {
+	DD_eventType event;	/* kind of event */
+	int	id;		/* unique event id */
+	int	fromId;		/* source unix pid */
+	int	toId;		/* dest unix pid, conversion pointer if no dest,
+							and taskp on waitTrans */
+	char	*tblock;	/* shared memory tblock pointer,
+					 and ccc pid (task pointer) on creates */
+	void	(*convert)();	/* conversion function for tblock */
+	struct	timeval time;	/* time stamp */
+	int	bufNum;
+} buffer;
+
+
+void DD_buffers_addEmpty(), DD_buffers_addFull();
+buffer *DD_buffers_getEmpty(), *DD_buffers_getFull();
+char *DD_buffers_getTblock();
+@
+
+
+2.3
+log
+@might not work, new version.
+@
+text
+@@
+
+
+2.2
+log
+@
+@
+text
+@d11 1
+d13 1
+a13 1
+	struct buf *next;
+a19 1
+bool DD_buffers_areFull();
+@
+
+
+2.1
+log
+@Version which works up to printing out buffer messages in commun.
+@
+text
+@d7 4
+a10 2
+	int	toId;		/* dest unix pid */
+	char	*tblock;	/* shared memory tblock pointer */
+d19 1
+@

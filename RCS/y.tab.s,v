@@ -1,0 +1,9686 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @# @;
+
+
+1.1
+date     86.07.18.14.46.21;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@another useless file?
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@LL0:
+.text
+	.data
+	.comm	_Filename,4
+	.comm	_Linenum,4
+	.comm	_casenum,4
+	.comm	_argnum,4
+ 	.align	2
+	.globl	_procnum
+_procnum:
+	.long	-1	# 14
+ 	.align	2
+	.globl	_proccontext
+_proccontext:
+	.long	0	# 14
+	.comm	_callprocnum,4
+	.comm	_maxargnum,4
+ 	.align	2
+	.globl	_istimed
+_istimed:
+	.long	0	# 14
+ 	.align	2
+	.globl	_selectnum
+_selectnum:
+	.long	0	# 14
+	.comm	_transid,4
+ 	.align	2
+	.globl	_thead
+_thead:
+	.long	0	# 14
+	.comm	_boxnum,4
+ 	.align	2
+	.globl	_shtypedefnum
+_shtypedefnum:
+	.long	0	# 14
+	.comm	_accept_in_select,4
+	.comm	_procname,200
+	.data
+	.globl	_argname
+_argname:
+	.long	0x0
+	.space	196
+	.comm	_alias,200
+	.comm	_acceptname,200
+	.comm	_idname,200
+	.comm	_transname,200
+	.comm	_dotname,200
+	.comm	_errorstring,200
+	.data
+ 	.align	2
+	.globl	_context
+_context:
+	.long	0	# 14
+	.comm	_transnum,4
+	.comm	_acceptnum,4
+ 	.align	2
+	.globl	_acceptnumgenerator
+_acceptnumgenerator:
+	.long	0	# 14
+	.comm	_proc_type_name,4
+	.comm	_typetrap,128
+	.comm	_typetrap_i,4
+ 	.align	2
+	.globl	_stattype
+_stattype:
+	.long	0	# 14
+	.text
+	.align	2
+	.globl	_itoa
+_itoa:
+	br 	L95	#bfcode
+L96:
+#_i:	.EQU	8(fp)
+	.lcomm	L97,12
+	.data	1
+L98:
+	.ascii	"%d\0"
+	.text
+	#forarg 115d...
+	movd	8(fp),tos	#59b
+	#unary and,forarg 115a...
+	addr	L98,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L97,tos	#setasg
+#68a
+	bsr	_sprintf	#44a
+	adjspb	-12
+	#& L97 intareg 114a...
+	addr	L97,r0	#setasg
+	br	L94
+L94:
+	exit	[]
+	ret	0
+L95:
+	enter	[],0
+	br 	L96
+	.data
+	.comm	_sizes,256
+	.comm	_tbuf,1024
+	.comm	_ntf,128
+ 	.align	2
+	.globl	_tbuf_i
+_tbuf_i:
+	.long	0	# 14
+	.comm	_trap_t,4
+	.data
+	.globl	_ps
+_ps:
+	.long	0x7325
+	.globl	_pss
+_pss:
+	.long	0x207325
+	.data
+ 	.align	2
+	.globl	_trapping
+_trapping:
+	.long	0	# 14
+	.text
+	.align	2
+	.globl	_tinsert
+_tinsert:
+	br 	L110	#bfcode
+L111:
+#_s:	.EQU	8(fp)
+#_i:	.EQU	12(fp)
+	#_tbuf_i intareg(nasl) 114b...
+	movd	_tbuf_i,r0	#59b
+	subd	12(fp),r0	#105r
+	movd	r0,-4(fp)	#59a
+	#forarg 115d...
+	movd	8(fp),tos	#59b
+	bsr	_strlen	#44a
+	adjspb	-4
+	movd	r0,-8(fp)	#59a
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movd	r0,-12(fp)	#59a
+	#-12(fp) intareg(nasl) 114b...
+	movd	-12(fp),r0	#59b
+	addd	-8(fp),r0	#105r
+	movd	r0,-16(fp)	#59a
+L113:
+	#intareg 114j...
+	movd	-4(fp),r0	#59b
+	addqd	-1,-4(fp)	#87c
+	cmpqd	0,r0	#35
+	beq	L114
+	addqd	-1,-12(fp)	#87c
+	#-12(fp) intareg(nasl) 114b...
+	movd	-12(fp),r0	#59b
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	addqd	-1,-16(fp)	#87c
+	#-16(fp) intareg(nasl) 114b...
+	movd	-16(fp),r1	#59b
+	movb	r0,0(r1)	#59a
+	br	L113
+L114:
+L115:
+	#8(fp) intareg(nasl) 114b...
+	movd	8(fp),r0	#59b
+	cmpqb	0,0(r0)	#35
+	beq	L116
+	movb	0(8(fp)),0(-12(fp))	#59b
+	addqd	1,8(fp)	#83
+	addqd	1,-12(fp)	#83
+	br	L115
+L116:
+	addd	-8(fp),_tbuf_i	#105q
+L109:
+	exit	[]
+	ret	0
+L110:
+	enter	[],16
+	br 	L111
+	.data
+	.comm	_type,8
+	.comm	_context,4
+ 	.align	2
+	.globl	_basic
+_basic:
+	.long	0	# 14
+	.long	0x6
+	.comm	_yylval,12
+	.comm	_yyval,12
+	.data
+ 	.align	1
+	.globl	_yyexca
+_yyexca:
+	.long	0x1ffff
+	.long	0xffff0000
+	.long	0xfffe
+	.long	0x3ffff
+	.long	0x20000
+	.long	0x126fffe
+	.long	0x44ffff
+	.long	0x4f0100
+	.long	0x4f002c
+	.long	0x4f003b
+	.long	0x130fffe
+	.long	0x4effff
+	.long	0xa3005d
+	.long	0x145fffe
+	.long	0x59ffff
+	.long	0xcf0100
+	.long	0xcf0109
+	.long	0xcf010a
+	.long	0xcf010b
+	.long	0xcf010c
+	.long	0xcf010d
+	.long	0xcf010e
+	.long	0xcf010f
+	.long	0xcf0110
+	.long	0xcf0126
+	.long	0xcf012f
+	.long	0xd1fffe
+	.long	0x5fffff
+	.long	0x110029
+	.long	0x15fffe
+	.long	0x73ffff
+	.long	0x5e007b
+	.long	0x60fffe
+	.long	0x76ffff
+	.long	0x77007b
+	.long	0x79fffe
+	.long	0x80ffff
+	.long	0xce007d
+	.long	0x34003b
+	.long	0x141fffe
+	.long	0x9effff
+	.long	0x17d010b
+	.long	0x17d010c
+	.long	0x17d010d
+	.long	0x17d010e
+	.long	0x17d010f
+	.long	0x17d0110
+	.long	0x17d0126
+	.long	0x155fffe
+	.long	0xb1ffff
+	.long	0x1a10028
+	.long	0x14ffffe
+	.long	0xb7ffff
+	.long	0x15c0028
+	.long	0x151fffe
+	.long	0xe8ffff
+	.long	0x34003b
+	.long	0x141fffe
+	.long	0x15bffff
+	.long	0x122003b
+	.long	0x141fffe
+	.long	0x163ffff
+	.long	0x34003b
+	.long	0x141fffe
+	.long	0x173ffff
+	.long	0xd0007d
+	.long	0x34003b
+	.long	0x141fffe
+	.long	0x18dffff
+	.long	0x8f0101
+	.long	0x8f002a
+	.long	0x8f0028
+	.long	0x8cfffe
+	.long	0x1a6ffff
+	.long	0x1c2005b
+	.long	0x1c0fffe
+	.long	0x1b6ffff
+	.long	0x176010b
+	.long	0x176010c
+	.long	0x176010d
+	.long	0x176010e
+	.long	0x176010f
+	.long	0x1760110
+	.long	0x1760126
+	.long	0x155fffe
+	.long	0x1bbffff
+	.long	0x1a30029
+	.long	0x1a7fffe
+	.long	0x1cbffff
+	.long	0x34003b
+	.long	0x141fffe
+	.long	0x1d1ffff
+	.long	0x34003b
+	.long	0x141fffe
+	.long	0x1e3ffff
+	.long	0xa3005d
+	.long	0x145fffe
+	.long	0x1e9ffff
+	.long	0xb3005b
+	.long	0xaffffe
+	.long	0x20bffff
+	.long	0x1c3005b
+	.long	0x1c6fffe
+	.long	0x249ffff
+	.long	0x1c2005b
+	.long	0x1c0fffe
+	.long	0x25affff
+	.long	0x34003b
+	.long	0x141fffe
+	.long	0x25bffff
+	.long	0x34003b
+	.long	0x141fffe
+	.long	0x25cffff
+	.long	0x34003b
+	.long	0x141fffe
+	.long	0x2a0ffff
+	.long	0x340029
+	.long	0x141fffe
+	.long	0x2a2ffff
+	.long	0x34003b
+	.long	0x141fffe
+	.long	0x2a5ffff
+	.long	0x34003b
+	.long	0x141fffe
+	.long	0x2b7ffff
+	.long	0x34003b
+	.long	0x141fffe
+	.long	0x2c2ffff
+	.long	0x34003b
+	.long	0x141fffe
+	.long	0x2cfffff
+	.long	0xf1007d
+	.long	0x34003b
+	.long	0x141fffe
+	.long	0x2d0ffff
+	.long	0xe80123
+	.long	0xe80124
+	.long	0xe8007c
+	.long	0xe8007d
+	.long	0x34003b
+	.long	0x141fffe
+	.long	0x2d2ffff
+	.long	0xed0123
+	.long	0xed0124
+	.long	0xed007c
+	.long	0xed007d
+	.long	0x34003b
+	.long	0x141fffe
+	.long	0x2d9ffff
+	.long	0xa3005d
+	.long	0x145fffe
+	.long	0x2e5ffff
+	.long	0xa3005d
+	.long	0x145fffe
+	.long	0x2e9ffff
+	.long	0xeb0123
+	.long	0xeb0124
+	.long	0xeb007c
+	.long	0xeb007d
+	.long	0x34003b
+	.long	0x141fffe
+ 	.align	1
+	.globl	_yyact
+_yyact:
+	.long	0x2ad009e
+	.long	0xd30110
+	.long	0x33006d
+	.long	0x3302c5
+	.long	0x2d006a
+	.long	0xb9016e
+	.long	0x2da0095
+	.long	0x231026b
+	.long	0x122002c
+	.long	0x40002c
+	.long	0x630033
+	.long	0xd60077
+	.long	0xa20115
+	.long	0x1540019
+	.long	0x3b00e5
+	.long	0x2c002b
+	.long	0x25f002b
+	.long	0x1700103
+	.long	0x33007a
+	.long	0x420033
+	.long	0x960241
+	.long	0x780193
+	.long	0x2b01e3
+	.long	0x4f0033
+	.long	0x208002c
+	.long	0x4b0053
+	.long	0x2140102
+	.long	0xe800ee
+	.long	0x2c00c1
+	.long	0x50022d
+	.long	0x9b0027
+	.long	0xa7002b
+	.long	0x2090217
+	.long	0x1a50216
+	.long	0x5c0065
+	.long	0x2b005d
+	.long	0x240244
+	.long	0x5e0080
+	.long	0x2f01de
+	.long	0xcc0150
+	.long	0x5b0057
+	.long	0x1ca004e
+	.long	0x11b012b
+	.long	0x17b008c
+	.long	0xcb003b
+	.long	0x6f029a
+	.long	0x2e01df
+	.long	0x36017d
+	.long	0x4c0076
+	.long	0x330033
+	.long	0x690068
+	.long	0x230011
+	.long	0x330011
+	.long	0x6002b5
+	.long	0x2c0281
+	.long	0x59002c
+	.long	0x2ab006b
+	.long	0xd40022
+	.long	0x36002c
+	.long	0xb7018e
+	.long	0x17e00d4
+	.long	0x2b0032
+	.long	0x106002b
+	.long	0x330032
+	.long	0xcd012f
+	.long	0x10c002b
+	.long	0x9800c2
+	.long	0x10a01e1
+	.long	0x91029f
+	.long	0x100002c
+	.long	0xc80288
+	.long	0x2180021
+	.long	0xf70067
+	.long	0x10800cf
+	.long	0x640086
+	.long	0x3c005a
+	.long	0x66002b
+	.long	0x10f0143
+	.long	0x320070
+	.long	0x7d0064
+	.long	0x3d005b
+	.long	0x360111
+	.long	0x310048
+	.long	0x153010b
+	.long	0x1d001b
+	.long	0x350034
+	.long	0x290030
+	.long	0x28002a
+	.long	0x64010e
+	.long	0x12601f1
+	.long	0x1550143
+	.long	0x32014a
+	.long	0x1470117
+	.long	0x144011c
+	.long	0x1480045
+	.long	0xd10064
+	.long	0xd50048
+	.long	0x70072
+	.long	0x170075
+	.long	0x510005
+	.long	0x330064
+	.long	0x64005b
+	.long	0x4800d4
+	.long	0x149001c
+	.long	0xd4014b
+	.long	0x5b0071
+	.long	0x8e002c
+	.long	0x480048
+	.long	0x340051
+	.long	0x300035
+	.long	0x2a0029
+	.long	0x970028
+	.long	0x5100c8
+	.long	0x140002b
+	.long	0x1130036
+	.long	0xf60046
+	.long	0xf900f5
+	.long	0xf80067
+	.long	0xfb0106
+	.long	0xfd00fc
+	.long	0xff00fe
+	.long	0x10a00f3
+	.long	0x480017
+	.long	0x1000238
+	.long	0x15500c6
+	.long	0x14e0036
+	.long	0x1070031
+	.long	0x108008e
+	.long	0x1040064
+	.long	0x360064
+	.long	0x3100f4
+	.long	0x350034
+	.long	0x290030
+	.long	0x28002a
+	.long	0x15f0155
+	.long	0x480036
+	.long	0x790031
+	.long	0xd20033
+	.long	0x1720036
+	.long	0x51005b
+	.long	0x330176
+	.long	0x17f0033
+	.long	0x24c00d4
+	.long	0x1140194
+	.long	0x1701e1
+	.long	0x2950008
+	.long	0x2c002c
+	.long	0x12e0032
+	.long	0x370276
+	.long	0x2b007c
+	.long	0x790036
+	.long	0xa0031
+	.long	0xa0249
+	.long	0x2b002b
+	.long	0x17101a6
+	.long	0x19101ef
+	.long	0x1ee0185
+	.long	0x1b00072
+	.long	0x184008a
+	.long	0x1b6015a
+	.long	0x14010d
+	.long	0x14018b
+	.long	0x2b201ed
+	.long	0x1bc01bb
+	.long	0x8b0088
+	.long	0x1b70247
+	.long	0x1b900ad
+	.long	0xbf0032
+	.long	0xbe0044
+	.long	0x9c0137
+	.long	0x2130215
+	.long	0x2120173
+	.long	0x1870186
+	.long	0x17c0145
+	.long	0x3601a4
+	.long	0x31026f
+	.long	0x3301a2
+	.long	0x1a10033
+	.long	0x3300cd
+	.long	0x4100cd
+	.long	0x1c1012a
+	.long	0x1cf01ce
+	.long	0x1a00033
+	.long	0x9d01d1
+	.long	0x1d201d9
+	.long	0x14100c4
+	.long	0x1d70142
+	.long	0x1bf01ae
+	.long	0x1b10129
+	.long	0x1b301b2
+	.long	0x330032
+	.long	0x3300c0
+	.long	0x360033
+	.long	0x31019f
+	.long	0x18d0128
+	.long	0x1ac017f
+	.long	0x17f01e4
+	.long	0x1dc019e
+	.long	0x1410127
+	.long	0x1d401d3
+	.long	0xac0194
+	.long	0x1550119
+	.long	0x1920194
+	.long	0x1ab002b
+	.long	0x2b016c
+	.long	0x1ad019d
+	.long	0x1560062
+	.long	0xa301c6
+	.long	0x1aa01db
+	.long	0x18a0188
+	.long	0x178017a
+	.long	0x20c00d0
+	.long	0x19101c4
+	.long	0x1e60162
+	.long	0x19101a9
+	.long	0x169019c
+	.long	0x1cc0183
+	.long	0x20e007e
+	.long	0x12501c7
+	.long	0x13019b
+	.long	0x13019a
+	.long	0x2110123
+	.long	0x1260199
+	.long	0x16d014d
+	.long	0x33020a
+	.long	0x1980033
+	.long	0x12101c3
+	.long	0x197017c
+	.long	0x1e801a8
+	.long	0x1790120
+	.long	0x2c002c
+	.long	0x1cd01f5
+	.long	0x2070206
+	.long	0x32021c
+	.long	0x19601e2
+	.long	0x2480195
+	.long	0x14c01ec
+	.long	0x2b002b
+	.long	0x1390210
+	.long	0x15701ea
+	.long	0x23600ab
+	.long	0x1f201f0
+	.long	0x23200aa
+	.long	0x32011f
+	.long	0x330235
+	.long	0x20f0033
+	.long	0x1c9023a
+	.long	0x13e0228
+	.long	0x8e0233
+	.long	0x1e4017f
+	.long	0x19400a5
+	.long	0xa4013d
+	.long	0x1e90205
+	.long	0x23b01d5
+	.long	0x13c01d6
+	.long	0x116023c
+	.long	0x1da0219
+	.long	0x13b002b
+	.long	0x1cb01cb
+	.long	0x19201f3
+	.long	0x13a0227
+	.long	0x19201f6
+	.long	0xa1024a
+	.long	0x21b027a
+	.long	0x126021d
+	.long	0x1260126
+	.long	0x1260126
+	.long	0x1260126
+	.long	0x1260126
+	.long	0x1260126
+	.long	0x1260126
+	.long	0x2420126
+	.long	0x2240246
+	.long	0x29c0245
+	.long	0x1d001be
+	.long	0xbc0182
+	.long	0x2530146
+	.long	0x11e0237
+	.long	0x25601bd
+	.long	0x26201b8
+	.long	0x990258
+	.long	0x138017c
+	.long	0x18900bb
+	.long	0x2200032
+	.long	0x124024b
+	.long	0xba024f
+	.long	0x25b025a
+	.long	0x2600252
+	.long	0x13f023d
+	.long	0x25e0255
+	.long	0x25702df
+	.long	0x2690264
+	.long	0x24d01b0
+	.long	0x2b4020c
+	.long	0x20c01ae
+	.long	0x299021a
+	.long	0x25d025c
+	.long	0x24e0251
+	.long	0x2980268
+	.long	0x1ba0250
+	.long	0x15100af
+	.long	0x2630032
+	.long	0x1ac006c
+	.long	0x105008f
+	.long	0x2260225
+	.long	0x20a0058
+	.long	0x56027b
+	.long	0x256020a
+	.long	0x22c0038
+	.long	0x9021f
+	.long	0x1ab0006
+	.long	0x1940245
+	.long	0x1ad0232
+	.long	0x40234
+	.long	0x1cb028b
+	.long	0x1aa0274
+	.long	0x27e01c8
+	.long	0x2730277
+	.long	0x23e0278
+	.long	0x240023f
+	.long	0x15b0270
+	.long	0x2a101a9
+	.long	0x2220287
+	.long	0x2710272
+	.long	0x2790292
+	.long	0x26a028d
+	.long	0x2230293
+	.long	0x2960275
+	.long	0x2900259
+	.long	0x22b022a
+	.long	0x1eb0260
+	.long	0x2910284
+	.long	0x2420286
+	.long	0x28200e1
+	.long	0x360167
+	.long	0x3101a8
+	.long	0x2940297
+	.long	0x16600ed
+	.long	0x25402a3
+	.long	0xec02a0
+	.long	0x1a028f
+	.long	0x22901af
+	.long	0x1400165
+	.long	0xeb01b5
+	.long	0x16b0033
+	.long	0xfa02bc
+	.long	0x2cc0164
+	.long	0x16300ea
+	.long	0x2c900e9
+	.long	0x2c802b1
+	.long	0x2b802b7
+	.long	0x2ca029e
+	.long	0x2c002b3
+	.long	0x161029d
+	.long	0x2d602c3
+	.long	0x3302d5
+	.long	0x2b02b6
+	.long	0x2cb0033
+	.long	0x2d800e7
+	.long	0x2ce004d
+	.long	0x15802c9
+	.long	0x2de02c8
+	.long	0x2dd02bd
+	.long	0x550160
+	.long	0x2d302e1
+	.long	0x22100e6
+	.long	0x330033
+	.long	0x33015e
+	.long	0x116002b
+	.long	0x2b02e2
+	.long	0x2de02ec
+	.long	0x2dd02e6
+	.long	0x2e402de
+	.long	0x2ef02dd
+	.long	0xe402e7
+	.long	0x2ed02ee
+	.long	0x2e3011f
+	.long	0x266006f
+	.long	0x2b02d9
+	.long	0x2c202f6
+	.long	0x2c6002b
+	.long	0x2f4015d
+	.long	0xe30111
+	.long	0x15c02f0
+	.long	0x2f30036
+	.long	0x2e80031
+	.long	0x2d002cf
+	.long	0x2d202f5
+	.long	0x2e500e2
+	.long	0x2c1029b
+	.long	0x3602aa
+	.long	0x310111
+	.long	0x23002c6
+	.long	0x2db0093
+	.long	0x6102f1
+	.long	0x2be02f2
+	.long	0x13302a9
+	.long	0x2a800a9
+	.long	0x27d027c
+	.long	0xb40031
+	.long	0xb50048
+	.long	0x132028a
+	.long	0x2db022f
+	.long	0x109016f
+	.long	0x2a202db
+	.long	0x2e90280
+	.long	0x1160116
+	.long	0x2a70116
+	.long	0x13302e0
+	.long	0x13600a9
+	.long	0x11e02a6
+	.long	0xb40031
+	.long	0xb502bb
+	.long	0x13202a5
+	.long	0x2890285
+	.long	0x2610283
+	.long	0x2a400c3
+	.long	0x124022e
+	.long	0x11f011f
+	.long	0x11f011f
+	.long	0x11f011f
+	.long	0x11f011f
+	.long	0x11f011f
+	.long	0x11f011f
+	.long	0x11f011f
+	.long	0x2d40130
+	.long	0x27f0036
+	.long	0x5b0031
+	.long	0xd401d8
+	.long	0x1680101
+	.long	0x116016a
+	.long	0x1160116
+	.long	0x7b00f2
+	.long	0x810118
+	.long	0x7f02b9
+	.long	0x2ba02bf
+	.long	0x1a300f1
+	.long	0x2c40130
+	.long	0xef00f0
+	.long	0xdf00e0
+	.long	0xde012f
+	.long	0xdd0152
+	.long	0x9200dc
+	.long	0xdb0032
+	.long	0x2cd02d1
+	.long	0xd900da
+	.long	0xd700d8
+	.long	0x1120180
+	.long	0x116008d
+	.long	0x26d006e
+	.long	0x11602b0
+	.long	0x26e026c
+	.long	0x11e012f
+	.long	0x11e011e
+	.long	0x11e011e
+	.long	0x11e011e
+	.long	0x11e011e
+	.long	0x11e011e
+	.long	0x11e011e
+	.long	0x124011e
+	.long	0x1240124
+	.long	0x1240124
+	.long	0x1240124
+	.long	0x1240124
+	.long	0x1240124
+	.long	0x1240124
+	.long	0x1330124
+	.long	0x24300a9
+	.long	0x18f01f4
+	.long	0xb40031
+	.long	0xb500b2
+	.long	0x132011d
+	.long	0xa900c7
+	.long	0x36011a
+	.long	0x310094
+	.long	0x4a00b4
+	.long	0x1600b5
+	.long	0x340155
+	.long	0x300035
+	.long	0x2a0029
+	.long	0x1c50028
+	.long	0x930093
+	.long	0xce0159
+	.long	0x1f70074
+	.long	0x1f901f8
+	.long	0x1fb01fa
+	.long	0x1fd01fc
+	.long	0x1ff01fe
+	.long	0x2010200
+	.long	0x2030202
+	.long	0x540204
+	.long	0x21e0017
+	.long	0x320089
+	.long	0x14f01c2
+	.long	0xca00c5
+	.long	0xc90130
+	.long	0x520073
+	.long	0x1f0020
+	.long	0x470181
+	.long	0x1e0032
+	.long	0x180097
+	.long	0x900116
+	.long	0xf6018c
+	.long	0xf900f5
+	.long	0xf80049
+	.long	0xfb0106
+	.long	0xfd00fc
+	.long	0xff00fe
+	.long	0x10a00f3
+	.long	0x430015
+	.long	0x100012f
+	.long	0xf0010
+	.long	0x2eb000e
+	.long	0x10702ea
+	.long	0x10802d7
+	.long	0x10400b2
+	.long	0xb302af
+	.long	0xa900f4
+	.long	0x3602ae
+	.long	0x31028e
+	.long	0xb200b4
+	.long	0x26700b5
+	.long	0x1e00239
+	.long	0x12e00a9
+	.long	0x1dd0036
+	.long	0xb40031
+	.long	0xb50087
+	.long	0x1770085
+	.long	0x1c00084
+	.long	0x83005f
+	.long	0x3a003f
+	.long	0x12d012c
+	.long	0x1350134
+	.long	0x3e0131
+	.long	0x320012
+	.long	0x12e000c
+	.long	0x2ac0175
+	.long	0x265028c
+	.long	0x1b0174
+	.long	0x34001d
+	.long	0x300035
+	.long	0x2a0029
+	.long	0x820028
+	.long	0x12d012c
+	.long	0x1350134
+	.long	0x1b0131
+	.long	0x34001d
+	.long	0x300035
+	.long	0x2a0029
+	.long	0x390028
+	.long	0x3000b
+	.long	0x10002
+	.long	0x2601a7
+	.long	0x20d0017
+	.long	0x190020b
+	.long	0xa6000d
+	.long	0x9a01b4
+	.long	0x1c00a0
+	.long	0x2dc01e7
+	.long	0x1e502c7
+	.long	0x250017
+	.long	0xb300b8
+	.long	0xb100bd
+	.long	0xb0
+	.long	0x1c0000
+	.long	0x1520152
+	.long	0x0
+	.long	0xb3
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0xbf0032
+	.long	0xbe00ae
+	.long	0x0
+	.long	0xa80000
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x12e0000
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0xb60000
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x12d012c
+	.long	0x1350134
+	.long	0x131
+	.long	0x9f
+	.long	0x0
+	.long	0xc0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0xbf0032
+	.long	0xbe00ae
+	.long	0x0
+	.long	0xa80000
+	.long	0x0
+	.long	0x320000
+	.long	0xae00bf
+	.long	0xbe
+	.long	0x0
+	.long	0xa8
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0xb60000
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0xb6
+	.long	0x9f
+	.long	0x0
+	.long	0xc0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0xc00000
+ 	.align	1
+	.globl	_yypact
+_yypact:
+	.long	0xfc18fc18
+	.long	0xffc3ffc6
+	.long	0xfc18032c
+	.long	0xfc18032c
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xff79fc18
+	.long	0x2e50037
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18ffce
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xbc00e6
+	.long	0xfc18ff7d
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xe6fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xff7d0058
+	.long	0xfc18ff7d
+	.long	0xfc18fc18
+	.long	0xff7dfc18
+	.long	0xfc18fc18
+	.long	0x9cfc18
+	.long	0xfc1800ad
+	.long	0xfc18fc18
+	.long	0xffcefc18
+	.long	0xfc18ffce
+	.long	0xfc18ff7d
+	.long	0xff9cfc18
+	.long	0xfc18fc18
+	.long	0xfc180058
+	.long	0xe80025
+	.long	0xfc18fc18
+	.long	0xfc18ff9f
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0x2d8fc18
+	.long	0xfc1800e6
+	.long	0x58fc18
+	.long	0xfc18fc18
+	.long	0xfc180275
+	.long	0xfc180082
+	.long	0xe803e5
+	.long	0xfc180072
+	.long	0xfc18fc18
+	.long	0xfc1802b0
+	.long	0xff7dfc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0x33a0058
+	.long	0xfc18ffbf
+	.long	0x5402e5
+	.long	0xff9fffd6
+	.long	0xba00ec
+	.long	0xd600e8
+	.long	0xffcefc18
+	.long	0xfc18fc18
+	.long	0xfc1800ad
+	.long	0xfc18fc18
+	.long	0x3e50058
+	.long	0xfc180092
+	.long	0xfc18fc18
+	.long	0xfc18ffba
+	.long	0xfc18fc18
+	.long	0x2f4fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0x6cfc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xff7dfc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc1800ec
+	.long	0xfc18fc18
+	.long	0xfc1800ec
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xffb6fc18
+	.long	0xfffbff7d
+	.long	0xfc18fc18
+	.long	0xfc180159
+	.long	0x9f0058
+	.long	0xfc18fc18
+	.long	0xfc180058
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xbafc18
+	.long	0xfc18fc18
+	.long	0xfc18ffd6
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc1800ba
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0x58fc18
+	.long	0xfc1800ba
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xff7dfc18
+	.long	0xfc18fc18
+	.long	0xfc18ff7d
+	.long	0xfc18009b
+	.long	0xdbfc18
+	.long	0xfc18009f
+	.long	0xfc18fc18
+	.long	0xfc180053
+	.long	0xe60135
+	.long	0xfc180085
+	.long	0xe6fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0x3f0fc18
+	.long	0xffcefc18
+	.long	0x3f003f0
+	.long	0x3f003f0
+	.long	0xff7d03f0
+	.long	0xff7dfc18
+	.long	0xfc18fc18
+	.long	0xecfc18
+	.long	0xfc1800ec
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0x69fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xadff7d
+	.long	0xfc18ff7d
+	.long	0xbf00bf
+	.long	0xfc18fc18
+	.long	0xec00ec
+	.long	0xffd6fc18
+	.long	0xff7d00ec
+	.long	0xba00ba
+	.long	0xfc18fc18
+	.long	0xecfc18
+	.long	0xfc18fc18
+	.long	0xecfc18
+	.long	0x3e5fc18
+	.long	0xffd6fc18
+	.long	0xd600e8
+	.long	0xfc18fc18
+	.long	0xfc18ff5c
+	.long	0xfc18fc18
+	.long	0x7d00db
+	.long	0x10400ec
+	.long	0x4ffc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18ffb2
+	.long	0xe6fc18
+	.long	0xfc18fc18
+	.long	0xe6007d
+	.long	0x3f0fc18
+	.long	0x3f003f0
+	.long	0x3f003f0
+	.long	0x3f003f0
+	.long	0x3f003f0
+	.long	0x3f003f0
+	.long	0x3f003f0
+	.long	0x2f403f0
+	.long	0xe800e8
+	.long	0xff7d00db
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc1800ec
+	.long	0x3e503e5
+	.long	0xfc1803e5
+	.long	0x7b00d2
+	.long	0xfc1800bf
+	.long	0xfc18fc18
+	.long	0x9ffc18
+	.long	0xfc1800ba
+	.long	0xffd6fc18
+	.long	0xbffc18
+	.long	0xfc18fc18
+	.long	0xfc18ff67
+	.long	0xfc18fc18
+	.long	0xbafc18
+	.long	0xfc1800ba
+	.long	0xff7dfc18
+	.long	0x5800d6
+	.long	0xfff6ff7d
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc1800e8
+	.long	0xe8fc18
+	.long	0xec00db
+	.long	0xfc18007d
+	.long	0x3e5fc18
+	.long	0x3e503e5
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc1800ec
+	.long	0x30c00e8
+	.long	0x30c030c
+	.long	0x30c030c
+	.long	0x30c030c
+	.long	0x30c030c
+	.long	0x30c030c
+	.long	0x30c030c
+	.long	0xfc180380
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xecfc18
+	.long	0x7d00e8
+	.long	0xffcefc18
+	.long	0x3e50082
+	.long	0xd600e8
+	.long	0x3e5fc18
+	.long	0xd600e8
+	.long	0xe8fc18
+	.long	0xfc1800d6
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xe8fc18
+	.long	0xfc1800e8
+	.long	0xba00ba
+	.long	0xfc18fc18
+	.long	0x400e8
+	.long	0xe800ec
+	.long	0xfc1800d6
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc1800ba
+	.long	0xffcefc18
+	.long	0xfc180082
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc1800e8
+	.long	0xfc18fc18
+	.long	0x4dfc18
+	.long	0xdb03f0
+	.long	0xfc1800e8
+	.long	0xfc1800db
+	.long	0xfc1800e8
+	.long	0xd600e8
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18ff7d
+	.long	0xffd6ffd6
+	.long	0xfc18fc18
+	.long	0xff48fc18
+	.long	0xff6afc18
+	.long	0xfc18fc18
+	.long	0xff9fff7d
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18007d
+	.long	0x3e500ec
+	.long	0x8600bf
+	.long	0xfc18fc18
+	.long	0xe8fc18
+	.long	0xfc18038b
+	.long	0xfc18ff2e
+	.long	0xfc1803e5
+	.long	0xff74fc18
+	.long	0x5400ba
+	.long	0xfc18fc18
+	.long	0xfc180004
+	.long	0xfc1800ba
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18ff52
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc180082
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc180082
+	.long	0xff45fc18
+	.long	0xfc18fc18
+	.long	0xfc1800e8
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc18ffd6
+	.long	0xffd6fc18
+	.long	0xfc18fc18
+	.long	0x9b00e8
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xe600d4
+	.long	0xfc18fc18
+	.long	0xfc1803e5
+	.long	0xfc1800ec
+	.long	0xffd6fc18
+	.long	0xfc1800e8
+	.long	0xbafc18
+	.long	0xbffc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xfc1802dc
+	.long	0xfc18fc18
+	.long	0x7d00e6
+	.long	0xe6fc18
+	.long	0xfc18fc18
+	.long	0xfc18fc18
+	.long	0xffd6fc18
+	.long	0xfc18ffd6
+	.long	0xfc18ffd6
+	.long	0xfc18fc18
+	.long	0xecfc18
+	.long	0xfc18fc18
+	.long	0xe600e8
+	.long	0xfc1800bc
+	.long	0xfc1800e6
+	.long	0xffcefc18
+	.long	0xfc180082
+	.long	0xfc18fc18
+	.long	0xe8ff9c
+	.long	0xffd600e8
+	.long	0xd600e8
+	.long	0xfc18fc18
+	.long	0xe80082
+	.long	0xfc18fc18
+	.long	0xffcefc18
+	.long	0xfc18fc18
+	.long	0xfc18
+ 	.align	1
+	.globl	_yypgo
+_yypgo:
+	.long	0x3f0000
+	.long	0x4650466
+	.long	0x4620464
+	.long	0x46102a9
+	.long	0x6045f
+	.long	0xd045e
+	.long	0x45c045d
+	.long	0x790057
+	.long	0x45a005e
+	.long	0x4590018
+	.long	0x458016f
+	.long	0x231003d
+	.long	0x23008f
+	.long	0x20457
+	.long	0x760456
+	.long	0x280455
+	.long	0x310041
+	.long	0x4530454
+	.long	0x13c0043
+	.long	0x380451
+	.long	0x44f0450
+	.long	0x44d044e
+	.long	0x61044c
+	.long	0xb044b
+	.long	0x43d
+	.long	0x2b0434
+	.long	0x4330096
+	.long	0x4310432
+	.long	0x3004a
+	.long	0x150430
+	.long	0x42c042e
+	.long	0x425042b
+	.long	0x4230424
+	.long	0x42200bc
+	.long	0x41f0420
+	.long	0x94041e
+	.long	0x419041c
+	.long	0x415004c
+	.long	0x4130414
+	.long	0x1040e
+	.long	0x408040c
+	.long	0x4020404
+	.long	0x490401
+	.long	0x160009
+	.long	0x8002c
+	.long	0x4000c
+	.long	0x91001c
+	.long	0x400012a
+	.long	0x3fe03ff
+	.long	0x2701b2
+	.long	0x3fa03fb
+	.long	0x1a03f0
+	.long	0x8903eb
+	.long	0x3e902d1
+	.long	0x4400e6
+	.long	0x3e70056
+	.long	0x3e203e3
+	.long	0x72008e
+	.long	0x3e10067
+	.long	0x3e000d2
+	.long	0x3dd03df
+	.long	0x3dc006f
+	.long	0x5d0113
+	.long	0xf8004d
+	.long	0x4e03db
+	.long	0x3d703da
+	.long	0x7000a7
+	.long	0x3d5003c
+	.long	0x5903c6
+	.long	0x4f03c5
+	.long	0x3c103c4
+	.long	0x3b703b9
+	.long	0x3b203b4
+	.long	0x3ae0055
+	.long	0x7703a9
+	.long	0x3b03a8
+	.long	0xe03a7
+	.long	0x48002a
+	.long	0x3860387
+	.long	0x3830384
+	.long	0x190029
+	.long	0x3800382
+	.long	0x37e037f
+	.long	0x1700c1
+	.long	0x37c037d
+	.long	0x37a037b
+	.long	0x3740377
+	.long	0x3710373
+	.long	0x36e036f
+	.long	0x36c036d
+	.long	0x3650368
+	.long	0x240363
+	.long	0x3600361
+	.long	0x36035c
+	.long	0x35a035b
+	.long	0x3a0358
+	.long	0x3550021
+	.long	0x33f0342
+	.long	0x33d033e
+	.long	0x34001b
+	.long	0x33a033c
+	.long	0x3300334
+	.long	0x32f0022
+	.long	0x11000a
+	.long	0x329032a
+	.long	0x3260327
+	.long	0x3220324
+	.long	0x3170318
+	.long	0xf0311
+	.long	0x30b030c
+	.long	0x2ff0308
+	.long	0x2fd0053
+	.long	0x2ed02fa
+	.long	0x2da02de
+	.long	0x2cc02d6
+	.long	0x2c202c3
+	.long	0x2bc02be
+	.long	0x2b80037
+	.long	0x2b602b7
+	.long	0x2b302b4
+	.long	0x2af02b1
+	.long	0x2ab02ac
+	.long	0x2a302a7
+	.long	0x29c02a2
+	.long	0x281029a
+	.long	0x2730278
+	.long	0x26c0122
+	.long	0x268026b
+	.long	0x2620265
+	.long	0x25f0099
+	.long	0x25c025e
+	.long	0x2570258
+	.long	0x2550256
+	.long	0x24b024f
+	.long	0x400244
+	.long	0x23b0241
+	.long	0x2330234
+	.long	0x22c022e
+	.long	0x2280042
+	.long	0x2240227
+	.long	0x20e0223
+	.long	0x209020d
+	.long	0x19f0203
+	.long	0x1f701fd
+	.long	0x1f401f6
+	.long	0x1eb01ef
+	.long	0x1e001e4
+	.long	0x14c0191
+	.long	0x1d701dd
+	.long	0x1d501d6
+	.long	0x1c701ca
+	.long	0x1c301c5
+	.long	0x1ba01bc
+	.long	0x1b601b8
+	.long	0x1ae01b5
+	.long	0x18c019a
+	.long	0x184018a
+	.long	0x1780182
+	.long	0x168016d
+	.long	0x540163
+	.long	0x15e0160
+	.long	0x157015a
+	.long	0x350155
+	.long	0x1530154
+	.long	0x14a0152
+	.long	0x1440145
+	.long	0x139013d
+	.long	0x1360138
+	.long	0x1340135
+	.long	0x1280130
+	.long	0x11d0123
+ 	.align	1
+	.globl	_yyr1
+_yyr1:
+	.long	0x2a0000
+	.long	0x300029
+	.long	0x370035
+	.long	0x32002c
+	.long	0x3a0032
+	.long	0x3c003a
+	.long	0x41003d
+	.long	0x43003e
+	.long	0x44003e
+	.long	0x460044
+	.long	0x480046
+	.long	0x450047
+	.long	0x490045
+	.long	0x490049
+	.long	0x4c0049
+	.long	0x4a004e
+	.long	0x4f004f
+	.long	0x520051
+	.long	0x530050
+	.long	0x540053
+	.long	0x90054
+	.long	0xa0009
+	.long	0xa000a
+	.long	0xb000b
+	.long	0xc000c
+	.long	0xc000c
+	.long	0x5c005c
+	.long	0x5e005e
+	.long	0x5f005e
+	.long	0x66005f
+	.long	0x680060
+	.long	0x680068
+	.long	0x680068
+	.long	0x690068
+	.long	0x62006b
+	.long	0x620062
+	.long	0x640064
+	.long	0x640064
+	.long	0x640064
+	.long	0x6c006c
+	.long	0x4d0025
+	.long	0x67004d
+	.long	0x670067
+	.long	0x670067
+	.long	0x700067
+	.long	0x6f0075
+	.long	0x6f0077
+	.long	0x780079
+	.long	0x760078
+	.long	0x260026
+	.long	0x7b007b
+	.long	0x7b007b
+	.long	0x80007f
+	.long	0x800080
+	.long	0x800080
+	.long	0x820080
+	.long	0x810081
+	.long	0x830083
+	.long	0x710087
+	.long	0x8a0088
+	.long	0x880088
+	.long	0x890089
+	.long	0x8b008c
+	.long	0x8d008d
+	.long	0x60006
+	.long	0x70007
+	.long	0x70007
+	.long	0x90008f
+	.long	0x910061
+	.long	0x910091
+	.long	0x910091
+	.long	0x930091
+	.long	0x1d0092
+	.long	0x96001d
+	.long	0x98001e
+	.long	0x9c001e
+	.long	0x1f001e
+	.long	0x9e001f
+	.long	0x990099
+	.long	0x9d009f
+	.long	0x9a0094
+	.long	0x59009b
+	.long	0x5b0059
+	.long	0xa2005b
+	.long	0xa200a2
+	.long	0xa200a2
+	.long	0x1b00a2
+	.long	0xd000d
+	.long	0xe000e
+	.long	0x100010
+	.long	0xf000f
+	.long	0x8000f
+	.long	0x6e0008
+	.long	0xa5006e
+	.long	0xa400a5
+	.long	0xa600a4
+	.long	0xa600a6
+	.long	0xa600a6
+	.long	0xa600a6
+	.long	0xa600a6
+	.long	0xa600a6
+	.long	0xb000b0
+	.long	0xa700b0
+	.long	0xb600b5
+	.long	0x3800b5
+	.long	0x360038
+	.long	0xb70036
+	.long	0xb800b8
+	.long	0xb800b8
+	.long	0xba00b1
+	.long	0xbc00b1
+	.long	0xbe00af
+	.long	0xc200b2
+	.long	0xc500bf
+	.long	0xc300c3
+	.long	0xc900c4
+	.long	0xca00c4
+	.long	0xc400cb
+	.long	0xc400cd
+	.long	0xc000c0
+	.long	0xc100d1
+	.long	0xb300c1
+	.long	0xcc00b4
+	.long	0xd500d3
+	.long	0xd400ce
+	.long	0xd800d4
+	.long	0xd900d8
+	.long	0xdb00d6
+	.long	0xd700d6
+	.long	0xdd00d7
+	.long	0xe000a9
+	.long	0xe200a9
+	.long	0xde00a9
+	.long	0xe400aa
+	.long	0xe600ab
+	.long	0xe700ac
+	.long	0xe700e9
+	.long	0xec00ad
+	.long	0xee00ad
+	.long	0xf000ad
+	.long	0xf200ea
+	.long	0xae00f3
+	.long	0xae00f5
+	.long	0xae00f7
+	.long	0xa800f9
+	.long	0xfa00fa
+	.long	0x2b00fb
+	.long	0x2b00fd
+	.long	0x2b002b
+	.long	0xfc00fc
+	.long	0xfc00fc
+	.long	0xfe00ff
+	.long	0x1c001c
+	.long	0x1010100
+	.long	0x950100
+	.long	0x5a0058
+	.long	0x570056
+	.long	0x6a0055
+	.long	0x7a006d
+	.long	0x7c0084
+	.long	0x1030063
+	.long	0x104005d
+	.long	0x10500a3
+	.long	0x1070085
+	.long	0x109001a
+	.long	0x109010c
+	.long	0x1080108
+	.long	0x10001
+	.long	0x20003
+	.long	0x50002
+	.long	0x1110005
+	.long	0x1120005
+	.long	0x50005
+	.long	0x50113
+	.long	0x50115
+	.long	0x1180117
+	.long	0x50005
+	.long	0x1140114
+	.long	0x119010d
+	.long	0x11010d
+	.long	0x140011
+	.long	0x14011b
+	.long	0x14011c
+	.long	0x14011e
+	.long	0x140120
+	.long	0x140122
+	.long	0x150014
+	.long	0x150123
+	.long	0x11f011f
+	.long	0x11f011f
+	.long	0x1280016
+	.long	0x160129
+	.long	0x12a0017
+	.long	0x12b0017
+	.long	0x12d0017
+	.long	0x12f0017
+	.long	0x1300017
+	.long	0x1320017
+	.long	0x1330017
+	.long	0x1350017
+	.long	0x1360017
+	.long	0x1380017
+	.long	0x13a0017
+	.long	0x13c0017
+	.long	0x13e0017
+	.long	0x120017
+	.long	0x1410140
+	.long	0x120012
+	.long	0x1420004
+	.long	0x1430027
+	.long	0x1440143
+	.long	0x1460144
+	.long	0x1480145
+	.long	0x14a0149
+	.long	0x180013
+	.long	0x18014b
+	.long	0x18014d
+	.long	0x18014f
+	.long	0x1500019
+	.long	0x240150
+	.long	0x1510151
+	.long	0x1510151
+	.long	0x280028
+	.long	0x280028
+	.long	0x210021
+	.long	0x230023
+	.long	0x200152
+	.long	0x220020
+	.long	0x1530022
+	.long	0x1550022
+	.long	0x1540022
+	.long	0x14e0154
+	.long	0x12e00d2
+	.long	0xf6002e
+	.long	0xda0073
+	.long	0xe10116
+	.long	0xf4010f
+	.long	0xdf0106
+	.long	0xeb00bb
+	.long	0x8600e8
+	.long	0xed013b
+	.long	0x2f00f1
+	.long	0xc800e5
+	.long	0x40011a
+	.long	0xcf00dc
+	.long	0xd0012c
+	.long	0x2d010b
+	.long	0xf8013d
+	.long	0x8e00bd
+	.long	0x1210134
+	.long	0x110003f
+	.long	0xe3007d
+	.long	0x4b00c7
+	.long	0x7200b9
+	.long	0x7e0065
+	.long	0xef0074
+	.long	0x147010a
+	.long	0xc6014c
+	.long	0x11d0102
+	.long	0x1250124
+	.long	0x1270126
+	.long	0xcf00a1
+	.long	0x1370131
+	.long	0x13f0139
+	.long	0x330031
+	.long	0xa00097
+	.long	0x390034
+	.long	0x10e003b
+	.long	0x42
+ 	.align	1
+	.globl	_yyr2
+_yyr2:
+	.long	0x0
+	.long	0x2
+	.long	0x0
+	.long	0xd
+	.long	0x10001
+	.long	0x20003
+	.long	0x3
+	.long	0x4
+	.long	0x5
+	.long	0x10001
+	.long	0x3
+	.long	0x40002
+	.long	0x10001
+	.long	0x10002
+	.long	0x2
+	.long	0x50000
+	.long	0x20003
+	.long	0x0
+	.long	0x10006
+	.long	0x30000
+	.long	0x20001
+	.long	0x10001
+	.long	0x40003
+	.long	0x10002
+	.long	0x30001
+	.long	0x40004
+	.long	0x10000
+	.long	0x10001
+	.long	0x20001
+	.long	0x3
+	.long	0x10005
+	.long	0x10003
+	.long	0x30002
+	.long	0x10003
+	.long	0x20001
+	.long	0x10001
+	.long	0x30001
+	.long	0x20001
+	.long	0x30003
+	.long	0x10003
+	.long	0x1
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x20001
+	.long	0x30000
+	.long	0x40000
+	.long	0x20000
+	.long	0x30000
+	.long	0x10001
+	.long	0x20001
+	.long	0x20001
+	.long	0x10003
+	.long	0x10003
+	.long	0x30002
+	.long	0x3
+	.long	0x20003
+	.long	0x20000
+	.long	0x30000
+	.long	0x3
+	.long	0x10005
+	.long	0x30001
+	.long	0x30000
+	.long	0x20000
+	.long	0x10002
+	.long	0x30001
+	.long	0x40004
+	.long	0x0
+	.long	0x10006
+	.long	0x10003
+	.long	0x30002
+	.long	0x3
+	.long	0x20002
+	.long	0x1
+	.long	0x3
+	.long	0x4
+	.long	0x5
+	.long	0x2
+	.long	0x10004
+	.long	0x30000
+	.long	0x10001
+	.long	0x1
+	.long	0x1
+	.long	0x10001
+	.long	0x10003
+	.long	0x30002
+	.long	0x20003
+	.long	0x10002
+	.long	0x10002
+	.long	0x10000
+	.long	0x30004
+	.long	0x10002
+	.long	0x10002
+	.long	0x10003
+	.long	0x10002
+	.long	0x10003
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x30001
+	.long	0x1
+	.long	0x3
+	.long	0x2
+	.long	0x10001
+	.long	0x20001
+	.long	0x20001
+	.long	0x2
+	.long	0x4
+	.long	0x4
+	.long	0x7
+	.long	0x3
+	.long	0x5
+	.long	0x2
+	.long	0x4
+	.long	0x60000
+	.long	0x40000
+	.long	0x30000
+	.long	0x40000
+	.long	0x20000
+	.long	0x20002
+	.long	0x0
+	.long	0x7
+	.long	0x10001
+	.long	0x10003
+	.long	0x0
+	.long	0x10003
+	.long	0x1
+	.long	0x3
+	.long	0x3
+	.long	0x20004
+	.long	0x2
+	.long	0x6
+	.long	0x7
+	.long	0x30000
+	.long	0x2
+	.long	0x4
+	.long	0x9
+	.long	0x5
+	.long	0x50000
+	.long	0x30000
+	.long	0x30000
+	.long	0x40000
+	.long	0x10000
+	.long	0x20000
+	.long	0x30000
+	.long	0x20001
+	.long	0x10001
+	.long	0x10001
+	.long	0x30000
+	.long	0x10002
+	.long	0x1
+	.long	0x10003
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x1
+	.long	0x2
+	.long	0x2
+	.long	0x2
+	.long	0x7
+	.long	0x60000
+	.long	0x10000
+	.long	0x10001
+	.long	0x10003
+	.long	0x10001
+	.long	0x1
+	.long	0x4
+	.long	0x30005
+	.long	0x50000
+	.long	0x50000
+	.long	0x0
+	.long	0x10008
+	.long	0x10000
+	.long	0x1
+	.long	0x10004
+	.long	0x10002
+	.long	0x30000
+	.long	0x30000
+	.long	0x30000
+	.long	0x30000
+	.long	0x30000
+	.long	0x10001
+	.long	0x40000
+	.long	0x10001
+	.long	0x10001
+	.long	0x1
+	.long	0x60000
+	.long	0x1
+	.long	0x4
+	.long	0x4
+	.long	0x4
+	.long	0x4
+	.long	0x4
+	.long	0x4
+	.long	0x4
+	.long	0x4
+	.long	0x4
+	.long	0x4
+	.long	0x4
+	.long	0x4
+	.long	0x10004
+	.long	0x0
+	.long	0x10007
+	.long	0x1
+	.long	0x5
+	.long	0x10001
+	.long	0x3
+	.long	0x2
+	.long	0x0
+	.long	0x10009
+	.long	0x40000
+	.long	0x40000
+	.long	0x40000
+	.long	0x2
+	.long	0x20003
+	.long	0x10002
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10000
+	.long	0x10000
+	.long	0x30000
+	.long	0x20001
+	.long	0x3
+	.long	0x4
+	.long	0x20004
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x10001
+	.long	0x1
+ 	.align	1
+	.globl	_yychk
+_yychk:
+	.long	0xffd7fc18
+	.long	0xffd5ffd6
+	.long	0x100ff05
+	.long	0x100ff03
+	.long	0xff02ff04
+	.long	0xffd4ffa2
+	.long	0xffe4ffc4
+	.long	0xffa0ffa1
+	.long	0xffd3ff9f
+	.long	0xff9effc3
+	.long	0xff9bffdb
+	.long	0x126ff72
+	.long	0xff99ff95
+	.long	0x109fffa
+	.long	0x10a012f
+	.long	0xff90ff91
+	.long	0xff8eff8f
+	.long	0xff8cff8d
+	.long	0xfff9ffab
+	.long	0xff7affda
+	.long	0x10e0110
+	.long	0xff5f010f
+	.long	0xffaaffd1
+	.long	0xff82ff83
+	.long	0x2a010d
+	.long	0xffcf0101
+	.long	0x10c010b
+	.long	0xff040028
+	.long	0xffd2ff01
+	.long	0xffd1ffc1
+	.long	0x128011e
+	.long	0xffc0ffc2
+	.long	0x130ffcf
+	.long	0xff9cff9d
+	.long	0xffbeffdb
+	.long	0x100ff94
+	.long	0xff9a003b
+	.long	0xff99ff71
+	.long	0xfffaffd3
+	.long	0xffaaffa8
+	.long	0x5bff69
+	.long	0xffd1ff8b
+	.long	0xfffaff79
+	.long	0xff59ff00
+	.long	0xff86feff
+	.long	0x7bffcc
+	.long	0xffd1ffd1
+	.long	0xffbdffd1
+	.long	0xff96ff9d
+	.long	0xffc50100
+	.long	0xff93002c
+	.long	0x3dfefe
+	.long	0xff99ff99
+	.long	0xff7bffa7
+	.long	0xffa5fefb
+	.long	0xffd1ff5e
+	.long	0xff8a0100
+	.long	0xff89ff86
+	.long	0xff86ff78
+	.long	0xffa9ffd1
+	.long	0x29ffcd
+	.long	0xff48ff49
+	.long	0x100ffa2
+	.long	0xff4bff9e
+	.long	0xff4affc8
+	.long	0xffbfffd0
+	.long	0xffbaffbc
+	.long	0xffb8ffb9
+	.long	0x100ff94
+	.long	0xff94ffdb
+	.long	0xff5dff92
+	.long	0xfefcff86
+	.long	0xff97ff98
+	.long	0xfffa0100
+	.long	0xffa6ff70
+	.long	0x5dff60
+	.long	0xffe9ffee
+	.long	0xffeaffed
+	.long	0xffecfeb9
+	.long	0x12dffcf
+	.long	0xfee6ffef
+	.long	0xfee3ff5f
+	.long	0xfedffee1
+	.long	0xffffffe6
+	.long	0x260108
+	.long	0xfedbfedc
+	.long	0xfed9feda
+	.long	0xfefa0103
+	.long	0xfffdfffe
+	.long	0x7e0021
+	.long	0x2d002b
+	.long	0xff6b0120
+	.long	0xffd1fffb
+	.long	0xfef0fef1
+	.long	0xfffcfeea
+	.long	0x1020104
+	.long	0xffd90131
+	.long	0xff96ffa9
+	.long	0xff850100
+	.long	0x100ff81
+	.long	0xff88ff99
+	.long	0xff77ff87
+	.long	0xffd1ff75
+	.long	0xff59ff76
+	.long	0x100ffa2
+	.long	0xffc7ff84
+	.long	0xff5a007d
+	.long	0xff58ff59
+	.long	0xff56ff57
+	.long	0xff54ff55
+	.long	0xff52ff53
+	.long	0xff50ff51
+	.long	0xff08ff4f
+	.long	0xff21ff24
+	.long	0xffa4ff1f
+	.long	0xff1bff1d
+	.long	0xff15ff16
+	.long	0xff0fff13
+	.long	0xff0aff0c
+	.long	0xff4eff45
+	.long	0xff4cff4d
+	.long	0x11cff47
+	.long	0x112012e
+	.long	0xffa30111
+	.long	0x1130115
+	.long	0x117ff11
+	.long	0x1190118
+	.long	0x11b011a
+	.long	0xff430121
+	.long	0xff34ff39
+	.long	0xfefd012b
+	.long	0x1270116
+	.long	0xff2e0129
+	.long	0xff49011d
+	.long	0xffbeffcf
+	.long	0xffc5ffcd
+	.long	0xff99ffe5
+	.long	0xff92ff5c
+	.long	0xffeeffe8
+	.long	0xff9dffec
+	.long	0x100ff96
+	.long	0xff6eff6f
+	.long	0xff6d0100
+	.long	0xfed9feda
+	.long	0xfed2fed4
+	.long	0xfecfff31
+	.long	0xfeccfee3
+	.long	0xfec9ff5f
+	.long	0xfec5fec7
+	.long	0xfec1fec3
+	.long	0x1330132
+	.long	0x7c0123
+	.long	0x136005e
+	.long	0x25002f
+	.long	0x1350134
+	.long	0xfeb8003f
+	.long	0xfed8feef
+	.long	0xfee4fee5
+	.long	0xfee0fee2
+	.long	0xfef2fede
+	.long	0x107ff69
+	.long	0x2e0108
+	.long	0xfebeffd1
+	.long	0xffcffeeb
+	.long	0xffd1ffcf
+	.long	0xffd10100
+	.long	0xff81ff84
+	.long	0xff800100
+	.long	0x100ff7f
+	.long	0xff7cfffa
+	.long	0x3aff3a
+	.long	0xff84ff8a
+	.long	0xff74ff96
+	.long	0xff07ff86
+	.long	0xff20ff23
+	.long	0xff9dff1e
+	.long	0xff1aff1c
+	.long	0xff14ff5a
+	.long	0xff0eff12
+	.long	0xff09ff0b
+	.long	0xffbeff44
+	.long	0xff10ff46
+	.long	0xffbeffcc
+	.long	0xff2dff32
+	.long	0xfeb0ffe7
+	.long	0xffc8ffd1
+	.long	0xffc6ffce
+	.long	0xffbbffd1
+	.long	0xffbeffcc
+	.long	0xfff2ffb9
+	.long	0xfff0ffab
+	.long	0xffaafff1
+	.long	0xff96ff5b
+	.long	0xfefeff84
+	.long	0xfeb2feb4
+	.long	0x1060105
+	.long	0x100ff97
+	.long	0xff9dff97
+	.long	0x100ff96
+	.long	0xff6cffe3
+	.long	0xff5fffe2
+	.long	0xff66ff6b
+	.long	0xfed6ffcf
+	.long	0xfed3fed5
+	.long	0xfed0fed1
+	.long	0xfecdfece
+	.long	0xfecafecb
+	.long	0xfec6fec8
+	.long	0xfec2fec4
+	.long	0xffe9fec0
+	.long	0xffdcffe7
+	.long	0xffd8feaf
+	.long	0xff8dff8e
+	.long	0xff83ff8c
+	.long	0xffd3ff82
+	.long	0xffecff7a
+	.long	0xffeaffcf
+	.long	0xffeaffea
+	.long	0xffecffeb
+	.long	0xffd1ffcf
+	.long	0xffd1feee
+	.long	0xffcffef9
+	.long	0xfeedffcf
+	.long	0xff9dfee9
+	.long	0x100ff96
+	.long	0xff7bff7e
+	.long	0xff73ff75
+	.long	0xff77ff93
+	.long	0xffa3ff06
+	.long	0xff7cff22
+	.long	0xff7bff22
+	.long	0xffaaffaa
+	.long	0xffaaff5a
+	.long	0xff9dffd1
+	.long	0xffa3ff9d
+	.long	0xffaaffa3
+	.long	0xffcfff42
+	.long	0xffcdffe8
+	.long	0xffb7ffc5
+	.long	0x100ffb6
+	.long	0x12affb5
+	.long	0xffa8fff2
+	.long	0xfff8ffaa
+	.long	0xfff3ffcd
+	.long	0xfff1ffab
+	.long	0xff84fff0
+	.long	0xfeb5ff92
+	.long	0xfeb1feb3
+	.long	0x100ff6e
+	.long	0xffe3ff6e
+	.long	0xff69ff6a
+	.long	0xffe9ffe3
+	.long	0xffe9ffe9
+	.long	0xffe9ffe9
+	.long	0xffe9ffe9
+	.long	0xffe9ffe9
+	.long	0xffe9ffe9
+	.long	0xffe9ffe9
+	.long	0xfec1ffe9
+	.long	0xffcdffcd
+	.long	0xffe0ffdf
+	.long	0xffdeff5f
+	.long	0xffddffcf
+	.long	0xfeddffd1
+	.long	0xffcfffe7
+	.long	0xfebcfebd
+	.long	0xfebafebb
+	.long	0xfef3feec
+	.long	0xfeecffe8
+	.long	0xff7fffe8
+	.long	0xff7f0100
+	.long	0xff7cff7d
+	.long	0xff84ff7b
+	.long	0xff5affbe
+	.long	0xffa3ff22
+	.long	0xff16ffa3
+	.long	0xff0dffa4
+	.long	0xffbeffbe
+	.long	0xff41ffa3
+	.long	0xff2cff3e
+	.long	0xff27ff28
+	.long	0xffc5ffd1
+	.long	0xffd1ffcc
+	.long	0xffb6ffc7
+	.long	0xffb40100
+	.long	0xffa9ffa7
+	.long	0xfff2ffa9
+	.long	0xffe8ffe8
+	.long	0xffe1ffe8
+	.long	0xff68ff66
+	.long	0xffcdff65
+	.long	0xfeb7ff3a
+	.long	0xfeaefed7
+	.long	0xffcdffcf
+	.long	0xff69feab
+	.long	0xff60ffdc
+	.long	0xfef3fef8
+	.long	0xffc5ffcd
+	.long	0xffcdffe8
+	.long	0xffcdffc5
+	.long	0xff7bffc5
+	.long	0xffa9ffa9
+	.long	0xff9dff9d
+	.long	0xff40ffa9
+	.long	0xff3dff31
+	.long	0xffcdffcf
+	.long	0xffcbffc5
+	.long	0xffb3ffbe
+	.long	0xffa6ff99
+	.long	0xff67ff65
+	.long	0xff61ff63
+	.long	0xfebfff64
+	.long	0xffffffd9
+	.long	0xffdfffea
+	.long	0xffe0ffcd
+	.long	0xffcdfead
+	.long	0xfebbffcd
+	.long	0xffd1fee7
+	.long	0xff5aff5a
+	.long	0xff3fffa4
+	.long	0x124ff30
+	.long	0xff3cff41
+	.long	0xff38ff39
+	.long	0xff34ff45
+	.long	0xff3b0122
+	.long	0xff27ff2b
+	.long	0xff49ffca
+	.long	0xff69ffb2
+	.long	0xffe1ffe7
+	.long	0xff3affee
+	.long	0xfeacffcd
+	.long	0xff60ffee
+	.long	0xfef6fef7
+	.long	0xffe8012c
+	.long	0xff19fee8
+	.long	0x114ff18
+	.long	0xffc7ff9d
+	.long	0xff40ff2f
+	.long	0xff37ffbe
+	.long	0xff33ff36
+	.long	0xff2affa3
+	.long	0x11fff26
+	.long	0xffb1ffc9
+	.long	0xffafffb0
+	.long	0xff60ff62
+	.long	0xff60feb6
+	.long	0x125fef5
+	.long	0xff17ffcd
+	.long	0xff5affa4
+	.long	0xffa3ff5a
+	.long	0xffcdff32
+	.long	0xffbeff29
+	.long	0xff25ff59
+	.long	0xffc5ffc8
+	.long	0xfff7ffbe
+	.long	0xfff6ffab
+	.long	0xffaaffd1
+	.long	0xffeeff67
+	.long	0xff5affcf
+	.long	0xffc8ffa9
+	.long	0xffbeffc8
+	.long	0xff3affc8
+	.long	0xffc7ffa3
+	.long	0xffaeffb1
+	.long	0xffa8fff7
+	.long	0xffabfff5
+	.long	0xffd1fff4
+	.long	0xfef4ffaa
+	.long	0xffcfff35
+	.long	0xffa9ffa7
+	.long	0xffa8fff5
+	.long	0xfff5ffaa
+	.long	0xffc8ffe7
+	.long	0xffacffad
+	.long	0xffa6ffe5
+	.long	0xffa5ffa7
+	.long	0xffcdffa9
+	.long	0xffc5ffcd
+	.long	0xffa9ffa6
+	.long	0xffe5
+ 	.align	1
+	.globl	_yydef
+_yydef:
+	.long	0xfffe0001
+	.long	0xfffe0124
+	.long	0x1280000
+	.long	0x1290000
+	.long	0x12a0125
+	.long	0x12c012b
+	.long	0x12e012d
+	.long	0x370036
+	.long	0x38
+	.long	0x0
+	.long	0x3b0131
+	.long	0x1ed0086
+	.long	0x470046
+	.long	0x1fc0050
+	.long	0x4401f1
+	.long	0x540053
+	.long	0x560055
+	.long	0x580057
+	.long	0x810000
+	.long	0x74005a
+	.long	0x1d401fb
+	.long	0x13a01fe
+	.long	0x82
+	.long	0x630062
+	.long	0x20a01df
+	.long	0x13801e3
+	.long	0x1fd01f6
+	.long	0x1270210
+	.long	0x133
+	.long	0x590000
+	.long	0x1f401d2
+	.long	0xb
+	.long	0x1e7000f
+	.long	0x39
+	.long	0x140fffe
+	.long	0x4a0048
+	.long	0x218
+	.long	0x450000
+	.long	0x800000
+	.long	0xa5fffe
+	.long	0x2120136
+	.long	0x5c0000
+	.long	0x0
+	.long	0x132012f
+	.long	0xfffe0000
+	.long	0x214013d
+	.long	0xc0003
+	.long	0xfffe000d
+	.long	0x3a
+	.long	0x13b004b
+	.long	0x1430216
+	.long	0x204013c
+	.long	0x870000
+	.long	0xa40000
+	.long	0x0
+	.long	0xa700a6
+	.long	0x5b00a9
+	.long	0xfffe0000
+	.long	0x75
+	.long	0x83fffe
+	.long	0x2110139
+	.long	0xd50000
+	.long	0xd800d6
+	.long	0x0
+	.long	0xfffe
+	.long	0x0
+	.long	0x120000
+	.long	0x13
+	.long	0x4d0049
+	.long	0x4c004f
+	.long	0xb9004e
+	.long	0x143
+	.long	0x3d0000
+	.long	0x43003f
+	.long	0x84008f
+	.long	0x2130137
+	.long	0x19b0146
+	.long	0x180019f
+	.long	0x17c01a9
+	.long	0x201fffe
+	.long	0x16a0169
+	.long	0x16e016c
+	.long	0x1720170
+	.long	0x1670174
+	.long	0x20501e6
+	.long	0x1790178
+	.long	0x17b017a
+	.long	0x1f3
+	.long	0xfffe014e
+	.long	0x2070206
+	.long	0x2090208
+	.long	0xfffe01da
+	.long	0x1350152
+	.long	0x1540153
+	.long	0x1610000
+	.long	0x1f501d8
+	.long	0x1a001d6
+	.long	0x85
+	.long	0xaa
+	.long	0x660064
+	.long	0x5d0000
+	.long	0x0
+	.long	0x7c007a
+	.long	0x1340000
+	.long	0xd900d7
+	.long	0x13f00cd
+	.long	0xd20215
+	.long	0xc000bf
+	.long	0xc200c1
+	.long	0xc400c3
+	.long	0xc600c5
+	.long	0xc800c7
+	.long	0x12000c9
+	.long	0x1050103
+	.long	0x107
+	.long	0x10d010b
+	.long	0x113fffe
+	.long	0x1190115
+	.long	0x11e011c
+	.long	0xca00dd
+	.long	0xcc00cb
+	.long	0x1ef00db
+	.long	0x1db01e8
+	.long	0x3501d7
+	.long	0x1e401f7
+	.long	0x1dd0117
+	.long	0x1e201e1
+	.long	0x1d301d9
+	.long	0x1dc
+	.long	0xf60000
+	.long	0x1b501fa
+	.long	0x1f001ff
+	.long	0x1f8
+	.long	0xd101d0
+	.long	0xe0007
+	.long	0x150000
+	.long	0xb20016
+	.long	0xbd0000
+	.long	0x1ad0144
+	.long	0x3c017c
+	.long	0x400000
+	.long	0x890000
+	.long	0x8b
+	.long	0x1830181
+	.long	0x1870185
+	.long	0x18b0189
+	.long	0x18f018d
+	.long	0x1930191
+	.long	0x1970195
+	.long	0x19c0199
+	.long	0x1d101ea
+	.long	0x20b01e9
+	.long	0x1f2020c
+	.long	0x20e020d
+	.long	0x1ee01e0
+	.long	0x20f
+	.long	0x1b5
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x157
+	.long	0x2170168
+	.long	0x147
+	.long	0x15a0000
+	.long	0xa8015e
+	.long	0xab00ac
+	.long	0x650061
+	.long	0x67
+	.long	0x6b0069
+	.long	0x145006f
+	.long	0x203013e
+	.long	0x76005f
+	.long	0x7e0000
+	.long	0xfffe0000
+	.long	0x0
+	.long	0x10a0145
+	.long	0x0
+	.long	0xfffe0112
+	.long	0x0
+	.long	0x0
+	.long	0xda0141
+	.long	0x141
+	.long	0xf300df
+	.long	0xf4
+	.long	0x142
+	.long	0xfffe00f5
+	.long	0x80000
+	.long	0x100009
+	.long	0x180000
+	.long	0xad0014
+	.long	0xb100b2
+	.long	0xb200b3
+	.long	0x14300ba
+	.long	0x1ae00bb
+	.long	0x1b201b0
+	.long	0x1cf0202
+	.long	0x42003e
+	.long	0x880041
+	.long	0xfffe008f
+	.long	0x90
+	.long	0xa00092
+	.long	0x93
+	.long	0xa1
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0x0
+	.long	0xfffe
+	.long	0x1ba01b9
+	.long	0x1bc01bb
+	.long	0x1be01bd
+	.long	0x16b01bf
+	.long	0x16d0155
+	.long	0x171016f
+	.long	0x1750173
+	.long	0x150fffe
+	.long	0x15901b5
+	.long	0xfffe0000
+	.long	0x1620162
+	.long	0x680000
+	.long	0x6c0000
+	.long	0x710072
+	.long	0x7d007b
+	.long	0x145
+	.long	0x1230000
+	.long	0xfffe0104
+	.long	0x106
+	.long	0x1410141
+	.long	0xfffe0000
+	.long	0x11d011a
+	.long	0x11f
+	.long	0x1410000
+	.long	0xf900e1
+	.long	0x1b4
+	.long	0x0
+	.long	0x1b0019
+	.long	0x1f9001d
+	.long	0xfffe00b0
+	.long	0xb60000
+	.long	0xb7
+	.long	0xfffe00b2
+	.long	0xbc0000
+	.long	0xbe
+	.long	0x0
+	.long	0x8e008a
+	.long	0x91008d
+	.long	0x950099
+	.long	0x1820000
+	.long	0x1860184
+	.long	0x18a0188
+	.long	0x18e018c
+	.long	0x1920190
+	.long	0x1960194
+	.long	0x19a0198
+	.long	0x1aa0000
+	.long	0x17e0156
+	.long	0x1c101b7
+	.long	0xfffe01c4
+	.long	0x1cb
+	.long	0x1b8
+	.long	0x14c0000
+	.long	0x1a40000
+	.long	0x1a5
+	.long	0x1630000
+	.long	0x164
+	.long	0x6a0000
+	.long	0x6d006e
+	.long	0x1450070
+	.long	0x78007f
+	.long	0x1090121
+	.long	0x108
+	.long	0x1140000
+	.long	0x0
+	.long	0xdc00de
+	.long	0xee0000
+	.long	0xe5
+	.long	0xfb00fa
+	.long	0x1b600fd
+	.long	0xa0004
+	.long	0x1a0000
+	.long	0x51001c
+	.long	0xb50000
+	.long	0xae00b8
+	.long	0x1b101af
+	.long	0x9401b3
+	.long	0x9e0000
+	.long	0xa20097
+	.long	0x19d
+	.long	0xfffe0000
+	.long	0x1c70000
+	.long	0x1c901c2
+	.long	0x1580000
+	.long	0x14d0000
+	.long	0x1a701a2
+	.long	0x15d01a8
+	.long	0x15b0165
+	.long	0x730000
+	.long	0xfffefffe
+	.long	0x11bfffe
+	.long	0xf20118
+	.long	0xe1
+	.long	0xf700e3
+	.long	0xd30000
+	.long	0x1e0017
+	.long	0xb40052
+	.long	0x96009a
+	.long	0x1b5009d
+	.long	0x99
+	.long	0x1a0
+	.long	0x1c5017f
+	.long	0x1c8
+	.long	0x1770000
+	.long	0x1a60149
+	.long	0x15f0000
+	.long	0x10f010c
+	.long	0x0
+	.long	0x1eb00f0
+	.long	0xe200ee
+	.long	0xe70000
+	.long	0xec00e9
+	.long	0x14101e5
+	.long	0xfc00fe
+	.long	0xd40005
+	.long	0x9b0022
+	.long	0x980000
+	.long	0x1ab019e
+	.long	0x1ca01cc
+	.long	0x1ce0000
+	.long	0x148
+	.long	0x1660200
+	.long	0x10e0000
+	.long	0x1de0110
+	.long	0xe0fffe
+	.long	0xeffffe
+	.long	0xfffe00e6
+	.long	0xf60141
+	.long	0x0
+	.long	0x1d500ff
+	.long	0x1f00d1
+	.long	0x0
+	.long	0x9f009e
+	.long	0x1cd0000
+	.long	0x1ec0000
+	.long	0xfffe0160
+	.long	0xd10000
+	.long	0xd1
+	.long	0xd1
+	.long	0x10100f8
+	.long	0x1410102
+	.long	0x22fffe
+	.long	0x230021
+	.long	0x2a0000
+	.long	0x2b
+	.long	0x1ac009c
+	.long	0x111014a
+	.long	0xfffe0116
+	.long	0xeafffe
+	.long	0xe4fffe
+	.long	0x60100
+	.long	0x20
+	.long	0xfffe0029
+	.long	0x0
+	.long	0x30002f
+	.long	0x1b50000
+	.long	0x2600d1
+	.long	0x2c0000
+	.long	0xfffe002e
+	.long	0xa5
+	.long	0xfffe0000
+	.long	0x250000
+	.long	0x2d0028
+	.long	0x0
+	.long	0x14b0031
+	.long	0x24
+	.long	0x330032
+	.long	0x27
+_yaccpar_rcsid:
+	.long	0x61654824
+	.long	0x3a726564
+	.long	0x63617920
+	.long	0x72617063
+	.long	0x342e3120
+	.long	0x2f343820
+	.long	0x322f3231
+	.long	0x242031
+	.data
+ 	.align	2
+	.globl	_yydebug
+_yydebug:
+	.long	0	# 14
+	.comm	_yyv,1800
+ 	.align	2
+	.globl	_yychar
+_yychar:
+	.long	-1	# 14
+ 	.align	2
+	.globl	_yynerrs
+_yynerrs:
+	.long	0	# 14
+ 	.align	1
+	.globl	_yyerrflag
+_yyerrflag:
+	.long	0x0
+	.text
+	.align	2
+	.globl	_yyparse
+_yyparse:
+	br 	L147	#bfcode
+L148:
+	movqw	0,-306(fp)	#59a
+	movqd	-1,_yychar	#59a
+	movqd	0,_yynerrs	#59a
+	movqw	0,_yyerrflag	#59a
+	addr	-302(fp),r6	#setasg
+#68a
+	addr	_yyv+-12,r5	#setasg
+#68a
+L149:
+	cmpqd	0,_yydebug	#35
+	beq	L150
+	.data	1
+L152:
+	.ascii	"state %d, char 0%o\12\0"
+	.text
+	#forarg 115d...
+	movd	_yychar,tos	#59b
+	#forarg 115d...
+	movxwd	-306(fp),tos	#59b
+	#unary and,forarg 115a...
+	addr	L152,tos	#setasg
+#68a
+	bsr	_printf	#44a
+	adjspb	-12
+L150:
+	addqd	2,r6	#82
+	#& 0(fp) intareg 114a...
+	addr	0(fp),r0	#setasg
+	cmpd	r0,r6	#38
+	bhs	L153
+	.data	1
+L154:
+	.ascii	"yacc stack overflow\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L154,tos	#setasg
+#68a
+	bsr	_yyerror	#44a
+	adjspb	-4
+	#1 intareg(nasl) 114b...
+	movqd	1,r0	#59a
+	br	L146
+L153:
+	movw	-306(fp),0(r6)	#59b
+	addr	12(r5),r5	#86e  r5 += 12
+	#& _yyval intareg 114a...
+	addr	_yyval,r0	#setasg
+movmd	0(r0),0(r5),3	#20a
+L155:
+	#& _yypact intareg 114a...
+	addr	_yypact,r0	#setasg
+	#-306(fp) intareg(nasl) 114b...
+	movxwd	-306(fp),r1	#59b
+	addr	@@0[r1:w],r1	#fast r1 <<= 1 #49c
+	addd	r1,r0	#105t
+	movw	0(r0),-308(fp)	#59b
+	cmpw	-1000,-308(fp)	#37a1
+	blt	L156
+	br	L157
+L156:
+	cmpqd	0,_yychar	#35
+	ble	L158
+	bsr	_yylex	#44a
+	movd	r0,_yychar	#59a
+	cmpqd	0,r0	#35
+	ble	L160
+	movqd	0,_yychar	#59a
+L160:
+L158:
+	addw	_yychar,-308(fp)	#100a
+	cmpqw	0,-308(fp)	#35
+	bgt	L9999
+	cmpw	1314,-308(fp)	#37a1
+	bgt	L161
+L9999:
+	br	L157
+L161:
+	#& _yyact intareg 114a...
+	addr	_yyact,r0	#setasg
+	#-308(fp) intareg(nasl) 114b...
+	movxwd	-308(fp),r1	#59b
+	addr	@@0[r1:w],r1	#fast r1 <<= 1 #49c
+	addd	r1,r0	#105t
+	movw	0(r0),-308(fp)	#59b
+	#-308(fp) intareg(nasl) 114b...
+	movxwd	-308(fp),r0	#59b
+	#& _yychk intareg 114a...
+	addr	_yychk,r1	#setasg
+	addr	@@0[r0:w],r0	#fast r0 <<= 1 #49c
+	addd	r1,r0	#105t
+	#0(r0) intareg(nasl) 114b...
+	movxwd	0(r0),r0	#59b
+	cmpd	r0,_yychar	#39f
+	bne	L162
+	movqd	-1,_yychar	#59a
+	#& _yylval intareg 114a...
+	addr	_yylval,r0	#setasg
+movmd	0(r0),_yyval,3	#20a
+	movw	-308(fp),-306(fp)	#59b
+	cmpqw	0,_yyerrflag	#35
+	bge	L163
+	addqw	-1,_yyerrflag	#87c
+L163:
+	br	L149
+L162:
+L157:
+	#& _yydef intareg 114a...
+	addr	_yydef,r0	#setasg
+	#-306(fp) intareg(nasl) 114b...
+	movxwd	-306(fp),r1	#59b
+	addr	@@0[r1:w],r1	#fast r1 <<= 1 #49c
+	addd	r1,r0	#105t
+	movw	0(r0),-308(fp)	#59b
+	cmpqw	-2,-308(fp)	#35
+	bne	L164
+	cmpqd	0,_yychar	#35
+	ble	L165
+	bsr	_yylex	#44a
+	movd	r0,_yychar	#59a
+	cmpqd	0,r0	#35
+	ble	L166
+	movqd	0,_yychar	#59a
+L166:
+L165:
+	addr	_yyexca,r4	#setasg
+#68a
+L169:
+	cmpqw	-1,0(r4)	#35
+	bne	L9998
+	cmpw	2(r4),-306(fp)	#39a
+	beq	L168
+L9998:
+L167:
+	addqd	4,r4	#82
+	br	L169
+L168:
+L170:
+	addqd	4,r4	#82
+	cmpqw	0,0(r4)	#35
+	bgt	L171
+	#0(r4) intareg(nasl) 114b...
+	movxwd	0(r4),r0	#59b
+	cmpd	r0,_yychar	#39f
+	bne	L172
+	br	L171
+L172:
+	br	L170
+L171:
+	movw	2(r4),-308(fp)	#59b
+	cmpqw	0,-308(fp)	#35
+	ble	L173
+	#0 intareg(nasl) 114b...
+	movqd	0,r0	#59a
+	br	L146
+L173:
+L164:
+	cmpqw	0,-308(fp)	#35
+	bne	L174
+	#_yyerrflag intareg(nasl) 114b...
+	movxwd	_yyerrflag,r0	#59b
+	br	L176
+L177:
+	.data	1
+L178:
+	.ascii	"syntax error\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L178,tos	#setasg
+#68a
+	bsr	_yyerror	#44a
+	adjspb	-4
+L179:
+	addqd	1,_yynerrs	#83
+L180:
+L181:
+	movqw	3,_yyerrflag	#59a
+L182:
+	#& -300(fp) intareg 114a...
+	addr	-300(fp),r0	#setasg
+	cmpd	r6,r0	#38
+	blo	L183
+	#& _yypact intareg 114a...
+	addr	_yypact,r0	#setasg
+	#0(r6) intareg(nasl) 114b...
+	movxwd	0(r6),r1	#59b
+	addr	@@0[r1:w],r1	#fast r1 <<= 1 #49c
+	addd	r1,r0	#105t
+	#0(r0) intareg(nasl) 114b...
+	movxwd	0(r0),r0	#59b
+	addr	256(r0),r0	#86e  r0 += 256
+	movw	r0,-308(fp)	#59a
+	cmpqw	0,-308(fp)	#35
+	bgt	L184
+	cmpw	1314,-308(fp)	#37a1
+	ble	L184
+	#& _yyact intareg 114a...
+	addr	_yyact,r0	#setasg
+	#-308(fp) intareg(nasl) 114b...
+	movxwd	-308(fp),r1	#59b
+	addr	@@0[r1:w],r1	#fast r1 <<= 1 #49c
+	addd	r1,r0	#105t
+	#0(r0) intareg(nasl) 114b...
+	movxwd	0(r0),r0	#59b
+	#& _yychk intareg 114a...
+	addr	_yychk,r1	#setasg
+	addr	@@0[r0:w],r0	#fast r0 <<= 1 #49c
+	addd	r1,r0	#105t
+	cmpw	256,0(r0)	#37a1
+	bne	L184
+	#& _yyact intareg 114a...
+	addr	_yyact,r0	#setasg
+	#-308(fp) intareg(nasl) 114b...
+	movxwd	-308(fp),r1	#59b
+	addr	@@0[r1:w],r1	#fast r1 <<= 1 #49c
+	addd	r1,r0	#105t
+	movw	0(r0),-306(fp)	#59b
+	br	L149
+L184:
+	#& _yypact intareg 114a...
+	addr	_yypact,r0	#setasg
+	#0(r6) intareg(nasl) 114b...
+	movxwd	0(r6),r1	#59b
+	addr	@@0[r1:w],r1	#fast r1 <<= 1 #49c
+	addd	r1,r0	#105t
+	movw	0(r0),-308(fp)	#59b
+	cmpqd	0,_yydebug	#35
+	beq	L185
+	.data	1
+L186:
+	.ascii	"error recovery pops state %d, uncovers %d\12\0"
+	.text
+	#forarg 115d...
+	movxwd	-2(r6),tos	#59b
+	#forarg 115d...
+	movxwd	0(r6),tos	#59b
+	#unary and,forarg 115a...
+	addr	L186,tos	#setasg
+#68a
+	bsr	_printf	#44a
+	adjspb	-12
+L185:
+	addqd	-2,r6	#87b
+	subd	12,r5	#105r
+	br	L182
+L183:
+L187:
+	#1 intareg(nasl) 114b...
+	movqd	1,r0	#59a
+	br	L146
+L188:
+	cmpqd	0,_yydebug	#35
+	beq	L189
+	.data	1
+L190:
+	.ascii	"error recovery discards char %d\12\0"
+	.text
+	#forarg 115d...
+	movd	_yychar,tos	#59b
+	#unary and,forarg 115a...
+	addr	L190,tos	#setasg
+#68a
+	bsr	_printf	#44a
+	adjspb	-8
+L189:
+	cmpqd	0,_yychar	#35
+	bne	L191
+	br	L187
+L191:
+	movqd	-1,_yychar	#59a
+	br	L155
+L176:
+	checkd	r0,L194,r0
+	bfs	L193
+L192:	casew	L192+7[r0:w]
+	.word	L177-L192
+	.word	L180-L192
+	.word	L181-L192
+	.word	L188-L192
+L194:	.long	3,0
+L193:
+L175:
+L174:
+	cmpqd	0,_yydebug	#35
+	beq	L195
+	.data	1
+L196:
+	.ascii	"reduce %d\12\0"
+	.text
+	#forarg 115d...
+	movxwd	-308(fp),tos	#59b
+	#unary and,forarg 115a...
+	addr	L196,tos	#setasg
+#68a
+	bsr	_printf	#44a
+	adjspb	-8
+L195:
+	#& _yyr2 intareg 114a...
+	addr	_yyr2,r0	#setasg
+	#-308(fp) intareg(nasl) 114b...
+	movxwd	-308(fp),r1	#59b
+	addr	@@0[r1:w],r1	#fast r1 <<= 1 #49c
+	addd	r1,r0	#105t
+	#0(r0) intareg(nasl) 114b...
+	movxwd	0(r0),r0	#59b
+	addr	@@0[r0:w],r0	#fast r0 <<= 1 #49c
+	subd	r0,r6	#105t
+	movd	r5,r7	#59b
+	#& _yyr2 intareg 114a...
+	addr	_yyr2,r0	#setasg
+	#-308(fp) intareg(nasl) 114b...
+	movxwd	-308(fp),r1	#59b
+	addr	@@0[r1:w],r1	#fast r1 <<= 1 #49c
+	addd	r1,r0	#105t
+	#0(r0) intareg(nasl) 114b...
+	movxwd	0(r0),r0	#59b
+	muld	12,r0	#105r
+	subd	r0,r5	#105t
+	#r5 intareg(nasl) 114b...
+	movd	r5,r0	#59b
+	addr	12(r0),r0	#86e  r0 += 12
+movmd	0(r0),_yyval,3	#20a
+	movw	-308(fp),-304(fp)	#59b
+	#& _yyr1 intareg 114a...
+	addr	_yyr1,r0	#setasg
+	#-308(fp) intareg(nasl) 114b...
+	movxwd	-308(fp),r1	#59b
+	addr	@@0[r1:w],r1	#fast r1 <<= 1 #49c
+	addd	r1,r0	#105t
+	movw	0(r0),-308(fp)	#59b
+	#& _yypgo intareg 114a...
+	addr	_yypgo,r0	#setasg
+	#-308(fp) intareg(nasl) 114b...
+	movxwd	-308(fp),r1	#59b
+	addr	@@0[r1:w],r1	#fast r1 <<= 1 #49c
+	addd	r1,r0	#105t
+	#0(r0) intareg(nasl) 114b...
+	movxwd	0(r0),r0	#59b
+	#0(r6) intareg(nasl) 114b...
+	movxwd	0(r6),r1	#59b
+	addd	r1,r0	#105t
+	addqd	1,r0	#82
+	movw	r0,-302(fp)	#59a
+	cmpw	1314,-302(fp)	#37a1
+	ble	L9997
+	#& _yyact intareg 114a...
+	addr	_yyact,r0	#setasg
+	#-302(fp) intareg(nasl) 114b...
+	movxwd	-302(fp),r1	#59b
+	addr	@@0[r1:w],r1	#fast r1 <<= 1 #49c
+	addd	r1,r0	#105t
+	movw	0(r0),-306(fp)	#59b
+	#-306(fp) intareg(nasl) 114b...
+	movxwd	-306(fp),r0	#59b
+	#& _yychk intareg 114a...
+	addr	_yychk,r1	#setasg
+	addr	@@0[r0:w],r0	#fast r0 <<= 1 #49c
+	addd	r1,r0	#105t
+	#0(r0) intareg(nasl) 114b...
+	movxwd	0(r0),r0	#59b
+	#-308(fp) intareg(nasl) 114b...
+	movxwd	-308(fp),r1	#59b
+	#intareg 114h...
+	negd	r1,r1	#emit_uop
+	cmpw	r1,r0	#39a
+	beq	L197
+L9997:
+	#& _yypgo intareg 114a...
+	addr	_yypgo,r0	#setasg
+	#-308(fp) intareg(nasl) 114b...
+	movxwd	-308(fp),r1	#59b
+	addr	@@0[r1:w],r1	#fast r1 <<= 1 #49c
+	addd	r1,r0	#105t
+	#0(r0) intareg(nasl) 114b...
+	movxwd	0(r0),r0	#59b
+	#& _yyact intareg 114a...
+	addr	_yyact,r1	#setasg
+	addr	@@0[r0:w],r0	#fast r0 <<= 1 #49c
+	addd	r1,r0	#105t
+	movw	0(r0),-306(fp)	#59b
+L197:
+	#-304(fp) intareg(nasl) 114b...
+	movxwd	-304(fp),r0	#59b
+	br	L199
+L200:
+	.data	1
+L201:
+	.ascii	"#include <ccc/CC_kernel.h>\12\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L201,tos	#setasg
+#68a
+	bsr	_printf	#44a
+	adjspb	-4
+	br	L198
+L202:
+	#forarg 115d...
+	movqd	3,tos	#59a
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_lookup_tag	#44a
+	adjspb	-12
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_procname,tos	#setasg
+#68a
+	bsr	_strcpy	#44a
+	adjspb	-8
+	#& _yyval intareg 114a...
+	addr	_yyval,r0	#setasg
+	adjspb	8	#20
+movmd	0(r0),0(sp),2	
+	bsr	_contextof	#44a
+	adjspb	-8
+	movd	r0,_procnum	#59a
+	.data	1
+L205:
+	.ascii	"CC_pid CC_%s(\0"
+	.text
+	#unary and,forarg 115a...
+	addr	_procname,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L205,tos	#setasg
+#68a
+	bsr	_printf	#44a
+	adjspb	-8
+	br	L198
+L206:
+	.data	1
+L207:
+	.ascii	"CC_priority)\12\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L207,tos	#setasg
+#68a
+	bsr	_printf	#44a
+	adjspb	-4
+	bsr	_linesynch	#44a
+	bsr	_declare_parameters	#44a
+	.data	1
+L208:
+	.ascii	"int CC_priority;\12{\12\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L208,tos	#setasg
+#68a
+	bsr	_printf	#44a
+	adjspb	-4
+	bsr	_linesynch	#44a
+	movqd	1,_stattype	#59a
+	bsr	_enterblock	#44a
+	.data	1
+L211:
+	.ascii	"c_mypid\0"
+	.text
+	#forarg 115d...
+	movqd	0,tos	#59a
+	adjspb	8
+	#& 0(sp) intareg 114a...
+	addr	0(sp),r0	#setasg
+	#intemp 116a...
+	movd	r0,-312(fp)	#59a
+	adjspb	8	#20
+movmd	-48(r7),0(sp),2	
+	#forarg 115d...
+	movd	-312(fp),tos	#59b
+	bsr	_func	#44a
+	adjspb	-12
+	#forarg 115d...
+	movqd	0,tos	#59a
+	#unary and,forarg 115a...
+	addr	L211,tos	#setasg
+#68a
+	bsr	_declare	#44a
+	adjspb	-20
+	br	L198
+L212:
+	.data	1
+L213:
+	.ascii	"\12if (CC_fork(\"%s\",CC_%s_numtrans,CC_priority))\12\0"
+	.text
+	#unary and,forarg 115a...
+	addr	_procname,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_procname,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L213,tos	#setasg
+#68a
+	bsr	_printf	#44a
+	adjspb	-12
+	.data	1
+L214:
+	.ascii	"    return CC_childpid;\12\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L214,tos	#setasg
+#68a
+	bsr	_printf	#44a
+	adjspb	-4
+	bsr	_forcelinesynch	#44a
+	br	L198
+L216:
+	bsr	_exitblock	#44a
+	movqd	-1,_procnum	#59a
+	.data	1
+L218:
+	.ascii	"CC_complete();\12}\12\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L218,tos	#setasg
+#68a
+	bsr	_printf	#44a
+	adjspb	-4
+	br	L198
+L219:
+	bsr	_null_parameter_list	#44a
+	br	L198
+L220:
+	addqd	-1,__iob+20	#87c
+	cmpqd	0,__iob+20	#35
+	bgt	L9996
+	#intareg 114i...
+	movd	__iob+24,r0	#59b
+	addqd	1,__iob+24	#83
+	movb	44,0(r0)	#59a
+	#44 intareg(nasl) 114b...
+	movxbd	44,r0	#59a
+	br	L9995
+L9996:
+	#unary and,forarg 115a...
+	addr	__iob+20,tos	#setasg
+#68a
+	#forarg 115d...
+	addr	@@44,tos	#59a
+	bsr	__flsbuf	#44a
+	adjspb	-8
+L9995:
+	br	L198
+L222:
+	.data	1
+L223:
+	.ascii	"%s \0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L223,tos	#setasg
+#68a
+	bsr	_printf	#44a
+	adjspb	-8
+	bsr	_remember_first_parameter_name	#44a
+	br	L198
+L224:
+	addqd	-1,__iob+20	#87c
+	cmpqd	0,__iob+20	#35
+	bgt	L9994
+	#intareg 114i...
+	movd	__iob+24,r0	#59b
+	addqd	1,__iob+24	#83
+	movb	44,0(r0)	#59a
+	#44 intareg(nasl) 114b...
+	movxbd	44,r0	#59a
+	br	L9993
+L9994:
+	#unary and,forarg 115a...
+	addr	__iob+20,tos	#setasg
+#68a
+	#forarg 115d...
+	addr	@@44,tos	#59a
+	bsr	__flsbuf	#44a
+	adjspb	-8
+L9993:
+	.data	1
+L225:
+	.ascii	"%s \0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L225,tos	#setasg
+#68a
+	bsr	_printf	#44a
+	adjspb	-8
+	bsr	_remember_another_parameter_name	#44a
+	br	L198
+L226:
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_procname,tos	#setasg
+#68a
+	bsr	_strcpy	#44a
+	adjspb	-8
+	#unary and,forarg 115a...
+	addr	_procname,tos	#setasg
+#68a
+	bsr	_spec_start	#44a
+	adjspb	-4
+	br	L198
+L228:
+	#forarg 115d...
+	movqd	3,tos	#59a
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	-316(fp),tos	#setasg
+#68a
+	bsr	_lookup_tag	#44a
+	adjspb	-12
+	#forarg 115d...
+	movqd	0,tos	#59a
+	#& -316(fp) intareg 114a...
+	addr	-316(fp),r0	#setasg
+	adjspb	8	#20
+movmd	0(r0),0(sp),2	
+	#forarg 115d...
+	movqd	1,tos	#59a
+	#unary and,forarg 115a...
+	addr	_procname,tos	#setasg
+#68a
+	bsr	_declare	#44a
+	adjspb	-20
+	.data	1
+L229:
+	.ascii	"\12#define CC_%s_numtrans CC_%s_numtrans\12\0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_procname,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L229,tos	#setasg
+#68a
+	bsr	_printf	#44a
+	adjspb	-12
+	bsr	_forcelinesynch	#44a
+	br	L198
+L230:
+	#forarg 115d...
+	movqd	3,tos	#59a
+	#unary and,forarg 115a...
+	addr	_procname,tos	#setasg
+#68a
+	bsr	_declare_tag	#44a
+	adjspb	-8
+	movd	r0,_proccontext	#59a
+	.data	1
+L231:
+	.ascii	"CC_%d%s_arg%%d\0"
+	.text
+	#unary and,forarg 115a...
+	addr	_procname,tos	#setasg
+#68a
+	#forarg 115d...
+	movd	_proccontext,tos	#59b
+	#unary and,forarg 115a...
+	addr	L231,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_argname,tos	#setasg
+#68a
+	bsr	_sprintf	#44a
+	adjspb	-16
+	movqd	1,_argnum	#59a
+	movqd	0,_transid	#59a
+	br	L198
+L232:
+	.data	1
+L233:
+	.ascii	"\12#define CC_%s_numtrans %d\12\0"
+	.text
+	#forarg 115d...
+	movd	_transid,tos	#59b
+	#unary and,forarg 115a...
+	addr	_procname,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L233,tos	#setasg
+#68a
+	bsr	_printf	#44a
+	adjspb	-12
+	.data	1
+L234:
+	.ascii	"CC_pid CC_%s();\12\0"
+	.text
+	#unary and,forarg 115a...
+	addr	_procname,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L234,tos	#setasg
+#68a
+	bsr	_printf	#44a
+	adjspb	-8
+	movqd	0,_proccontext	#59a
+	bsr	_forcelinesynch	#44a
+	bsr	_spec_end	#44a
+	br	L198
+L236:
+	.data	1
+L237:
+	.ascii	"typedef \0"
+	.text
+	#unary and,forarg 115a...
+	addr	L237,tos	#setasg
+#68a
+	bsr	_printf	#44a
+	adjspb	-4
+	bsr	_capture_new	#44a
+	movd	r0,_proc_type_name	#59a
+	br	L198
+L239:
+	addqd	-1,__iob+20	#87c
+	cmpqd	0,__iob+20	#35
+	bgt	L9992
+	#intareg 114i...
+	movd	__iob+24,r0	#59b
+	addqd	1,__iob+24	#83
+	movb	59,0(r0)	#59a
+	#59 intareg(nasl) 114b...
+	movxbd	59,r0	#59a
+	br	L9991
+L9992:
+	#unary and,forarg 115a...
+	addr	__iob+20,tos	#setasg
+#68a
+	#forarg 115d...
+	addr	@@59,tos	#59a
+	bsr	__flsbuf	#44a
+	adjspb	-8
+L9991:
+	addqd	-1,__iob+20	#87c
+	cmpqd	0,__iob+20	#35
+	bgt	L9990
+	#intareg 114i...
+	movd	__iob+24,r0	#59b
+	addqd	1,__iob+24	#83
+	movb	10,0(r0)	#59a
+	#10 intareg(nasl) 114b...
+	movxbd	10,r0	#59a
+	br	L9989
+L9990:
+	#unary and,forarg 115a...
+	addr	__iob+20,tos	#setasg
+#68a
+	#forarg 115d...
+	addr	@@10,tos	#59a
+	bsr	__flsbuf	#44a
+	adjspb	-8
+L9989:
+	#forarg 115d...
+	movqd	0,tos	#59a
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	#forarg 115d...
+	movd	_proccontext,tos	#59b
+	#forarg 115i...
+	movd	_argnum,tos	#59b
+	addqd	1,_argnum	#83
+	bsr	_itoa	#44a
+	adjspb	-4
+	#forarg 115d...
+	movd	r0,tos	#59a
+	bsr	_declare	#44a
+	adjspb	-20
+	#forarg 115d...
+	movd	_proc_type_name,tos	#59b
+	bsr	_capture_string	#44a
+	adjspb	-4
+	#forarg 115d...
+	movd	r0,tos	#59a
+	bsr	_spec_add_param	#44a
+	adjspb	-4
+	#forarg 115d...
+	movd	_proc_type_name,tos	#59b
+	bsr	_capture_free	#44a
+	adjspb	-4
+	br	L198
+L243:
+	movqw	0,_yyerrflag	#59a
+	br	L198
+L244:
+	.data	1
+L245:
+	.ascii	"typedef \0"
+	.text
+	#unary and,forarg 115a...
+	addr	L245,tos	#setasg
+#68a
+	bsr	_printf	#44a
+	adjspb	-4
+	br	L198
+L246:
+	.data	1
+L247:
+	.ascii	"CC_headvalue%d;\12\0"
+	.text
+	addqd	1,_thead	#83
+	#forarg 115d...
+	movd	_thead,tos	#59b
+	#unary and,forarg 115a...
+	addr	L247,tos	#setasg
+#68a
+	bsr	_printf	#44a
+	adjspb	-8
+	bsr	_linesynch	#44a
+	br	L198
+L248:
+	#& _type intareg 114a...
+	addr	_type,r0	#setasg
+movmd	0(r0),_yyval,2	#20a
+	.data	1
+L249:
+	.ascii	"typedef struct {\12CC_headvalue%d \0"
+	.text
+	#forarg 115d...
+	movd	_thead,tos	#59b
+	#unary and,forarg 115a...
+	addr	L249,tos	#setasg
+#68a
+	bsr	_printf	#44a
+	adjspb	-8
+	bsr	_linesynch	#44a
+	br	L198
+L250:
+	addqd	-1,__iob+20	#87c
+	cmpqd	0,__iob+20	#35
+	bgt	L9988
+	#intareg 114i...
+	movd	__iob+24,r0	#59b
+	addqd	1,__iob+24	#83
+	movb	59,0(r0)	#59a
+	#59 intareg(nasl) 114b...
+	movxbd	59,r0	#59a
+	br	L9987
+L9988:
+	#unary and,forarg 115a...
+	addr	__iob+20,tos	#setasg
+#68a
+	#forarg 115d...
+	addr	@@59,tos	#59a
+	bsr	__flsbuf	#44a
+	adjspb	-8
+L9987:
+	addqd	-1,__iob+20	#87c
+	cmpqd	0,__iob+20	#35
+	bgt	L9986
+	#intareg 114i...
+	movd	__iob+24,r0	#59b
+	addqd	1,__iob+24	#83
+	movb	10,0(r0)	#59a
+	#10 intareg(nasl) 114b...
+	movxbd	10,r0	#59a
+	br	L9985
+L9986:
+	#unary and,forarg 115a...
+	addr	__iob+20,tos	#setasg
+#68a
+	#forarg 115d...
+	addr	@@10,tos	#59a
+	bsr	__flsbuf	#44a
+	adjspb	-8
+L9985:
+	bsr	_newtag	#44a
+	movd	r0,_transnum	#59a
+	.data	1
+L252:
+	.ascii	"=\0"
+	.text
+	#forarg 115d...
+	movqd	0,tos	#59a
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	#forarg 115d...
+	movd	_transnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	L252,tos	#setasg
+#68a
+	bsr	_declare	#44a
+	adjspb	-20
+	inssd	_transnum,4(r7),0,14	#62c
+	#forarg 115d...
+	movqd	0,tos	#59a
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	#forarg 115d...
+	movd	_proccontext,tos	#59b
+	#unary and,forarg 115a...
+	addr	_transname,tos	#setasg
+#68a
+	bsr	_declare	#44a
+	adjspb	-20
+	.data	1
+L253:
+	.ascii	"arg%d\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L253,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_argname,tos	#setasg
+#68a
+	bsr	_strcpy	#44a
+	adjspb	-8
+	movqd	1,_argnum	#59a
+	br	L198
+L254:
+	.data
+ 	.align	2
+L255:
+	.long	0	# 14
+	.long	0x0
+	.text
+	#-1 intareg(nasl) 114b...
+	movqd	-1,r0	#59a
+	addd	_argnum,r0	#105r
+	inssd	r0,L255+4,0,14	#62a
+	.data	1
+L256:
+	.ascii	"} CC_%d%s;\12\0"
+	.text
+	#unary and,forarg 115a...
+	addr	_transname,tos	#setasg
+#68a
+	#forarg 115d...
+	movd	_proccontext,tos	#59b
+	#unary and,forarg 115a...
+	addr	L256,tos	#setasg
+#68a
+	bsr	_printf	#44a
+	adjspb	-12
+	.data	1
+L257:
+	.ascii	"#define CC_%d%s_id %d\12\0"
+	.text
+	#forarg 115i...
+	movd	_transid,tos	#59b
+	addqd	1,_transid	#83
+	#unary and,forarg 115a...
+	addr	_transname,tos	#setasg
+#68a
+	#forarg 115d...
+	movd	_proccontext,tos	#59b
+	#unary and,forarg 115a...
+	addr	L257,tos	#setasg
+#68a
+	bsr	_printf	#44a
+	adjspb	-16
+	.data	1
+L258:
+	.ascii	""
+	.ascii	"0\0"
+	.text
+	#forarg 115d...
+	movqd	0,tos	#59a
+	#& L255 intareg 114a...
+	addr	L255,r0	#setasg
+	adjspb	8	#20
+movmd	0(r0),0(sp),2	
+	#forarg 115d...
+	movd	_transnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	L258,tos	#setasg
+#68a
+	bsr	_declare	#44a
+	adjspb	-20
+	movqb	0,_argname	#59a
+	#r7 intareg(nasl) 114b...
+	movd	r7,r0	#59b
+	addd	-60,r0	#105r
+movmd	0(r0),_type,2	#20a
+	bsr	_linesynch	#44a
+	br	L198
+L259:
+	#forarg 115d...
+	movqd	0,tos	#59a
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	#forarg 115d...
+	movd	_transnum,tos	#59b
+	#forarg 115i...
+	movd	_argnum,tos	#59b
+	addqd	1,_argnum	#83
+	bsr	_itoa	#44a
+	adjspb	-4
+	#forarg 115d...
+	movd	r0,tos	#59a
+	bsr	_declare	#44a
+	adjspb	-20
+	addqd	-1,__iob+20	#87c
+	cmpqd	0,__iob+20	#35
+	bgt	L9984
+	#intareg 114i...
+	movd	__iob+24,r0	#59b
+	addqd	1,__iob+24	#83
+	movb	59,0(r0)	#59a
+	#59 intareg(nasl) 114b...
+	movxbd	59,r0	#59a
+	br	L9983
+L9984:
+	#unary and,forarg 115a...
+	addr	__iob+20,tos	#setasg
+#68a
+	#forarg 115d...
+	addr	@@59,tos	#59a
+	bsr	__flsbuf	#44a
+	adjspb	-8
+L9983:
+	addqd	-1,__iob+20	#87c
+	cmpqd	0,__iob+20	#35
+	bgt	L9982
+	#intareg 114i...
+	movd	__iob+24,r0	#59b
+	addqd	1,__iob+24	#83
+	movb	10,0(r0)	#59a
+	#10 intareg(nasl) 114b...
+	movxbd	10,r0	#59a
+	br	L9981
+L9982:
+	#unary and,forarg 115a...
+	addr	__iob+20,tos	#setasg
+#68a
+	#forarg 115d...
+	addr	@@10,tos	#59a
+	bsr	__flsbuf	#44a
+	adjspb	-8
+L9981:
+	bsr	_linesynch	#44a
+	br	L198
+L260:
+	#forarg 115d...
+	movqd	0,tos	#59a
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	#forarg 115d...
+	movd	_transnum,tos	#59b
+	#forarg 115i...
+	movd	_argnum,tos	#59b
+	addqd	1,_argnum	#83
+	bsr	_itoa	#44a
+	adjspb	-4
+	#forarg 115d...
+	movd	r0,tos	#59a
+	bsr	_declare	#44a
+	adjspb	-20
+	addqd	-1,__iob+20	#87c
+	cmpqd	0,__iob+20	#35
+	bgt	L9980
+	#intareg 114i...
+	movd	__iob+24,r0	#59b
+	addqd	1,__iob+24	#83
+	movb	59,0(r0)	#59a
+	#59 intareg(nasl) 114b...
+	movxbd	59,r0	#59a
+	br	L9979
+L9980:
+	#unary and,forarg 115a...
+	addr	__iob+20,tos	#setasg
+#68a
+	#forarg 115d...
+	addr	@@59,tos	#59a
+	bsr	__flsbuf	#44a
+	adjspb	-8
+L9979:
+	addqd	-1,__iob+20	#87c
+	cmpqd	0,__iob+20	#35
+	bgt	L9978
+	#intareg 114i...
+	movd	__iob+24,r0	#59b
+	addqd	1,__iob+24	#83
+	movb	10,0(r0)	#59a
+	#10 intareg(nasl) 114b...
+	movxbd	10,r0	#59a
+	br	L9977
+L9978:
+	#unary and,forarg 115a...
+	addr	__iob+20,tos	#setasg
+#68a
+	#forarg 115d...
+	addr	@@10,tos	#59a
+	bsr	__flsbuf	#44a
+	adjspb	-8
+L9977:
+	bsr	_linesynch	#44a
+	br	L198
+L261:
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_ref	#44a
+	adjspb	-12
+	br	L198
+L262:
+	#0 intareg(nasl) 114b...
+	movqd	0,r0	#59a
+	addd	r7,r0	#105t
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L263:
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_transname,tos	#setasg
+#68a
+	bsr	_strcpy	#44a
+	adjspb	-8
+	.data	1
+L264:
+	.ascii	"value\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L264,tos	#setasg
+#68a
+	bsr	_printf	#44a
+	adjspb	-4
+	#& _type intareg 114a...
+	addr	_type,r0	#setasg
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L265:
+	#r7 intareg(nasl) 114b...
+	movd	r7,r0	#59b
+	addd	-12,r0	#105r
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L266:
+	adjspb	8	#20
+movmd	-36(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_ref	#44a
+	adjspb	-12
+	br	L198
+L267:
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_ref	#44a
+	adjspb	-12
+	br	L198
+L268:
+	#0 intareg(nasl) 114b...
+	movqd	0,r0	#59a
+	addd	r7,r0	#105t
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L269:
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_transname,tos	#setasg
+#68a
+	bsr	_strcpy	#44a
+	adjspb	-8
+	.data	1
+L270:
+	.ascii	"value\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L270,tos	#setasg
+#68a
+	bsr	_printf	#44a
+	adjspb	-4
+	#& _type intareg 114a...
+	addr	_type,r0	#setasg
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L271:
+	#r7 intareg(nasl) 114b...
+	movd	r7,r0	#59b
+	addd	-12,r0	#105r
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L272:
+	adjspb	8	#20
+movmd	-36(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_ref	#44a
+	adjspb	-12
+	br	L198
+L273:
+	adjspb	8	#20
+movmd	-36(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_func	#44a
+	adjspb	-12
+	br	L198
+L274:
+	.data	1
+L275:
+	.ascii	"%s \0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L275,tos	#setasg
+#68a
+	bsr	_printf	#44a
+	adjspb	-8
+	br	L198
+L276:
+	movqw	0,_yyerrflag	#59a
+	br	L198
+L277:
+	movqw	0,_yyerrflag	#59a
+	br	L198
+L278:
+	#forarg 115d...
+	movqd	0,tos	#59a
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	#forarg 115d...
+	movqd	2,tos	#59a
+	#unary and,forarg 115a...
+	addr	_idname,tos	#setasg
+#68a
+	bsr	_declare	#44a
+	adjspb	-20
+	bsr	_linesynch	#44a
+	br	L198
+L279:
+	.data	1
+L280:
+	.ascii	"%s \0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L280,tos	#setasg
+#68a
+	bsr	_printf	#44a
+	adjspb	-8
+	br	L198
+L281:
+	#& _basic intareg 114a...
+	addr	_basic,r0	#setasg
+movmd	0(r0),_type,2	#20a
+	br	L198
+L282:
+	movqw	0,_yyerrflag	#59a
+	br	L198
+L283:
+	movqw	0,_yyerrflag	#59a
+	br	L198
+L284:
+	#forarg 115d...
+	movqd	0,tos	#59a
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	#forarg 115d...
+	movqd	0,tos	#59a
+	#unary and,forarg 115a...
+	addr	_idname,tos	#setasg
+#68a
+	bsr	_declare	#44a
+	adjspb	-20
+	bsr	_linesynch	#44a
+	#0 intareg(nasl) 114b...
+	movqd	0,r0	#59a
+	addd	r7,r0	#105t
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L285:
+	.data	1
+L286:
+	.ascii	"int \0"
+	.text
+	#unary and,forarg 115a...
+	addr	L286,tos	#setasg
+#68a
+	bsr	_printf	#44a
+	adjspb	-4
+	#& _basic intareg 114a...
+	addr	_basic,r0	#setasg
+movmd	0(r0),_type,2	#20a
+	br	L198
+L287:
+	.data	1
+L289:
+	.ascii	"%s \0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L289,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+	#0 intareg(nasl) 114b...
+	movqd	0,r0	#59a
+	addd	r7,r0	#105t
+movmd	0(r0),_type,2	#20a
+	br	L198
+L290:
+	.data	1
+L291:
+	.ascii	"%s \0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L291,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+	#& _basic intareg 114a...
+	addr	_basic,r0	#setasg
+movmd	0(r0),_type,2	#20a
+	br	L198
+L292:
+	.data	1
+L293:
+	.ascii	"int \0"
+	.text
+	#unary and,forarg 115a...
+	addr	L293,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-4
+	#& _basic intareg 114a...
+	addr	_basic,r0	#setasg
+movmd	0(r0),_type,2	#20a
+	br	L198
+L294:
+	.data	1
+L295:
+	.ascii	"CC_pid \0"
+	.text
+	#unary and,forarg 115a...
+	addr	L295,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-4
+	cmpqd	0,_proccontext	#35
+	beq	L296
+	#forarg 115d...
+	movqd	3,tos	#59a
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_type,tos	#setasg
+#68a
+	bsr	_half_declare_tag	#44a
+	adjspb	-12
+	br	L297
+L296:
+	#forarg 115d...
+	movqd	3,tos	#59a
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_type,tos	#setasg
+#68a
+	bsr	_lookup_tag	#44a
+	adjspb	-12
+L297:
+	br	L198
+L298:
+	#& _basic intareg 114a...
+	addr	_basic,r0	#setasg
+movmd	0(r0),_yyval,2	#20a
+	inssd	0(r7),_yyval+5,6,2	#62c
+	inssd	_context,_yyval+4,0,14	#62c
+	#forarg 115d...
+	movd	0(r7),tos	#59b
+	#forarg 115d...
+	movqd	0,tos	#59a
+	bsr	_declare_tag	#44a
+	adjspb	-8
+	movd	r0,_context	#59a
+	br	L198
+L299:
+	#r7 intareg(nasl) 114b...
+	movd	r7,r0	#59b
+	addd	-12,r0	#105r
+movmd	0(r0),_type,2	#20a
+	inssd	_context,_type+4,0,14	#62c
+	extsd	-8(r7),_context,0,14	#63
+	br	L198
+L300:
+	.data	1
+L301:
+	.ascii	"%s \0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L301,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_idname,tos	#setasg
+#68a
+	bsr	_strcpy	#44a
+	adjspb	-8
+	movd	-12(r7),_yyval	#59b
+	br	L198
+L302:
+	#& _basic intareg 114a...
+	addr	_basic,r0	#setasg
+movmd	0(r0),_yyval,2	#20a
+	inssd	0(r7),_yyval+5,6,2	#62c
+	inssd	_context,_yyval+4,0,14	#62c
+	#forarg 115d...
+	movd	0(r7),tos	#59b
+	#unary and,forarg 115a...
+	addr	_idname,tos	#setasg
+#68a
+	bsr	_declare_tag	#44a
+	adjspb	-8
+	movd	r0,_context	#59a
+	br	L198
+L303:
+	#r7 intareg(nasl) 114b...
+	movd	r7,r0	#59b
+	addd	-12,r0	#105r
+movmd	0(r0),_type,2	#20a
+	inssd	_context,_type+4,0,14	#62c
+	extsd	-8(r7),_context,0,14	#63
+	br	L198
+L304:
+	cmpqd	0,_context	#35
+	beq	L305
+	#forarg 115d...
+	movd	0(r7),tos	#59b
+	#unary and,forarg 115a...
+	addr	_idname,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_type,tos	#setasg
+#68a
+	bsr	_half_declare_tag	#44a
+	adjspb	-12
+	br	L306
+L305:
+	#forarg 115d...
+	movd	0(r7),tos	#59b
+	#unary and,forarg 115a...
+	addr	_idname,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_type,tos	#setasg
+#68a
+	bsr	_lookup_tag	#44a
+	adjspb	-12
+L306:
+	br	L198
+L307:
+	.data	1
+L308:
+	.ascii	"%s \0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L308,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+	movqd	1,_yyval	#59a
+	br	L198
+L309:
+	.data	1
+L310:
+	.ascii	"%s \0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L310,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+	movqd	2,_yyval	#59a
+	br	L198
+L311:
+	movqw	0,_yyerrflag	#59a
+	br	L198
+L312:
+	movqw	0,_yyerrflag	#59a
+	br	L198
+L313:
+	movqw	0,_yyerrflag	#59a
+	br	L198
+L314:
+	#forarg 115d...
+	movqd	0,tos	#59a
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	#forarg 115d...
+	movd	_context,tos	#59b
+	#unary and,forarg 115a...
+	addr	_idname,tos	#setasg
+#68a
+	bsr	_declare	#44a
+	adjspb	-20
+	br	L198
+L315:
+	.data	1
+L316:
+	.ascii	"%s \0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L316,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+	br	L198
+L317:
+	#& _basic intareg 114a...
+	addr	_basic,r0	#setasg
+movmd	0(r0),_type,2	#20a
+	br	L198
+L318:
+	.data	1
+L319:
+	.ascii	"%s \0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L319,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+	br	L198
+L320:
+	.data	1
+L321:
+	.ascii	"%s \0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L321,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+	br	L198
+L322:
+	.data	1
+L323:
+	.ascii	"%s \0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L323,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+	#forarg 115d...
+	movqd	0,tos	#59a
+	#forarg 115d...
+	movqd	0,tos	#59a
+	#forarg 115d...
+	movqd	0,tos	#59a
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	bsr	_declare	#44a
+	adjspb	-16
+	br	L198
+L324:
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_ref	#44a
+	adjspb	-12
+	br	L198
+L325:
+	#0 intareg(nasl) 114b...
+	movqd	0,r0	#59a
+	addd	r7,r0	#105t
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L326:
+	.data	1
+L327:
+	.ascii	"%s \0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L327,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_idname,tos	#setasg
+#68a
+	bsr	_strcpy	#44a
+	adjspb	-8
+	#& _type intareg 114a...
+	addr	_type,r0	#setasg
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L328:
+	#r7 intareg(nasl) 114b...
+	movd	r7,r0	#59b
+	addd	-12,r0	#105r
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L329:
+	adjspb	8	#20
+movmd	-36(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_ref	#44a
+	adjspb	-12
+	br	L198
+L330:
+	adjspb	8	#20
+movmd	-36(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_func	#44a
+	adjspb	-12
+	br	L198
+L331:
+	cmpqd	0,_blocknum	#35
+	beq	L333
+	movqd	1,_localsharedp	#59a
+L333:
+	.data	1
+L334:
+	.ascii	"typedef \0"
+	.text
+	#unary and,forarg 115a...
+	addr	L334,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-4
+	br	L198
+L335:
+	.data	1
+L336:
+	.ascii	" CC_shtypedef%d;\12CC_shtypedef%d \0"
+	.text
+	#forarg 115d...
+	movd	_shtypedefnum,tos	#59b
+	#forarg 115d...
+	movd	_shtypedefnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	L336,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-12
+	bsr	_linesynch	#44a
+	br	L198
+L337:
+#68a
+	addqd	1,_shtypedefnum	#83
+	br	L198
+L338:
+	movqw	0,_yyerrflag	#59a
+	br	L198
+L339:
+	movqw	0,_yyerrflag	#59a
+	br	L198
+L340:
+	movqd	0,_typetrap_i	#59a
+	movqd	0,_boxnum	#59a
+	br	L198
+L341:
+	cmpqb	0,_alias	#35
+	beq	L9976
+	#& _alias intareg 114a...
+	addr	_alias,r0	#setasg
+	br	L9975
+L9976:
+	#0 intareg(nasl) 114b...
+	movqd	0,r0	#59a
+L9975:
+	#forarg 115d...
+	movd	r0,tos	#59a
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	#forarg 115d...
+	movqd	0,tos	#59a
+	#unary and,forarg 115a...
+	addr	_idname,tos	#setasg
+#68a
+	bsr	_declare	#44a
+	adjspb	-20
+	#& _typetrap intareg 114a...
+	addr	_typetrap,r0	#setasg
+	addd	_typetrap_i,r0	#105r
+	movqb	0,0(r0)	#59a
+	#_boxnum intareg(nasl) 114b...
+	movd	_boxnum,r0	#59b
+	br	L343
+L344:
+	.data	1
+L346:
+	.ascii	"%s = (CC_shtypedef%d %s) \0"
+	.text
+	#unary and,forarg 115a...
+	addr	_typetrap,tos	#setasg
+#68a
+	#forarg 115d...
+	movd	_shtypedefnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	_idname,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L346,tos	#setasg
+#68a
+	#forarg 115d...
+	movd	_Fshared,tos	#59b
+	bsr	_fprintf	#44a
+	adjspb	-20
+	.data	1
+L347:
+	.ascii	"CC_shmalloc(sizeof(*%s));\12\0"
+	.text
+	#unary and,forarg 115a...
+	addr	_idname,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L347,tos	#setasg
+#68a
+	#forarg 115d...
+	movd	_Fshared,tos	#59b
+	bsr	_fprintf	#44a
+	adjspb	-12
+	br	L342
+L348:
+	.data	1
+L349:
+	.ascii	"%s = (CC_shtypedef%d %s) \0"
+	.text
+	#unary and,forarg 115a...
+	addr	_typetrap,tos	#setasg
+#68a
+	#forarg 115d...
+	movd	_shtypedefnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	_idname,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L349,tos	#setasg
+#68a
+	#forarg 115d...
+	movd	_Fshared,tos	#59b
+	bsr	_fprintf	#44a
+	adjspb	-20
+	.data	1
+L350:
+	.ascii	"CC_shmalloc((%s) * sizeof(*%s));\12\0"
+	.text
+	#unary and,forarg 115a...
+	addr	_idname,tos	#setasg
+#68a
+	#forarg 115d...
+	movd	_sizes+4,tos	#59b
+	#unary and,forarg 115a...
+	addr	L350,tos	#setasg
+#68a
+	#forarg 115d...
+	movd	_Fshared,tos	#59b
+	bsr	_fprintf	#44a
+	adjspb	-16
+	br	L342
+L351:
+	.data	1
+L352:
+	.ascii	"CC_n=(%s)\0"
+	.text
+	#forarg 115d...
+	movd	_sizes+4,tos	#59b
+	#unary and,forarg 115a...
+	addr	L352,tos	#setasg
+#68a
+	#forarg 115d...
+	movd	_Fshared,tos	#59b
+	bsr	_fprintf	#44a
+	adjspb	-12
+	#forarg 115d...
+	movd	_sizes+4,tos	#59b
+	bsr	_free	#44a
+	adjspb	-4
+	movqd	2,-312(fp)	#59a
+L356:
+	cmpd	-312(fp),_boxnum	#38
+	bge	L355
+	.data	1
+L357:
+	.ascii	"*(%s)\0"
+	.text
+	#& _sizes intareg 114a...
+	addr	_sizes,r0	#setasg
+	#-312(fp) intareg(nasl) 114b...
+	movd	-312(fp),r1	#59b
+	addr	@@0[r1:d],r1	#fast r1 <<= 2 #49b
+	addd	r1,r0	#105t
+	#forarg 115d...
+	movd	0(r0),tos	#59b
+	#unary and,forarg 115a...
+	addr	L357,tos	#setasg
+#68a
+	#forarg 115d...
+	movd	_Fshared,tos	#59b
+	bsr	_fprintf	#44a
+	adjspb	-12
+	#& _sizes intareg 114a...
+	addr	_sizes,r0	#setasg
+	#-312(fp) intareg(nasl) 114b...
+	movd	-312(fp),r1	#59b
+	addr	@@0[r1:d],r1	#fast r1 <<= 2 #49b
+	addd	r1,r0	#105t
+	#forarg 115d...
+	movd	0(r0),tos	#59b
+	bsr	_free	#44a
+	adjspb	-4
+L354:
+#68a
+	addqd	1,-312(fp)	#83
+	br	L356
+L355:
+	.data	1
+L358:
+	.ascii	";\12CC_ss = (%s) * sizeof(\0"
+	.text
+	#& _sizes intareg 114a...
+	addr	_sizes,r0	#setasg
+	#_boxnum intareg(nasl) 114b...
+	movd	_boxnum,r1	#59b
+	addr	@@0[r1:d],r1	#fast r1 <<= 2 #49b
+	addd	r1,r0	#105t
+	#forarg 115d...
+	movd	0(r0),tos	#59b
+	#unary and,forarg 115a...
+	addr	L358,tos	#setasg
+#68a
+	#forarg 115d...
+	movd	_Fshared,tos	#59b
+	bsr	_fprintf	#44a
+	adjspb	-12
+	#& _sizes intareg 114a...
+	addr	_sizes,r0	#setasg
+	#_boxnum intareg(nasl) 114b...
+	movd	_boxnum,r1	#59b
+	addr	@@0[r1:d],r1	#fast r1 <<= 2 #49b
+	addd	r1,r0	#105t
+	#forarg 115d...
+	movd	0(r0),tos	#59b
+	bsr	_free	#44a
+	adjspb	-4
+	movqd	1,-312(fp)	#59a
+L361:
+	cmpd	-312(fp),_boxnum	#38
+	bgt	L360
+	#forarg 115d...
+	movd	_Fshared,tos	#59b
+	#forarg 115d...
+	addr	@@42,tos	#59a
+	bsr	_fputc	#44a
+	adjspb	-8
+L359:
+#68a
+	addqd	1,-312(fp)	#83
+	br	L361
+L360:
+	.data	1
+L363:
+	.ascii	"%s);\12\0"
+	.text
+	#unary and,forarg 115a...
+	addr	_idname,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L363,tos	#setasg
+#68a
+	#forarg 115d...
+	movd	_Fshared,tos	#59b
+	bsr	_fprintf	#44a
+	adjspb	-12
+	.data	1
+L364:
+	.ascii	"CC_s = CC_shmalloc(CC_n * CC_ss);\12\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L364,tos	#setasg
+#68a
+	#forarg 115d...
+	movd	_Fshared,tos	#59b
+	bsr	_fprintf	#44a
+	adjspb	-8
+	.data	1
+L365:
+	.ascii	"for (CC_j=0;CC_j<CC_n;CC_j++,CC_s+=CC_ss)\12(\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L365,tos	#setasg
+#68a
+	#forarg 115d...
+	movd	_Fshared,tos	#59b
+	bsr	_fprintf	#44a
+	adjspb	-8
+	movqd	1,-312(fp)	#59a
+L368:
+	#-2 intareg(nasl) 114b...
+	movqd	-2,r0	#59a
+	addd	_boxnum,r0	#105r
+	cmpd	r0,-312(fp)	#38
+	blt	L367
+	#forarg 115d...
+	movd	_Fshared,tos	#59b
+	#forarg 115d...
+	addr	@@42,tos	#59a
+	bsr	_fputc	#44a
+	adjspb	-8
+L366:
+#68a
+	addqd	1,-312(fp)	#83
+	br	L368
+L367:
+	.data	1
+L369:
+	.ascii	"%s)[CC_j] = (CC_shtypedef%d %s) CC_s;\12\0"
+	.text
+	#unary and,forarg 115a...
+	addr	_typetrap,tos	#setasg
+#68a
+	#forarg 115d...
+	movd	_shtypedefnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	_idname,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L369,tos	#setasg
+#68a
+	#forarg 115d...
+	movd	_Fshared,tos	#59b
+	bsr	_fprintf	#44a
+	adjspb	-20
+	br	L342
+L343:
+	cmpqd 	0,r0
+	beq	L344
+	cmpqd 	1,r0
+	beq	L348
+	br	L351
+L342:
+	bsr	_linesynch	#44a
+	br	L198
+L370:
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_ref	#44a
+	adjspb	-12
+	br	L198
+L371:
+	#0 intareg(nasl) 114b...
+	movqd	0,r0	#59a
+	addd	r7,r0	#105t
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L372:
+	.data	1
+L373:
+	.ascii	"(*%s)\0"
+	.text
+	#unary and,forarg 115a...
+	addr	_idname,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L373,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_alias,tos	#setasg
+#68a
+	bsr	_sprintf	#44a
+	adjspb	-12
+	#unary and,forarg 115a...
+	addr	_alias,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-4
+	#& _typetrap intareg 114a...
+	addr	_typetrap,r0	#setasg
+	addd	_typetrap_i,r0	#105r
+	movb	42,0(r0)	#59a
+	addqd	1,_typetrap_i	#83
+	#& _type intareg 114a...
+	addr	_type,r0	#setasg
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L374:
+	#0 intareg(nasl) 114b...
+	movqd	0,r0	#59a
+	addd	r7,r0	#105t
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L375:
+	movqb	0,_alias	#59a
+	.data	1
+L376:
+	.ascii	"*%s\0"
+	.text
+	#unary and,forarg 115a...
+	addr	_idname,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L376,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+	#& _typetrap intareg 114a...
+	addr	_typetrap,r0	#setasg
+	addd	_typetrap_i,r0	#105r
+	movb	42,0(r0)	#59a
+	addqd	1,_typetrap_i	#83
+	br	L198
+L377:
+	movd	_boxnum,-312(fp)	#59b
+	#& _type intareg 114a...
+	addr	_type,r0	#setasg
+movmd	0(r0),_yyval,2	#20a
+L378:
+	#intareg 114j...
+	movd	-312(fp),r0	#59b
+	addqd	-1,-312(fp)	#87c
+	cmpqd	0,r0	#35
+	beq	L379
+	#& _yyval intareg 114a...
+	addr	_yyval,r0	#setasg
+	adjspb	8	#20
+movmd	0(r0),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_ref	#44a
+	adjspb	-12
+	br	L378
+L379:
+	br	L198
+L380:
+	#r7 intareg(nasl) 114b...
+	movd	r7,r0	#59b
+	addd	-12,r0	#105r
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L381:
+	#0 intareg(nasl) 114b...
+	movqd	0,r0	#59a
+	addd	r7,r0	#105t
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L382:
+	#0 intareg(nasl) 114b...
+	movqd	0,r0	#59a
+	addd	r7,r0	#105t
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L383:
+	adjspb	8	#20
+movmd	-24(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_func	#44a
+	adjspb	-12
+	br	L198
+L384:
+	addqd	-1,__iob+20	#87c
+	cmpqd	0,__iob+20	#35
+	bgt	L9974
+	#intareg 114i...
+	movd	__iob+24,r0	#59b
+	addqd	1,__iob+24	#83
+	movb	91,0(r0)	#59a
+	#91 intareg(nasl) 114b...
+	movxbd	91,r0	#59a
+	br	L9973
+L9974:
+	#unary and,forarg 115a...
+	addr	__iob+20,tos	#setasg
+#68a
+	#forarg 115d...
+	addr	@@91,tos	#59a
+	bsr	__flsbuf	#44a
+	adjspb	-8
+L9973:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movqb	0,0(r0)	#59a
+	#unary and,forarg 115a...
+	addr	_tbuf,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_ps,tos	#setasg
+#68a
+	bsr	_printf	#44a
+	adjspb	-8
+	movqd	0,_trapping	#59a
+	bsr	_linesynch	#44a
+	addqd	-1,__iob+20	#87c
+	cmpqd	0,__iob+20	#35
+	bgt	L9972
+	#intareg 114i...
+	movd	__iob+24,r0	#59b
+	addqd	1,__iob+24	#83
+	movb	93,0(r0)	#59a
+	#93 intareg(nasl) 114b...
+	movxbd	93,r0	#59a
+	br	L9971
+L9972:
+	#unary and,forarg 115a...
+	addr	__iob+20,tos	#setasg
+#68a
+	#forarg 115d...
+	addr	@@93,tos	#59a
+	bsr	__flsbuf	#44a
+	adjspb	-8
+L9971:
+	br	L198
+L385:
+	movqb	0,_tbuf	#59a
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movqb	0,0(r0)	#59a
+	#unary and,forarg 115a...
+	addr	_tbuf,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_ps,tos	#setasg
+#68a
+	bsr	_printf	#44a
+	adjspb	-8
+	movqd	0,_trapping	#59a
+	bsr	_linesynch	#44a
+	br	L198
+L386:
+	movqd	0,_tbuf_i	#59a
+	movqd	1,_trapping	#59a
+	bsr	_linesynch	#44a
+	br	L198
+L387:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movqb	0,0(r0)	#59a
+	#unary and,forarg 115a...
+	addr	_tbuf,tos	#setasg
+#68a
+	#forarg 115d...
+	#unary and,forarg 115a...
+	addr	_tbuf,tos	#setasg
+#68a
+	bsr	_strlen	#44a
+	adjspb	-4
+	addqd	1,r0	#82
+	movd	r0,tos	#59a
+	bsr	_malloc	#44a
+	adjspb	-4
+	#forarg 115d...
+	movd	r0,tos	#59a
+	bsr	_strcpy	#44a
+	adjspb	-8
+	#& _sizes intareg 114a...
+	addr	_sizes,r1	#setasg
+	addqd	1,_boxnum	#83
+	#_boxnum intareg(nasl) 114b...
+	movd	_boxnum,r2	#59b
+	addr	@@0[r2:d],r2	#fast r2 <<= 2 #49b
+	addd	r2,r1	#105t
+	movd	r0,0(r1)	#59a
+	br	L198
+L389:
+	addqd	-1,__iob+20	#87c
+	cmpqd	0,__iob+20	#35
+	bgt	L9970
+	#intareg 114i...
+	movd	__iob+24,r0	#59b
+	addqd	1,__iob+24	#83
+	movb	42,0(r0)	#59a
+	#42 intareg(nasl) 114b...
+	movxbd	42,r0	#59a
+	br	L9969
+L9970:
+	#unary and,forarg 115a...
+	addr	__iob+20,tos	#setasg
+#68a
+	#forarg 115d...
+	addr	@@42,tos	#59a
+	bsr	__flsbuf	#44a
+	adjspb	-8
+L9969:
+	#& _typetrap intareg 114a...
+	addr	_typetrap,r0	#setasg
+	addd	_typetrap_i,r0	#105r
+	movb	42,0(r0)	#59a
+	addqd	1,_typetrap_i	#83
+	br	L198
+L390:
+	addqd	-1,__iob+20	#87c
+	cmpqd	0,__iob+20	#35
+	bgt	L9968
+	#intareg 114i...
+	movd	__iob+24,r0	#59b
+	addqd	1,__iob+24	#83
+	movb	40,0(r0)	#59a
+	#40 intareg(nasl) 114b...
+	movxbd	40,r0	#59a
+	br	L9967
+L9968:
+	#unary and,forarg 115a...
+	addr	__iob+20,tos	#setasg
+#68a
+	#forarg 115d...
+	addr	@@40,tos	#59a
+	bsr	__flsbuf	#44a
+	adjspb	-8
+L9967:
+	#& _typetrap intareg 114a...
+	addr	_typetrap,r0	#setasg
+	addd	_typetrap_i,r0	#105r
+	movb	40,0(r0)	#59a
+	addqd	1,_typetrap_i	#83
+	br	L198
+L391:
+	addqd	-1,__iob+20	#87c
+	cmpqd	0,__iob+20	#35
+	bgt	L9966
+	#intareg 114i...
+	movd	__iob+24,r0	#59b
+	addqd	1,__iob+24	#83
+	movb	41,0(r0)	#59a
+	#41 intareg(nasl) 114b...
+	movxbd	41,r0	#59a
+	br	L9965
+L9966:
+	#unary and,forarg 115a...
+	addr	__iob+20,tos	#setasg
+#68a
+	#forarg 115d...
+	addr	@@41,tos	#59a
+	bsr	__flsbuf	#44a
+	adjspb	-8
+L9965:
+	#& _typetrap intareg 114a...
+	addr	_typetrap,r0	#setasg
+	addd	_typetrap_i,r0	#105r
+	movb	41,0(r0)	#59a
+	addqd	1,_typetrap_i	#83
+	br	L198
+L392:
+	.data	1
+L393:
+	.ascii	"%s \0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L393,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+	br	L198
+L394:
+	.data	1
+L395:
+	.ascii	"%s \0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L395,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+	movqw	0,_yyerrflag	#59a
+	br	L198
+L396:
+	.data	1
+L397:
+	.ascii	"%s \0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L397,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+	movqw	0,_yyerrflag	#59a
+	br	L198
+L398:
+	#0 intareg(nasl) 114b...
+	movqd	0,r0	#59a
+	addd	r7,r0	#105t
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L399:
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_ref	#44a
+	adjspb	-12
+	br	L198
+L400:
+	#0 intareg(nasl) 114b...
+	movqd	0,r0	#59a
+	addd	r7,r0	#105t
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L401:
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_ref	#44a
+	adjspb	-12
+	br	L198
+L402:
+	#0 intareg(nasl) 114b...
+	movqd	0,r0	#59a
+	addd	r7,r0	#105t
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L403:
+	#forarg 115d...
+	movd	_argnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	_argname,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+	#& _type intareg 114a...
+	addr	_type,r0	#setasg
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L404:
+	#0 intareg(nasl) 114b...
+	movqd	0,r0	#59a
+	addd	r7,r0	#105t
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L405:
+	adjspb	8	#20
+movmd	-36(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_ref	#44a
+	adjspb	-12
+	br	L198
+L406:
+	adjspb	8	#20
+movmd	-24(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_func	#44a
+	adjspb	-12
+	br	L198
+L407:
+	#0 intareg(nasl) 114b...
+	movqd	0,r0	#59a
+	addd	r7,r0	#105t
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L408:
+	#forarg 115d...
+	movd	_argnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	_argname,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+	addqd	-1,__iob+20	#87c
+	cmpqd	0,__iob+20	#35
+	bgt	L9964
+	#intareg 114i...
+	movd	__iob+24,r0	#59b
+	addqd	1,__iob+24	#83
+	movb	41,0(r0)	#59a
+	#41 intareg(nasl) 114b...
+	movxbd	41,r0	#59a
+	br	L9963
+L9964:
+	#unary and,forarg 115a...
+	addr	__iob+20,tos	#setasg
+#68a
+	#forarg 115d...
+	addr	@@41,tos	#59a
+	bsr	__flsbuf	#44a
+	adjspb	-8
+L9963:
+	addqd	-1,__iob+20	#87c
+	cmpqd	0,__iob+20	#35
+	bgt	L9962
+	#intareg 114i...
+	movd	__iob+24,r0	#59b
+	addqd	1,__iob+24	#83
+	movb	40,0(r0)	#59a
+	#40 intareg(nasl) 114b...
+	movxbd	40,r0	#59a
+	br	L9961
+L9962:
+	#unary and,forarg 115a...
+	addr	__iob+20,tos	#setasg
+#68a
+	#forarg 115d...
+	addr	@@40,tos	#59a
+	bsr	__flsbuf	#44a
+	adjspb	-8
+L9961:
+	addqd	-1,__iob+20	#87c
+	cmpqd	0,__iob+20	#35
+	bgt	L9960
+	#intareg 114i...
+	movd	__iob+24,r0	#59b
+	addqd	1,__iob+24	#83
+	movb	41,0(r0)	#59a
+	#41 intareg(nasl) 114b...
+	movxbd	41,r0	#59a
+	br	L9959
+L9960:
+	#unary and,forarg 115a...
+	addr	__iob+20,tos	#setasg
+#68a
+	#forarg 115d...
+	addr	@@41,tos	#59a
+	bsr	__flsbuf	#44a
+	adjspb	-8
+L9959:
+	#& _type intareg 114a...
+	addr	_type,r0	#setasg
+	adjspb	8	#20
+movmd	0(r0),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_func	#44a
+	adjspb	-12
+	br	L198
+L409:
+	#r7 intareg(nasl) 114b...
+	movd	r7,r0	#59b
+	addd	-12,r0	#105r
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L410:
+	cmpqd	0,_stattype	#35
+	bne	L411
+	.data	1
+L412:
+	.ascii	"statement illegal outside process body\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L412,tos	#setasg
+#68a
+	bsr	_yyerror	#44a
+	adjspb	-4
+L411:
+	br	L198
+L413:
+	cmpqd	2,_stattype	#35
+	beq	L414
+	.data	1
+L415:
+	.ascii	"statement illegal outside accept statement\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L415,tos	#setasg
+#68a
+	bsr	_yyerror	#44a
+	adjspb	-4
+L414:
+	br	L198
+L416:
+	bsr	_enterblock	#44a
+	br	L198
+L417:
+	bsr	_exitblock	#44a
+	br	L198
+L418:
+	bsr	_includeshared	#44a
+	br	L198
+L420:
+	movqw	0,_yyerrflag	#59a
+	br	L198
+L421:
+	.data	1
+L422:
+	.ascii	"goto CC_treturn%d;\12\0"
+	.text
+	#forarg 115d...
+	movd	_acceptnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	L422,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+	br	L198
+L423:
+	.data	1
+L424:
+	.ascii	"{\12((CC_%d%s *)CC_tblock%d)->value = \0"
+	.text
+	#forarg 115d...
+	movd	_acceptnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	_acceptname,tos	#setasg
+#68a
+	#forarg 115d...
+	movd	_procnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	L424,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-16
+	br	L198
+L425:
+	.data	1
+L426:
+	.ascii	";\12goto CC_treturn%d;\12}\12\0"
+	.text
+	#forarg 115d...
+	movd	_acceptnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	L426,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+	bsr	_linesynch	#44a
+	br	L198
+L427:
+	.data	1
+L428:
+	.ascii	"CC_delay((double)(\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L428,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-4
+	br	L198
+L429:
+	.data	1
+L430:
+	.ascii	"));\12\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L430,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-4
+	br	L198
+L431:
+	movqd	0,_casenum	#59a
+#68a
+	addqd	1,_selectnum	#83
+	.data	1
+L432:
+	.ascii	"{\12CC_selectinit();\12\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L432,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-4
+	.data	1
+L433:
+	.ascii	"goto CC_guard%d_1; CC_choose%d\72 switch(CC_choose()) {\0"
+	.text
+	#forarg 115d...
+	movd	_selectnum,tos	#59b
+	#forarg 115d...
+	movd	_selectnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	L433,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-12
+	bsr	_forcelinesynch	#44a
+	br	L198
+L434:
+	.data	1
+L435:
+	.ascii	"\12}\12goto CC_endselect%d;\12CC_guard%d_%d\72 \0"
+	.text
+	#forarg 115d...
+	#_casenum intareg(nasl) 114b...
+	movd	_casenum,r0	#59b
+	addqd	1,r0	#82
+	movd	r0,tos	#59a
+	#forarg 115d...
+	movd	_selectnum,tos	#59b
+	#forarg 115d...
+	movd	_selectnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	L435,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-16
+	.data	1
+L436:
+	.ascii	"goto CC_choose%d;\12CC_endselect%d\72;\12}\12\0"
+	.text
+	#forarg 115d...
+	movd	_selectnum,tos	#59b
+	#forarg 115d...
+	movd	_selectnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	L436,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-12
+	bsr	_forcelinesynch	#44a
+	br	L198
+L437:
+	.data	1
+L438:
+	.ascii	"CC_guard%d_%d \72\0"
+	.text
+	addqd	1,_casenum	#83
+	#forarg 115d...
+	movd	_casenum,tos	#59b
+	#forarg 115d...
+	movd	_selectnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	L438,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-12
+	bsr	_linesynch	#44a
+	br	L198
+L439:
+	.data	1
+L440:
+	.ascii	"break; \0"
+	.text
+	#unary and,forarg 115a...
+	addr	L440,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-4
+	bsr	_linesynch	#44a
+	br	L198
+L441:
+	.data	1
+L442:
+	.ascii	"if ((\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L442,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-4
+	br	L198
+L443:
+	.data	1
+L444:
+	.ascii	") && \0"
+	.text
+	#unary and,forarg 115a...
+	addr	L444,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-4
+	br	L198
+L445:
+	.data	1
+L446:
+	.ascii	"if (\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L446,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-4
+	br	L198
+L447:
+	.data	1
+L448:
+	.ascii	""
+	.ascii	"1) CC_terminate_exists=1; goto CC_guard%d_%d;\12\0"
+	.text
+	#forarg 115d...
+	#_casenum intareg(nasl) 114b...
+	movd	_casenum,r0	#59b
+	addqd	1,r0	#82
+	movd	r0,tos	#59a
+	#forarg 115d...
+	movd	_selectnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	L448,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-12
+	bsr	_forcelinesynch	#44a
+	br	L198
+L449:
+	.data	1
+L450:
+	.ascii	"!CC_ichoice) CC_ichoice=%d; goto CC_guard%d_%d;\12case %d\72\0"
+	.text
+	#forarg 115d...
+	movd	_casenum,tos	#59b
+	#forarg 115d...
+	#_casenum intareg(nasl) 114b...
+	movd	_casenum,r0	#59b
+	addqd	1,r0	#82
+	movd	r0,tos	#59a
+	#forarg 115d...
+	movd	_selectnum,tos	#59b
+	#forarg 115d...
+	movd	_casenum,tos	#59b
+	#unary and,forarg 115a...
+	addr	L450,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-20
+	bsr	_forcelinesynch	#44a
+	br	L198
+L451:
+	.data	1
+L452:
+	.ascii	"(CC_trydelay=(\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L452,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-4
+	br	L198
+L453:
+	.data	1
+L454:
+	.ascii	"))>=0)\12if (!CC_dchoice || CC_bestdelay>CC_trydelay) {\12\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L454,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-4
+	.data	1
+L455:
+	.ascii	"CC_dchoice=%d;\12CC_bestdelay=CC_trydelay;\12}\12\0"
+	.text
+	#forarg 115d...
+	movd	_casenum,tos	#59b
+	#unary and,forarg 115a...
+	addr	L455,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+	.data	1
+L456:
+	.ascii	"goto CC_guard%d_%d;\12case %d\72\0"
+	.text
+	#forarg 115d...
+	movd	_casenum,tos	#59b
+	#forarg 115d...
+	#_casenum intareg(nasl) 114b...
+	movd	_casenum,r0	#59b
+	addqd	1,r0	#82
+	movd	r0,tos	#59a
+	#forarg 115d...
+	movd	_selectnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	L456,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-16
+	bsr	_forcelinesynch	#44a
+	br	L198
+L457:
+	.data	1
+L458:
+	.ascii	"(CC_accept_exists=1,CC_tryaccept(CC_%d%s_id,%d)))\12\0"
+	.text
+	#forarg 115d...
+	movd	_casenum,tos	#59b
+	#unary and,forarg 115a...
+	addr	_acceptname,tos	#setasg
+#68a
+	#forarg 115d...
+	movd	_procnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	L458,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-16
+	.data	1
+L459:
+	.ascii	"goto CC_choose%d;\12\0"
+	.text
+	#forarg 115d...
+	movd	_selectnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	L459,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+	.data	1
+L460:
+	.ascii	"goto CC_guard%d_%d;\12case %d\72\0"
+	.text
+	#forarg 115d...
+	movd	_casenum,tos	#59b
+	#forarg 115d...
+	#_casenum intareg(nasl) 114b...
+	movd	_casenum,r0	#59b
+	addqd	1,r0	#82
+	movd	r0,tos	#59a
+	#forarg 115d...
+	movd	_selectnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	L460,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-16
+	movqd	1,_accept_in_select	#59a
+	bsr	_forcelinesynch	#44a
+	br	L198
+L461:
+	.data	1
+L462:
+	.ascii	"CC_guard%d_%d \72\0"
+	.text
+	addqd	1,_casenum	#83
+	#forarg 115d...
+	movd	_casenum,tos	#59b
+	#forarg 115d...
+	movd	_selectnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	L462,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-12
+	.data	1
+L463:
+	.ascii	"CC_ochoice=%d; goto CC_guard%d_%d;\12case %d\72\0"
+	.text
+	#forarg 115d...
+	movd	_casenum,tos	#59b
+	#forarg 115d...
+	#_casenum intareg(nasl) 114b...
+	movd	_casenum,r0	#59b
+	addqd	1,r0	#82
+	movd	r0,tos	#59a
+	#forarg 115d...
+	movd	_selectnum,tos	#59b
+	#forarg 115d...
+	movd	_casenum,tos	#59b
+	#unary and,forarg 115a...
+	addr	L463,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-20
+	bsr	_forcelinesynch	#44a
+	br	L198
+L464:
+	.data	1
+L465:
+	.ascii	"break; \0"
+	.text
+	#unary and,forarg 115a...
+	addr	L465,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-4
+	bsr	_forcelinesynch	#44a
+	br	L198
+L466:
+	.data	1
+L467:
+	.ascii	"c_abort(CC_mypid);\12\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L467,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-4
+	bsr	_linesynch	#44a
+	br	L198
+L468:
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_acceptname,tos	#setasg
+#68a
+	bsr	_strcpy	#44a
+	adjspb	-8
+	.data	1
+L469:
+	.ascii	"%s is not a transaction of this process\0"
+	.text
+	#unary and,forarg 115a...
+	addr	_acceptname,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L469,tos	#setasg
+#68a
+	#forarg 115d...
+	movd	_procnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	_acceptname,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	-316(fp),tos	#setasg
+#68a
+	bsr	_lookup_var	#44a
+	adjspb	-20
+	#& -316(fp) intareg 114a...
+	addr	-316(fp),r0	#setasg
+	adjspb	8	#20
+movmd	0(r0),0(sp),2	
+	bsr	_contextof	#44a
+	adjspb	-8
+	movd	r0,_transnum	#59a
+	movqd	0,_accept_in_select	#59a
+	br	L198
+L470:
+	bsr	_enterblock	#44a
+	movd	_acceptnum,_yyval	#59b
+	movd	_acceptnumgenerator,_acceptnum	#59b
+	addqd	1,_acceptnumgenerator	#83
+	.data	1
+L471:
+	.ascii	"{\12CC_tblock CC_tblock%d;\12\0"
+	.text
+	#forarg 115d...
+	movd	_acceptnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	L471,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+	movqd	0,_argnum	#59a
+	.data	1
+L472:
+	.ascii	""
+	.ascii	"0\0"
+	.text
+	adjspb	8
+	#& 0(sp) intareg 114a...
+	addr	0(sp),r0	#setasg
+	#intemp 116a...
+	movd	r0,-312(fp)	#59a
+	#forarg 115d...
+	movd	_transnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	L472,tos	#setasg
+#68a
+	#forarg 115d...
+	movd	-312(fp),tos	#59b
+	bsr	_internal_lookup	#44a
+	adjspb	-12
+	bsr	_contextof	#44a
+	adjspb	-8
+	movd	r0,_maxargnum	#59a
+	bsr	_linesynch	#44a
+	br	L198
+L473:
+	cmpd	_argnum,_maxargnum	#38
+	bge	L474
+	.data	1
+L475:
+	.ascii	"too few parameters in accept statement\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L475,tos	#setasg
+#68a
+	bsr	_yyerror	#44a
+	adjspb	-4
+L474:
+	movd	_stattype,_yyval	#59b
+	movqd	2,_stattype	#59a
+	bsr	_forcelinesynch	#44a
+	br	L198
+L476:
+	bsr	_exitblock	#44a
+	.data	1
+L477:
+	.ascii	"CC_treturn%d\72 CC_treturn();\12}\12\0"
+	.text
+	#forarg 115d...
+	movd	_acceptnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	L477,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+	movd	-72(r7),_acceptnum	#59b
+	movd	-24(r7),_stattype	#59b
+	bsr	_forcelinesynch	#44a
+	br	L198
+L478:
+	.data	1
+L480:
+	.ascii	"((CC_%d%s *)CC_tblock%d)->arg%d\0"
+	.text
+	addqd	1,_argnum	#83
+	#forarg 115d...
+	movd	_argnum,tos	#59b
+	#forarg 115d...
+	movd	_acceptnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	_acceptname,tos	#setasg
+#68a
+	#forarg 115d...
+	movd	_procnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	L480,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_alias,tos	#setasg
+#68a
+	bsr	_scapture_printf	#44a
+	adjspb	-24
+	cmpd	_argnum,_maxargnum	#38
+	bgt	L481
+	#unary and,forarg 115a...
+	addr	_alias,tos	#setasg
+#68a
+	adjspb	8
+	#& 0(sp) intareg 114a...
+	addr	0(sp),r0	#setasg
+	#intemp 116a...
+	movd	r0,-312(fp)	#59a
+	#forarg 115d...
+	movd	_transnum,tos	#59b
+	#forarg 115d...
+	movd	_argnum,tos	#59b
+	bsr	_itoa	#44a
+	adjspb	-4
+	#forarg 115d...
+	movd	r0,tos	#59a
+	#forarg 115d...
+	movd	-312(fp),tos	#59b
+	bsr	_internal_lookup	#44a
+	adjspb	-12
+	#forarg 115d...
+	movqd	0,tos	#59a
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	bsr	_declare	#44a
+	adjspb	-20
+	br	L482
+L481:
+	#1 intareg(nasl) 114b...
+	movqd	1,r0	#59a
+	addd	_maxargnum,r0	#105r
+	cmpd	r0,_argnum	#38
+	bne	L483
+	.data	1
+L484:
+	.ascii	"too many parameters in accept statement\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L484,tos	#setasg
+#68a
+	bsr	_yyerror	#44a
+	adjspb	-4
+L483:
+L482:
+	bsr	_linesynch	#44a
+	br	L198
+L485:
+	.data	1
+L486:
+	.ascii	"CC_accept(CC_%d%s_id,&CC_tblock%d,0,%d);\12\0"
+	.text
+	#forarg 115d...
+	movd	_accept_in_select,tos	#59b
+	#forarg 115d...
+	movd	_acceptnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	_acceptname,tos	#setasg
+#68a
+	#forarg 115d...
+	movd	_procnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	L486,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-20
+	bsr	_linesynch	#44a
+	br	L198
+L487:
+	.data	1
+L488:
+	.ascii	"CC_accept(CC_%d%s_id,&CC_tblock%d,1,%d);\12\0"
+	.text
+	#forarg 115d...
+	movd	_accept_in_select,tos	#59b
+	#forarg 115d...
+	movd	_acceptnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	_acceptname,tos	#setasg
+#68a
+	#forarg 115d...
+	movd	_procnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	L488,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-20
+	.data	1
+L489:
+	.ascii	"while(CC_acceptby((double)(\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L489,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-4
+	bsr	_linesynch	#44a
+	br	L198
+L490:
+	.data	1
+L491:
+	.ascii	")));\12\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L491,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-4
+	bsr	_linesynch	#44a
+	br	L198
+L492:
+	.data	1
+L493:
+	.ascii	"%s \0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L493,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+	br	L198
+L494:
+	.data	1
+L495:
+	.ascii	"%s \0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L495,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+	br	L198
+L496:
+	.data	1
+L497:
+	.ascii	"%s \0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L497,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+	br	L198
+L498:
+	.data	1
+L499:
+	.ascii	"%s \0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L499,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+	br	L198
+L500:
+	.data	1
+L501:
+	.ascii	"%s \0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L501,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+	br	L198
+L502:
+	.data	1
+L503:
+	.ascii	"%s \0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L503,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+	br	L198
+L504:
+	.data	1
+L505:
+	.ascii	"%s \0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L505,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+	br	L198
+L506:
+	.data	1
+L507:
+	.ascii	"%s \0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L507,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+	br	L198
+L508:
+	.data	1
+L509:
+	.ascii	"%s \0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L509,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+	br	L198
+L510:
+	.data	1
+L511:
+	.ascii	"%s \0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L511,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+	br	L198
+L512:
+	.data	1
+L513:
+	.ascii	"%s \0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L513,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+	br	L198
+L514:
+	.data	1
+L515:
+	.ascii	"%s \0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L515,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+	br	L198
+L516:
+	.data	1
+L517:
+	.ascii	"%s \0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L517,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+	br	L198
+L518:
+	cmpqd	0,_stattype	#35
+	bne	L519
+	.data	1
+L520:
+	.ascii	"%s \0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L520,tos	#setasg
+#68a
+	bsr	_capture_printf	#44a
+	adjspb	-8
+L519:
+	br	L198
+L521:
+	#_stattype intareg(nasl) 114b...
+	movd	_stattype,r0	#59b
+	br	L523
+L524:
+	addqd	-1,__iob+20	#87c
+	cmpqd	0,__iob+20	#35
+	bgt	L9958
+	#intareg 114i...
+	movd	__iob+24,r0	#59b
+	addqd	1,__iob+24	#83
+	movb	59,0(r0)	#59a
+	#59 intareg(nasl) 114b...
+	movxbd	59,r0	#59a
+	br	L9957
+L9958:
+	#unary and,forarg 115a...
+	addr	__iob+20,tos	#setasg
+#68a
+	#forarg 115d...
+	addr	@@59,tos	#59a
+	bsr	__flsbuf	#44a
+	adjspb	-8
+L9957:
+	addqd	-1,__iob+20	#87c
+	cmpqd	0,__iob+20	#35
+	bgt	L9956
+	#intareg 114i...
+	movd	__iob+24,r0	#59b
+	addqd	1,__iob+24	#83
+	movb	10,0(r0)	#59a
+	#10 intareg(nasl) 114b...
+	movxbd	10,r0	#59a
+	br	L9955
+L9956:
+	#unary and,forarg 115a...
+	addr	__iob+20,tos	#setasg
+#68a
+	#forarg 115d...
+	addr	@@10,tos	#59a
+	bsr	__flsbuf	#44a
+	adjspb	-8
+L9955:
+	br	L522
+L525:
+	.data	1
+L526:
+	.ascii	"return not allowed in accept statement body\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L526,tos	#setasg
+#68a
+	bsr	_yyerror	#44a
+	adjspb	-4
+	br	L522
+L527:
+	.data	1
+L529:
+	.ascii	"CC_complete();\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L529,tos	#setasg
+#68a
+	bsr	_puts	#44a
+	adjspb	-4
+	br	L522
+L523:
+	cmpqd 	0,r0
+	beq	L524
+	cmpqd 	1,r0
+	beq	L527
+	cmpqd 	2,r0
+	beq	L525
+L522:
+	bsr	_linesynch	#44a
+	br	L198
+L530:
+	cmpqd	0,_stattype	#35
+	beq	L531
+	.data	1
+L532:
+	.ascii	"illegally supplied return value in process body\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L532,tos	#setasg
+#68a
+	bsr	_yyerror	#44a
+	adjspb	-4
+	addqd	-1,__iob+20	#87c
+	cmpqd	0,__iob+20	#35
+	bgt	L9954
+	#intareg 114i...
+	movd	__iob+24,r0	#59b
+	addqd	1,__iob+24	#83
+	movb	59,0(r0)	#59a
+	#59 intareg(nasl) 114b...
+	movxbd	59,r0	#59a
+	br	L9953
+L9954:
+	#unary and,forarg 115a...
+	addr	__iob+20,tos	#setasg
+#68a
+	#forarg 115d...
+	addr	@@59,tos	#59a
+	bsr	__flsbuf	#44a
+	adjspb	-8
+L9953:
+	addqd	-1,__iob+20	#87c
+	cmpqd	0,__iob+20	#35
+	bgt	L9952
+	#intareg 114i...
+	movd	__iob+24,r0	#59b
+	addqd	1,__iob+24	#83
+	movb	10,0(r0)	#59a
+	#10 intareg(nasl) 114b...
+	movxbd	10,r0	#59a
+	br	L9951
+L9952:
+	#unary and,forarg 115a...
+	addr	__iob+20,tos	#setasg
+#68a
+	#forarg 115d...
+	addr	@@10,tos	#59a
+	bsr	__flsbuf	#44a
+	adjspb	-8
+L9951:
+L531:
+	br	L198
+L533:
+	#& _basic intareg 114a...
+	addr	_basic,r0	#setasg
+movmd	0(r0),_type,2	#20a
+	br	L198
+L534:
+	#& _basic intareg 114a...
+	addr	_basic,r0	#setasg
+movmd	0(r0),_type,2	#20a
+	br	L198
+L535:
+	movqw	0,_yyerrflag	#59a
+	br	L198
+L536:
+	movqd	0,_stattype	#59a
+	br	L198
+L537:
+	#0 intareg(nasl) 114b...
+	movqd	0,r0	#59a
+	addd	r7,r0	#105t
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L538:
+	#0 intareg(nasl) 114b...
+	movqd	0,r0	#59a
+	addd	r7,r0	#105t
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L539:
+	bsr	_enterblock	#44a
+	br	L198
+L540:
+	bsr	_exitblock	#44a
+	br	L198
+L541:
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_idname,tos	#setasg
+#68a
+	bsr	_strcpy	#44a
+	adjspb	-8
+	#& _yytext intareg 114a...
+	addr	_yytext,r0	#setasg
+	cmpd	r0,_cctext	#38
+	bne	L542
+	addr	_idname,_cctext	#setasg
+#68a
+L542:
+	br	L198
+L543:
+	addqd	-1,__iob+20	#87c
+	cmpqd	0,__iob+20	#35
+	bgt	L9950
+	#intareg 114i...
+	movd	__iob+24,r0	#59b
+	addqd	1,__iob+24	#83
+	movb	91,0(r0)	#59a
+	#91 intareg(nasl) 114b...
+	movxbd	91,r0	#59a
+	br	L9949
+L9950:
+	#unary and,forarg 115a...
+	addr	__iob+20,tos	#setasg
+#68a
+	#forarg 115d...
+	addr	@@91,tos	#59a
+	bsr	__flsbuf	#44a
+	adjspb	-8
+L9949:
+	br	L198
+L544:
+	addqd	-1,__iob+20	#87c
+	cmpqd	0,__iob+20	#35
+	bgt	L9948
+	#intareg 114i...
+	movd	__iob+24,r0	#59b
+	addqd	1,__iob+24	#83
+	movb	93,0(r0)	#59a
+	#93 intareg(nasl) 114b...
+	movxbd	93,r0	#59a
+	br	L9947
+L9948:
+	#unary and,forarg 115a...
+	addr	__iob+20,tos	#setasg
+#68a
+	#forarg 115d...
+	addr	@@93,tos	#59a
+	bsr	__flsbuf	#44a
+	adjspb	-8
+L9947:
+	br	L198
+L545:
+	addqd	-1,__iob+20	#87c
+	cmpqd	0,__iob+20	#35
+	bgt	L9946
+	#intareg 114i...
+	movd	__iob+24,r0	#59b
+	addqd	1,__iob+24	#83
+	movb	40,0(r0)	#59a
+	#40 intareg(nasl) 114b...
+	movxbd	40,r0	#59a
+	br	L9945
+L9946:
+	#unary and,forarg 115a...
+	addr	__iob+20,tos	#setasg
+#68a
+	#forarg 115d...
+	addr	@@40,tos	#59a
+	bsr	__flsbuf	#44a
+	adjspb	-8
+L9945:
+	br	L198
+L546:
+	addqd	-1,__iob+20	#87c
+	cmpqd	0,__iob+20	#35
+	bgt	L9944
+	#intareg 114i...
+	movd	__iob+24,r0	#59b
+	addqd	1,__iob+24	#83
+	movb	41,0(r0)	#59a
+	#41 intareg(nasl) 114b...
+	movxbd	41,r0	#59a
+	br	L9943
+L9944:
+	#unary and,forarg 115a...
+	addr	__iob+20,tos	#setasg
+#68a
+	#forarg 115d...
+	addr	@@41,tos	#59a
+	bsr	__flsbuf	#44a
+	adjspb	-8
+L9943:
+	br	L198
+L547:
+	addqd	-1,__iob+20	#87c
+	cmpqd	0,__iob+20	#35
+	bgt	L9942
+	#intareg 114i...
+	movd	__iob+24,r0	#59b
+	addqd	1,__iob+24	#83
+	movb	42,0(r0)	#59a
+	#42 intareg(nasl) 114b...
+	movxbd	42,r0	#59a
+	br	L9941
+L9942:
+	#unary and,forarg 115a...
+	addr	__iob+20,tos	#setasg
+#68a
+	#forarg 115d...
+	addr	@@42,tos	#59a
+	bsr	__flsbuf	#44a
+	adjspb	-8
+L9941:
+	br	L198
+L548:
+	addqd	-1,__iob+20	#87c
+	cmpqd	0,__iob+20	#35
+	bgt	L9940
+	#intareg 114i...
+	movd	__iob+24,r0	#59b
+	addqd	1,__iob+24	#83
+	movb	44,0(r0)	#59a
+	#44 intareg(nasl) 114b...
+	movxbd	44,r0	#59a
+	br	L9939
+L9940:
+	#unary and,forarg 115a...
+	addr	__iob+20,tos	#setasg
+#68a
+	#forarg 115d...
+	addr	@@44,tos	#59a
+	bsr	__flsbuf	#44a
+	adjspb	-8
+L9939:
+	br	L198
+L549:
+	addqd	-1,__iob+20	#87c
+	cmpqd	0,__iob+20	#35
+	bgt	L9938
+	#intareg 114i...
+	movd	__iob+24,r0	#59b
+	addqd	1,__iob+24	#83
+	movb	61,0(r0)	#59a
+	#61 intareg(nasl) 114b...
+	movxbd	61,r0	#59a
+	br	L9937
+L9938:
+	#unary and,forarg 115a...
+	addr	__iob+20,tos	#setasg
+#68a
+	#forarg 115d...
+	addr	@@61,tos	#59a
+	bsr	__flsbuf	#44a
+	adjspb	-8
+L9937:
+	br	L198
+L550:
+	addqd	-1,__iob+20	#87c
+	cmpqd	0,__iob+20	#35
+	bgt	L9936
+	#intareg 114i...
+	movd	__iob+24,r0	#59b
+	addqd	1,__iob+24	#83
+	movb	123,0(r0)	#59a
+	#123 intareg(nasl) 114b...
+	movxbd	123,r0	#59a
+	br	L9935
+L9936:
+	#unary and,forarg 115a...
+	addr	__iob+20,tos	#setasg
+#68a
+	#forarg 115d...
+	addr	@@123,tos	#59a
+	bsr	__flsbuf	#44a
+	adjspb	-8
+L9935:
+	br	L198
+L551:
+	addqd	-1,__iob+20	#87c
+	cmpqd	0,__iob+20	#35
+	bgt	L9934
+	#intareg 114i...
+	movd	__iob+24,r0	#59b
+	addqd	1,__iob+24	#83
+	movb	58,0(r0)	#59a
+	#58 intareg(nasl) 114b...
+	movxbd	58,r0	#59a
+	br	L9933
+L9934:
+	#unary and,forarg 115a...
+	addr	__iob+20,tos	#setasg
+#68a
+	#forarg 115d...
+	addr	@@58,tos	#59a
+	bsr	__flsbuf	#44a
+	adjspb	-8
+L9933:
+	br	L198
+L552:
+	addqd	-1,__iob+20	#87c
+	cmpqd	0,__iob+20	#35
+	bgt	L9932
+	#intareg 114i...
+	movd	__iob+24,r0	#59b
+	addqd	1,__iob+24	#83
+	movb	125,0(r0)	#59a
+	#125 intareg(nasl) 114b...
+	movxbd	125,r0	#59a
+	br	L9931
+L9932:
+	#unary and,forarg 115a...
+	addr	__iob+20,tos	#setasg
+#68a
+	#forarg 115d...
+	addr	@@125,tos	#59a
+	bsr	__flsbuf	#44a
+	adjspb	-8
+L9931:
+	br	L198
+L553:
+	addqd	-1,__iob+20	#87c
+	cmpqd	0,__iob+20	#35
+	bgt	L9930
+	#intareg 114i...
+	movd	__iob+24,r0	#59b
+	addqd	1,__iob+24	#83
+	movb	59,0(r0)	#59a
+	#59 intareg(nasl) 114b...
+	movxbd	59,r0	#59a
+	br	L9929
+L9930:
+	#unary and,forarg 115a...
+	addr	__iob+20,tos	#setasg
+#68a
+	#forarg 115d...
+	addr	@@59,tos	#59a
+	bsr	__flsbuf	#44a
+	adjspb	-8
+L9929:
+	br	L198
+L554:
+	movqd	0,_tbuf_i	#59a
+	movqd	1,_trapping	#59a
+	bsr	_linesynch	#44a
+	br	L198
+L555:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movqb	0,0(r0)	#59a
+	#unary and,forarg 115a...
+	addr	_tbuf,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_ps,tos	#setasg
+#68a
+	bsr	_printf	#44a
+	adjspb	-8
+	movqd	0,_trapping	#59a
+	bsr	_linesynch	#44a
+	br	L198
+L556:
+	movqd	0,_tbuf_i	#59a
+	movqd	1,_trapping	#59a
+	bsr	_linesynch	#44a
+	br	L198
+L557:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movqb	0,0(r0)	#59a
+	#unary and,forarg 115a...
+	addr	_tbuf,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_ps,tos	#setasg
+#68a
+	bsr	_printf	#44a
+	adjspb	-8
+	movqd	0,_trapping	#59a
+	bsr	_linesynch	#44a
+	br	L198
+L558:
+	movqd	0,_tbuf_i	#59a
+	movqd	1,_trapping	#59a
+	bsr	_linesynch	#44a
+	br	L198
+L559:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movqb	0,0(r0)	#59a
+	#unary and,forarg 115a...
+	addr	_tbuf,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_ps,tos	#setasg
+#68a
+	bsr	_printf	#44a
+	adjspb	-8
+	movqd	0,_trapping	#59a
+	bsr	_linesynch	#44a
+	br	L198
+L560:
+	#forarg 115d...
+	movqd	3,tos	#59a
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_lookup_tag	#44a
+	adjspb	-12
+	.data	1
+L561:
+	.ascii	"CC_%s\0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L561,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_ntf,tos	#setasg
+#68a
+	bsr	_sprintf	#44a
+	adjspb	-12
+	addr	_ntf,_trap_t	#setasg
+#68a
+L562:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L563
+	br	L562
+L563:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	#-1 intareg(nasl) 114b...
+	movqd	-1,r1	#59a
+	addd	_tbuf_i,r1	#105r
+	addd	r1,r0	#105t
+	movb	32,0(r0)	#59a
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	40,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	br	L198
+L564:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	41,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	#r7 intareg(nasl) 114b...
+	movd	r7,r0	#59b
+	addd	-48,r0	#105r
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L565:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	48,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	br	L198
+L566:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	40,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	br	L198
+L567:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	41,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	br	L198
+L568:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	44,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	br	L198
+L569:
+	#0 intareg(nasl) 114b...
+	movqd	0,r0	#59a
+	addd	r7,r0	#105t
+movmd	0(r0),_yyval,3	#20a
+	br	L198
+L570:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	46,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	.data	1
+L571:
+	.ascii	"%s \0"
+	.text
+	#unary and,forarg 115a...
+	addr	_dotname,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L571,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_ntf,tos	#setasg
+#68a
+	bsr	_sprintf	#44a
+	adjspb	-12
+	addr	_ntf,_trap_t	#setasg
+#68a
+L572:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L573
+	br	L572
+L573:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	#-1 intareg(nasl) 114b...
+	movqd	-1,r1	#59a
+	addd	_tbuf_i,r1	#105r
+	addd	r1,r0	#105t
+	movb	32,0(r0)	#59a
+	movw	0(r7),_yyval	#59b
+	movw	_tbuf_i,_yyval+2	#59b
+	#4 intareg(nasl) 114b...
+	movqd	4,r0	#59a
+	addd	r7,r0	#105t
+movmd	0(r0),_yyval+4,2	#20a
+	br	L198
+L574:
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_dotname,tos	#setasg
+#68a
+	bsr	_strcpy	#44a
+	adjspb	-8
+	adjspb	8	#20
+movmd	-20(r7),0(sp),2	
+	bsr	_contextof	#44a
+	adjspb	-8
+	movd	r0,_callprocnum	#59a
+	.data	1
+L575:
+	.ascii	"nonexistent field or transaction %s\0"
+	.text
+	#unary and,forarg 115a...
+	addr	_dotname,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L575,tos	#setasg
+#68a
+	#forarg 115d...
+	movd	_callprocnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	_dotname,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_yyval+4,tos	#setasg
+#68a
+	bsr	_lookup_var	#44a
+	adjspb	-20
+	movw	-24(r7),_yyval	#59b
+	movw	-22(r7),_yyval+2	#59b
+	br	L198
+L576:
+	movw	_tbuf_i,_yyval	#59b
+	#forarg 115d...
+	movd	_cctext,tos	#59b
+	#unary and,forarg 115a...
+	addr	_ntf,tos	#setasg
+#68a
+	bsr	_sprintf	#44a
+	adjspb	-8
+	addr	_ntf,_trap_t	#setasg
+#68a
+L577:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L578
+	br	L577
+L578:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	#-1 intareg(nasl) 114b...
+	movqd	-1,r1	#59a
+	addd	_tbuf_i,r1	#105r
+	addd	r1,r0	#105t
+	movb	32,0(r0)	#59a
+	movw	_tbuf_i,_yyval+2	#59b
+	#unary and,forarg 115a...
+	addr	_idname,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_yyval+4,tos	#setasg
+#68a
+	bsr	_lookup_last	#44a
+	adjspb	-8
+	br	L198
+L579:
+	#0 intareg(nasl) 114b...
+	movqd	0,r0	#59a
+	addd	r7,r0	#105t
+movmd	0(r0),_yyval,3	#20a
+	br	L198
+L580:
+	movw	_tbuf_i,_yyval	#59b
+	addr	_yytext,_trap_t	#setasg
+#68a
+L581:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L582
+	br	L581
+L582:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addqd	-1,_tbuf_i	#87c
+	addd	_tbuf_i,r0	#105r
+	movqb	0,0(r0)	#59a
+	movw	_tbuf_i,_yyval+2	#59b
+	#& _basic intareg 114a...
+	addr	_basic,r0	#setasg
+movmd	0(r0),_yyval+4,2	#20a
+	br	L198
+L583:
+	movw	_tbuf_i,_yyval	#59b
+	addr	_yytext,_trap_t	#setasg
+#68a
+L584:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L585
+	br	L584
+L585:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addqd	-1,_tbuf_i	#87c
+	addd	_tbuf_i,r0	#105r
+	movqb	0,0(r0)	#59a
+	movw	_tbuf_i,_yyval+2	#59b
+	#& _basic intareg 114a...
+	addr	_basic,r0	#setasg
+	adjspb	8	#20
+movmd	0(r0),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval+4,tos	#setasg
+#68a
+	bsr	_ref	#44a
+	adjspb	-12
+	br	L198
+L586:
+	movw	_tbuf_i,_yyval	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	40,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	br	L198
+L587:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	41,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	movw	_tbuf_i,_yyval+2	#59b
+	#r7 intareg(nasl) 114b...
+	movd	r7,r0	#59b
+	addd	-12,r0	#105r
+movmd	0(r0),_yyval+4,2	#20a
+	br	L198
+L588:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	91,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	br	L198
+L589:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	93,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	movw	-48(r7),_yyval	#59b
+	movw	_tbuf_i,_yyval+2	#59b
+	adjspb	8	#20
+movmd	-12(r7),0(sp),2	
+	adjspb	8	#20
+movmd	-44(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval+4,tos	#setasg
+#68a
+	bsr	_array	#44a
+	adjspb	-20
+	br	L198
+L590:
+	.data	1
+L591:
+	.ascii	"->%s\0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L591,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_ntf,tos	#setasg
+#68a
+	bsr	_sprintf	#44a
+	adjspb	-12
+	addr	_ntf,_trap_t	#setasg
+#68a
+L592:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L593
+	br	L592
+L593:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	#-1 intareg(nasl) 114b...
+	movqd	-1,r1	#59a
+	addd	_tbuf_i,r1	#105r
+	addd	r1,r0	#105t
+	movb	32,0(r0)	#59a
+	.data	1
+L594:
+	.ascii	"nonexistent field or transaction %s\0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L594,tos	#setasg
+#68a
+	adjspb	8
+	#& 0(sp) intareg 114a...
+	addr	0(sp),r0	#setasg
+	#intemp 116a...
+	movd	r0,-312(fp)	#59a
+	adjspb	8	#20
+movmd	-20(r7),0(sp),2	
+	#forarg 115d...
+	movd	-312(fp),tos	#59b
+	bsr	_deref	#44a
+	adjspb	-12
+	bsr	_contextof	#44a
+	adjspb	-8
+	#forarg 115d...
+	movd	r0,tos	#59a
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_yyval+4,tos	#setasg
+#68a
+	bsr	_lookup_var	#44a
+	adjspb	-20
+	movw	-24(r7),_yyval	#59b
+	movw	_tbuf_i,_yyval+2	#59b
+	br	L198
+L595:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	40,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	br	L198
+L596:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	41,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	movw	-48(r7),_yyval	#59b
+	movw	_tbuf_i,_yyval+2	#59b
+	adjspb	8	#20
+movmd	-44(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval+4,tos	#setasg
+#68a
+	bsr	_defunc	#44a
+	adjspb	-12
+	br	L198
+L597:
+	#unary and,forarg 115a...
+	addr	_idname,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_yyval+4,tos	#setasg
+#68a
+	bsr	_half_declare_func	#44a
+	adjspb	-8
+	movw	_tbuf_i,_yyval	#59b
+	#forarg 115d...
+	movd	_cctext,tos	#59b
+	#unary and,forarg 115a...
+	addr	_ntf,tos	#setasg
+#68a
+	bsr	_sprintf	#44a
+	adjspb	-8
+	addr	_ntf,_trap_t	#setasg
+#68a
+L598:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L599
+	br	L598
+L599:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	#-1 intareg(nasl) 114b...
+	movqd	-1,r1	#59a
+	addd	_tbuf_i,r1	#105r
+	addd	r1,r0	#105t
+	movb	32,0(r0)	#59a
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	40,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	br	L198
+L600:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	41,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	movw	-36(r7),_yyval	#59b
+	movw	_tbuf_i,_yyval+2	#59b
+	adjspb	8	#20
+movmd	-32(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval+4,tos	#setasg
+#68a
+	bsr	_defunc	#44a
+	adjspb	-12
+	br	L198
+L601:
+	movd	_tbuf_i,_yyval	#59b
+	.data	1
+L602:
+	.ascii	"c_count(\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L602,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_ntf,tos	#setasg
+#68a
+	bsr	_sprintf	#44a
+	adjspb	-8
+	addr	_ntf,_trap_t	#setasg
+#68a
+L603:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L604
+	br	L603
+L604:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	#-1 intareg(nasl) 114b...
+	movqd	-1,r1	#59a
+	addd	_tbuf_i,r1	#105r
+	addd	r1,r0	#105t
+	movb	32,0(r0)	#59a
+	br	L198
+L605:
+	adjspb	8	#20
+movmd	-24(r7),0(sp),2	
+	bsr	_contextof	#44a
+	adjspb	-8
+	movd	r0,_yyval	#59a
+	.data	1
+L606:
+	.ascii	"CC_%d%s_id)\0"
+	.text
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#forarg 115d...
+	movd	_yyval,tos	#59b
+	#unary and,forarg 115a...
+	addr	L606,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_ntf,tos	#setasg
+#68a
+	bsr	_sprintf	#44a
+	adjspb	-16
+	addr	_ntf,_trap_t	#setasg
+#68a
+L607:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L608
+	br	L607
+L608:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	#-1 intareg(nasl) 114b...
+	movqd	-1,r1	#59a
+	addd	_tbuf_i,r1	#105r
+	addd	r1,r0	#105t
+	movb	32,0(r0)	#59a
+	.data	1
+L609:
+	.ascii	"nonexistent transaction %s\0"
+	.text
+	adjspb	8
+	#& 0(sp) intareg 114a...
+	addr	0(sp),r0	#setasg
+	#intemp 116a...
+	movd	r0,-312(fp)	#59a
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	L609,tos	#setasg
+#68a
+	#forarg 115d...
+	movd	_yyval,tos	#59b
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#forarg 115d...
+	movd	-312(fp),tos	#59b
+	bsr	_lookup_var	#44a
+	adjspb	-28
+	br	L198
+L610:
+	movw	-60(r7),_yyval	#59b
+	movw	_tbuf_i,_yyval+2	#59b
+	#& _basic intareg 114a...
+	addr	_basic,r0	#setasg
+movmd	0(r0),_yyval+4,2	#20a
+	br	L198
+L611:
+	#0 intareg(nasl) 114b...
+	movqd	0,r0	#59a
+	addd	r7,r0	#105t
+movmd	0(r0),_yyval,3	#20a
+	br	L198
+L612:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	44,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	br	L198
+L613:
+	#4 intareg(nasl) 114b...
+	movqd	4,r0	#59a
+	addd	r7,r0	#105t
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L614:
+	addr	_yytext,_trap_t	#setasg
+#68a
+L615:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L616
+	br	L615
+L616:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addqd	-1,_tbuf_i	#87c
+	addd	_tbuf_i,r0	#105r
+	movqb	0,0(r0)	#59a
+	adjspb	8	#20
+movmd	-8(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_inc	#44a
+	adjspb	-12
+	br	L198
+L617:
+	#0 intareg(nasl) 114b...
+	movqd	0,r0	#59a
+	addd	r7,r0	#105t
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L618:
+	addr	_yytext,_trap_t	#setasg
+#68a
+L619:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L620
+	br	L619
+L620:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addqd	-1,_tbuf_i	#87c
+	addd	_tbuf_i,r0	#105r
+	movqb	0,0(r0)	#59a
+	br	L198
+L621:
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_inc	#44a
+	adjspb	-12
+	br	L198
+L622:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	42,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	br	L198
+L623:
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_deref	#44a
+	adjspb	-12
+	br	L198
+L624:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	38,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	br	L198
+L625:
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_addr	#44a
+	adjspb	-12
+	br	L198
+L626:
+	addr	_yytext,_trap_t	#setasg
+#68a
+L627:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L628
+	br	L627
+L628:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addqd	-1,_tbuf_i	#87c
+	addd	_tbuf_i,r0	#105r
+	movqb	0,0(r0)	#59a
+	br	L198
+L629:
+	#& _basic intareg 114a...
+	addr	_basic,r0	#setasg
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L630:
+	addr	_yytext,_trap_t	#setasg
+#68a
+L631:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L632
+	br	L631
+L632:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addqd	-1,_tbuf_i	#87c
+	addd	_tbuf_i,r0	#105r
+	movqb	0,0(r0)	#59a
+	br	L198
+L633:
+	#& _basic intareg 114a...
+	addr	_basic,r0	#setasg
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L634:
+	#0 intareg(nasl) 114b...
+	movqd	0,r0	#59a
+	addd	r7,r0	#105t
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L635:
+	movd	_argnum,_yyval	#59b
+	movqd	0,_argnum	#59a
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	40,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	br	L198
+L636:
+	movd	-24(r7),_argnum	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	41,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	br	L198
+L637:
+	#0 intareg(nasl) 114b...
+	movqd	0,r0	#59a
+	addd	r7,r0	#105t
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L638:
+	movd	_argnum,_yyval	#59b
+	movqd	0,_argnum	#59a
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	40,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	br	L198
+L639:
+	movd	-24(r7),_argnum	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	41,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	br	L198
+L640:
+	#r7 intareg(nasl) 114b...
+	movd	r7,r0	#59b
+	addd	-36,r0	#105r
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L641:
+	#0 intareg(nasl) 114b...
+	movqd	0,r0	#59a
+	addd	r7,r0	#105t
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L642:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	43,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	br	L198
+L643:
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	adjspb	8	#20
+movmd	-36(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_add	#44a
+	adjspb	-20
+	br	L198
+L644:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	45,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	br	L198
+L645:
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	adjspb	8	#20
+movmd	-36(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_subtract	#44a
+	adjspb	-20
+	br	L198
+L646:
+	addr	_yytext,_trap_t	#setasg
+#68a
+L647:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L648
+	br	L647
+L648:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addqd	-1,_tbuf_i	#87c
+	addd	_tbuf_i,r0	#105r
+	movqb	0,0(r0)	#59a
+	br	L198
+L649:
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	adjspb	8	#20
+movmd	-36(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_arith	#44a
+	adjspb	-20
+	br	L198
+L650:
+	addr	_yytext,_trap_t	#setasg
+#68a
+L651:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L652
+	br	L651
+L652:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addqd	-1,_tbuf_i	#87c
+	addd	_tbuf_i,r0	#105r
+	movqb	0,0(r0)	#59a
+	br	L198
+L653:
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	adjspb	8	#20
+movmd	-36(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_arith	#44a
+	adjspb	-20
+	br	L198
+L654:
+	addr	_yytext,_trap_t	#setasg
+#68a
+L655:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L656
+	br	L655
+L656:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addqd	-1,_tbuf_i	#87c
+	addd	_tbuf_i,r0	#105r
+	movqb	0,0(r0)	#59a
+	br	L198
+L657:
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	adjspb	8	#20
+movmd	-36(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_arith	#44a
+	adjspb	-20
+	br	L198
+L658:
+	addr	_yytext,_trap_t	#setasg
+#68a
+L659:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L660
+	br	L659
+L660:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addqd	-1,_tbuf_i	#87c
+	addd	_tbuf_i,r0	#105r
+	movqb	0,0(r0)	#59a
+	br	L198
+L661:
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	adjspb	8	#20
+movmd	-36(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_arith	#44a
+	adjspb	-20
+	br	L198
+L662:
+	addr	_yytext,_trap_t	#setasg
+#68a
+L663:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L664
+	br	L663
+L664:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addqd	-1,_tbuf_i	#87c
+	addd	_tbuf_i,r0	#105r
+	movqb	0,0(r0)	#59a
+	br	L198
+L665:
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	adjspb	8	#20
+movmd	-36(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_arith	#44a
+	adjspb	-20
+	br	L198
+L666:
+	addr	_yytext,_trap_t	#setasg
+#68a
+L667:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L668
+	br	L667
+L668:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addqd	-1,_tbuf_i	#87c
+	addd	_tbuf_i,r0	#105r
+	movqb	0,0(r0)	#59a
+	br	L198
+L669:
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	adjspb	8	#20
+movmd	-36(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_arith	#44a
+	adjspb	-20
+	br	L198
+L670:
+	addr	_yytext,_trap_t	#setasg
+#68a
+L671:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L672
+	br	L671
+L672:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addqd	-1,_tbuf_i	#87c
+	addd	_tbuf_i,r0	#105r
+	movqb	0,0(r0)	#59a
+	br	L198
+L673:
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	adjspb	8	#20
+movmd	-36(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_arith	#44a
+	adjspb	-20
+	br	L198
+L674:
+	addr	_yytext,_trap_t	#setasg
+#68a
+L675:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L676
+	br	L675
+L676:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addqd	-1,_tbuf_i	#87c
+	addd	_tbuf_i,r0	#105r
+	movqb	0,0(r0)	#59a
+	br	L198
+L677:
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	adjspb	8	#20
+movmd	-36(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_arith	#44a
+	adjspb	-20
+	br	L198
+L678:
+	addr	_yytext,_trap_t	#setasg
+#68a
+L679:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L680
+	br	L679
+L680:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addqd	-1,_tbuf_i	#87c
+	addd	_tbuf_i,r0	#105r
+	movqb	0,0(r0)	#59a
+	br	L198
+L681:
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	adjspb	8	#20
+movmd	-36(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_arith	#44a
+	adjspb	-20
+	br	L198
+L682:
+	addr	_yytext,_trap_t	#setasg
+#68a
+L683:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L684
+	br	L683
+L684:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addqd	-1,_tbuf_i	#87c
+	addd	_tbuf_i,r0	#105r
+	movqb	0,0(r0)	#59a
+	br	L198
+L685:
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	adjspb	8	#20
+movmd	-36(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_compare	#44a
+	adjspb	-20
+	br	L198
+L686:
+	addr	_yytext,_trap_t	#setasg
+#68a
+L687:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L688
+	br	L687
+L688:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addqd	-1,_tbuf_i	#87c
+	addd	_tbuf_i,r0	#105r
+	movqb	0,0(r0)	#59a
+	br	L198
+L689:
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	adjspb	8	#20
+movmd	-36(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_compare	#44a
+	adjspb	-20
+	br	L198
+L690:
+	#0 intareg(nasl) 114b...
+	movqd	0,r0	#59a
+	addd	r7,r0	#105t
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L691:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	63,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	br	L198
+L692:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	58,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	br	L198
+L693:
+	.data	1
+L694:
+	.ascii	"type clash in conditional statement\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L694,tos	#setasg
+#68a
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	adjspb	8	#20
+movmd	-36(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_condition	#44a
+	adjspb	-24
+	br	L198
+L695:
+	#0 intareg(nasl) 114b...
+	movqd	0,r0	#59a
+	addd	r7,r0	#105t
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L696:
+	cmpd	_argnum,_maxargnum	#38
+	bge	L697
+	.data	1
+L698:
+	.ascii	"too few parameters in transaction call\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L698,tos	#setasg
+#68a
+	bsr	_yyerror	#44a
+	adjspb	-4
+L697:
+	.data	1
+L699:
+	.ascii	"CC_tcall(),\12\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L699,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_ntf,tos	#setasg
+#68a
+	bsr	_sprintf	#44a
+	adjspb	-8
+	addr	_ntf,_trap_t	#setasg
+#68a
+L700:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L701
+	br	L700
+L701:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	#-1 intareg(nasl) 114b...
+	movqd	-1,r1	#59a
+	addd	_tbuf_i,r1	#105r
+	addd	r1,r0	#105t
+	movb	32,0(r0)	#59a
+	.data	1
+L702:
+	.ascii	"((CC_%d%s *)CC_mytblock)->value)\0"
+	.text
+	#unary and,forarg 115a...
+	addr	_transname,tos	#setasg
+#68a
+	#forarg 115d...
+	movd	_callprocnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	L702,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_ntf,tos	#setasg
+#68a
+	bsr	_sprintf	#44a
+	adjspb	-16
+	addr	_ntf,_trap_t	#setasg
+#68a
+L703:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L704
+	br	L703
+L704:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	#-1 intareg(nasl) 114b...
+	movqd	-1,r1	#59a
+	addd	_tbuf_i,r1	#105r
+	addd	r1,r0	#105t
+	movb	32,0(r0)	#59a
+	movw	0(r7),_yyval	#59b
+	movw	_tbuf_i,_yyval+2	#59b
+	.data	1
+L705:
+	.ascii	"=\0"
+	.text
+	#forarg 115d...
+	movd	_transnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	L705,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_yyval+4,tos	#setasg
+#68a
+	bsr	_internal_lookup	#44a
+	adjspb	-12
+	br	L198
+L706:
+	#unary and,forarg 115a...
+	addr	_dotname,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_transname,tos	#setasg
+#68a
+	bsr	_strcpy	#44a
+	adjspb	-8
+	adjspb	8	#20
+movmd	4(r7),0(sp),2	
+	bsr	_contextof	#44a
+	adjspb	-8
+	movd	r0,_transnum	#59a
+	movqd	0,_argnum	#59a
+	.data	1
+L707:
+	.ascii	""
+	.ascii	"0\0"
+	.text
+	adjspb	8
+	#& 0(sp) intareg 114a...
+	addr	0(sp),r0	#setasg
+	#intemp 116a...
+	movd	r0,-312(fp)	#59a
+	#forarg 115d...
+	movd	_transnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	L707,tos	#setasg
+#68a
+	#forarg 115d...
+	movd	-312(fp),tos	#59b
+	bsr	_internal_lookup	#44a
+	adjspb	-12
+	bsr	_contextof	#44a
+	adjspb	-8
+	movd	r0,_maxargnum	#59a
+	cmpqd	0,_istimed	#35
+	beq	L708
+	.data	1
+L709:
+	.ascii	"CC_tcallinit(\0"
+	.text
+	#forarg 115d...
+	movxwd	0(r7),tos	#59b
+	#unary and,forarg 115a...
+	addr	L709,tos	#setasg
+#68a
+	bsr	_tinsert	#44a
+	adjspb	-8
+	br	L710
+L708:
+	.data	1
+L711:
+	.ascii	"(CC_tcallinit(\0"
+	.text
+	#forarg 115d...
+	movxwd	0(r7),tos	#59b
+	#unary and,forarg 115a...
+	addr	L711,tos	#setasg
+#68a
+	bsr	_tinsert	#44a
+	adjspb	-8
+L710:
+	.data	1
+L712:
+	.ascii	",CC_%d%s_id),\12\0"
+	.text
+	#unary and,forarg 115a...
+	addr	_transname,tos	#setasg
+#68a
+	#forarg 115d...
+	movd	_callprocnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	L712,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_ntf,tos	#setasg
+#68a
+	bsr	_sprintf	#44a
+	adjspb	-16
+	addr	_ntf,_trap_t	#setasg
+#68a
+L713:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L714
+	br	L713
+L714:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	#-1 intareg(nasl) 114b...
+	movqd	-1,r1	#59a
+	addd	_tbuf_i,r1	#105r
+	addd	r1,r0	#105t
+	movb	32,0(r0)	#59a
+	br	L198
+L715:
+	movxwd	-48(r7),_yyval	#59b
+	br	L198
+L716:
+#68a
+	addqd	1,_argnum	#83
+	cmpd	_argnum,_maxargnum	#38
+	ble	L717
+	.data	1
+L718:
+	.ascii	"too many parameters in transaction call\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L718,tos	#setasg
+#68a
+	bsr	_yyerror	#44a
+	adjspb	-4
+L717:
+	.data	1
+L719:
+	.ascii	"((CC_%d%s *)CC_mytblock)->arg%d=\0"
+	.text
+	#forarg 115d...
+	movd	_argnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	_transname,tos	#setasg
+#68a
+	#forarg 115d...
+	movd	_callprocnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	L719,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_ntf,tos	#setasg
+#68a
+	bsr	_sprintf	#44a
+	adjspb	-20
+	addr	_ntf,_trap_t	#setasg
+#68a
+L720:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L721
+	br	L720
+L721:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	#-1 intareg(nasl) 114b...
+	movqd	-1,r1	#59a
+	addd	_tbuf_i,r1	#105r
+	addd	r1,r0	#105t
+	movb	32,0(r0)	#59a
+	#forarg 115d...
+	movd	_transnum,tos	#59b
+	#forarg 115d...
+	movd	_argnum,tos	#59b
+	bsr	_itoa	#44a
+	adjspb	-4
+	#forarg 115d...
+	movd	r0,tos	#59a
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_internal_lookup	#44a
+	adjspb	-12
+	br	L198
+L722:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	44,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	10,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	.data	1
+L723:
+	.ascii	"type clash in transaction call\0"
+	.text
+	adjspb	8
+	#& 0(sp) intareg 114a...
+	addr	0(sp),r0	#setasg
+	#intemp 116a...
+	movd	r0,-312(fp)	#59a
+	#unary and,forarg 115a...
+	addr	L723,tos	#setasg
+#68a
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	adjspb	8	#20
+movmd	-12(r7),0(sp),2	
+	#forarg 115d...
+	movd	-312(fp),tos	#59b
+	bsr	_assign	#44a
+	adjspb	-32
+	br	L198
+L724:
+	.data	1
+L725:
+	.ascii	"(CC_remember_time(\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L725,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_ntf,tos	#setasg
+#68a
+	bsr	_sprintf	#44a
+	adjspb	-8
+	addr	_ntf,_trap_t	#setasg
+#68a
+L726:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L727
+	br	L726
+L727:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	#-1 intareg(nasl) 114b...
+	movqd	-1,r1	#59a
+	addd	_tbuf_i,r1	#105r
+	addd	r1,r0	#105t
+	movb	32,0(r0)	#59a
+	br	L198
+L728:
+	.data	1
+L729:
+	.ascii	"),\12\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L729,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_ntf,tos	#setasg
+#68a
+	bsr	_sprintf	#44a
+	adjspb	-8
+	addr	_ntf,_trap_t	#setasg
+#68a
+L730:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L731
+	br	L730
+L731:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	#-1 intareg(nasl) 114b...
+	movqd	-1,r1	#59a
+	addd	_tbuf_i,r1	#105r
+	addd	r1,r0	#105t
+	movb	32,0(r0)	#59a
+	movqd	1,_istimed	#59a
+	br	L198
+L732:
+	movqd	0,_istimed	#59a
+	cmpd	_argnum,_maxargnum	#38
+	bge	L733
+	.data	1
+L734:
+	.ascii	"too few parameters in transaction call\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L734,tos	#setasg
+#68a
+	bsr	_yyerror	#44a
+	adjspb	-4
+L733:
+	.data	1
+L735:
+	.ascii	"(CC_timedtcall() ?\12\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L735,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_ntf,tos	#setasg
+#68a
+	bsr	_sprintf	#44a
+	adjspb	-8
+	addr	_ntf,_trap_t	#setasg
+#68a
+L736:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L737
+	br	L736
+L737:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	#-1 intareg(nasl) 114b...
+	movqd	-1,r1	#59a
+	addd	_tbuf_i,r1	#105r
+	addd	r1,r0	#105t
+	movb	32,0(r0)	#59a
+	.data	1
+L738:
+	.ascii	"((CC_%d%s *)CC_mytblock)->value \72\12(\0"
+	.text
+	#unary and,forarg 115a...
+	addr	_transname,tos	#setasg
+#68a
+	#forarg 115d...
+	movd	_callprocnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	L738,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_ntf,tos	#setasg
+#68a
+	bsr	_sprintf	#44a
+	adjspb	-16
+	addr	_ntf,_trap_t	#setasg
+#68a
+L739:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L740
+	br	L739
+L740:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	#-1 intareg(nasl) 114b...
+	movqd	-1,r1	#59a
+	addd	_tbuf_i,r1	#105r
+	addd	r1,r0	#105t
+	movb	32,0(r0)	#59a
+	br	L198
+L741:
+	.data	1
+L742:
+	.ascii	")))\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L742,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_ntf,tos	#setasg
+#68a
+	bsr	_sprintf	#44a
+	adjspb	-8
+	addr	_ntf,_trap_t	#setasg
+#68a
+L743:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L744
+	br	L743
+L744:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	#-1 intareg(nasl) 114b...
+	movqd	-1,r1	#59a
+	addd	_tbuf_i,r1	#105r
+	addd	r1,r0	#105t
+	movb	32,0(r0)	#59a
+	.data	1
+L745:
+	.ascii	"=\0"
+	.text
+	.data	1
+L746:
+	.ascii	"type clash in timed transaction call alternative\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L746,tos	#setasg
+#68a
+	adjspb	8
+	#& 0(sp) intareg 114a...
+	addr	0(sp),r0	#setasg
+	#intemp 116a...
+	movd	r0,-312(fp)	#59a
+	#forarg 115d...
+	movd	_transnum,tos	#59b
+	#unary and,forarg 115a...
+	addr	L745,tos	#setasg
+#68a
+	#forarg 115d...
+	movd	-312(fp),tos	#59b
+	bsr	_internal_lookup	#44a
+	adjspb	-12
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_condition	#44a
+	adjspb	-24
+	br	L198
+L747:
+	#0 intareg(nasl) 114b...
+	movqd	0,r0	#59a
+	addd	r7,r0	#105t
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L748:
+	addr	_yytext,_trap_t	#setasg
+#68a
+L749:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L750
+	br	L749
+L750:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addqd	-1,_tbuf_i	#87c
+	addd	_tbuf_i,r0	#105r
+	movqb	0,0(r0)	#59a
+	br	L198
+L751:
+	.data	1
+L752:
+	.ascii	"type clash in assignment statement\0"
+	.text
+	#unary and,forarg 115a...
+	addr	L752,tos	#setasg
+#68a
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	adjspb	8	#20
+movmd	-36(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_assign	#44a
+	adjspb	-24
+	br	L198
+L753:
+	addr	_yytext,_trap_t	#setasg
+#68a
+L754:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L755
+	br	L754
+L755:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addqd	-1,_tbuf_i	#87c
+	addd	_tbuf_i,r0	#105r
+	movqb	0,0(r0)	#59a
+	br	L198
+L756:
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	adjspb	8	#20
+movmd	-36(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_arithassign	#44a
+	adjspb	-20
+	br	L198
+L757:
+	addr	_yytext,_trap_t	#setasg
+#68a
+L758:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L759
+	br	L758
+L759:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addqd	-1,_tbuf_i	#87c
+	addd	_tbuf_i,r0	#105r
+	movqb	0,0(r0)	#59a
+	br	L198
+L760:
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	adjspb	8	#20
+movmd	-36(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_addassign	#44a
+	adjspb	-20
+	br	L198
+L761:
+	#0 intareg(nasl) 114b...
+	movqd	0,r0	#59a
+	addd	r7,r0	#105t
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L762:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	44,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	10,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	br	L198
+L763:
+	#0 intareg(nasl) 114b...
+	movqd	0,r0	#59a
+	addd	r7,r0	#105t
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L764:
+	cmpqd	3,-12(r7)	#35
+	beq	L765
+	addr	_yytext,_trap_t	#setasg
+#68a
+L766:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L767
+	br	L766
+L767:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addqd	-1,_tbuf_i	#87c
+	addd	_tbuf_i,r0	#105r
+	movqb	0,0(r0)	#59a
+L765:
+	cmpqd	0,-12(r7)	#35
+	bne	L768
+	#& _basic intareg 114a...
+	addr	_basic,r0	#setasg
+movmd	0(r0),_type,2	#20a
+	br	L769
+L768:
+	#forarg 115d...
+	movd	-12(r7),tos	#59b
+	#unary and,forarg 115a...
+	addr	_yytext,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_type,tos	#setasg
+#68a
+	bsr	_lookup_tag	#44a
+	adjspb	-12
+L769:
+	br	L198
+L770:
+	addr	_yytext,_trap_t	#setasg
+#68a
+L771:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L772
+	br	L771
+L772:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addqd	-1,_tbuf_i	#87c
+	addd	_tbuf_i,r0	#105r
+	movqb	0,0(r0)	#59a
+	#0 intareg(nasl) 114b...
+	movqd	0,r0	#59a
+	addd	r7,r0	#105t
+movmd	0(r0),_type,2	#20a
+	br	L198
+L773:
+	addr	_yytext,_trap_t	#setasg
+#68a
+L774:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L775
+	br	L774
+L775:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addqd	-1,_tbuf_i	#87c
+	addd	_tbuf_i,r0	#105r
+	movqb	0,0(r0)	#59a
+	#& _basic intareg 114a...
+	addr	_basic,r0	#setasg
+movmd	0(r0),_type,2	#20a
+	br	L198
+L776:
+	.data	1
+L777:
+	.ascii	"int \0"
+	.text
+	#unary and,forarg 115a...
+	addr	L777,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_ntf,tos	#setasg
+#68a
+	bsr	_sprintf	#44a
+	adjspb	-8
+	addr	_ntf,_trap_t	#setasg
+#68a
+L778:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L779
+	br	L778
+L779:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	#-1 intareg(nasl) 114b...
+	movqd	-1,r1	#59a
+	addd	_tbuf_i,r1	#105r
+	addd	r1,r0	#105t
+	movb	32,0(r0)	#59a
+	#& _basic intareg 114a...
+	addr	_basic,r0	#setasg
+movmd	0(r0),_type,2	#20a
+	br	L198
+L780:
+	addr	_yytext,_trap_t	#setasg
+#68a
+L781:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L782
+	br	L781
+L782:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addqd	-1,_tbuf_i	#87c
+	addd	_tbuf_i,r0	#105r
+	movqb	0,0(r0)	#59a
+	movqd	1,_yyval	#59a
+	br	L198
+L783:
+	addr	_yytext,_trap_t	#setasg
+#68a
+L784:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L785
+	br	L784
+L785:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addqd	-1,_tbuf_i	#87c
+	addd	_tbuf_i,r0	#105r
+	movqb	0,0(r0)	#59a
+	movqd	2,_yyval	#59a
+	br	L198
+L786:
+	.data	1
+L787:
+	.ascii	"CC_pid \0"
+	.text
+	#unary and,forarg 115a...
+	addr	L787,tos	#setasg
+#68a
+	#unary and,forarg 115a...
+	addr	_ntf,tos	#setasg
+#68a
+	bsr	_sprintf	#44a
+	adjspb	-8
+	addr	_ntf,_trap_t	#setasg
+#68a
+L788:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L789
+	br	L788
+L789:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	#-1 intareg(nasl) 114b...
+	movqd	-1,r1	#59a
+	addd	_tbuf_i,r1	#105r
+	addd	r1,r0	#105t
+	movb	32,0(r0)	#59a
+	movqd	3,_yyval	#59a
+	br	L198
+L790:
+	addr	_yytext,_trap_t	#setasg
+#68a
+L791:
+	#intareg 114i...
+	movd	_trap_t,r0	#59b
+	addqd	1,_trap_t	#83
+	#0(r0) intareg(nasl) 114b...
+	movxbd	0(r0),r0	#59b
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r1	#setasg
+	addd	_tbuf_i,r1	#105r
+	addqd	1,_tbuf_i	#83
+	movb	r0,0(r1)	#59a
+	cmpqb	0,r0	#35
+	beq	L792
+	br	L791
+L792:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addqd	-1,_tbuf_i	#87c
+	addd	_tbuf_i,r0	#105r
+	movqb	0,0(r0)	#59a
+	movqd	0,_yyval	#59a
+	br	L198
+L793:
+	#& _type intareg 114a...
+	addr	_type,r0	#setasg
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L794:
+	#0 intareg(nasl) 114b...
+	movqd	0,r0	#59a
+	addd	r7,r0	#105t
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L795:
+	#& _type intareg 114a...
+	addr	_type,r0	#setasg
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L796:
+	#0 intareg(nasl) 114b...
+	movqd	0,r0	#59a
+	addd	r7,r0	#105t
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L797:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	42,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	br	L198
+L798:
+	adjspb	8	#20
+movmd	0(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_ref	#44a
+	adjspb	-12
+	br	L198
+L799:
+	#0 intareg(nasl) 114b...
+	movqd	0,r0	#59a
+	addd	r7,r0	#105t
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L800:
+	#& _type intareg 114a...
+	addr	_type,r0	#setasg
+	adjspb	8	#20
+movmd	0(r0),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_func	#44a
+	adjspb	-12
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	40,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	41,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	br	L198
+L801:
+	adjspb	8	#20
+movmd	-24(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_func	#44a
+	adjspb	-12
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	40,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	41,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	br	L198
+L802:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	91,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	br	L198
+L803:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	93,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	adjspb	8	#20
+movmd	-36(r7),0(sp),2	
+	#unary and,forarg 115a...
+	addr	_yyval,tos	#setasg
+#68a
+	bsr	_ref	#44a
+	adjspb	-12
+	br	L198
+L804:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	40,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	br	L198
+L805:
+	#& _tbuf intareg 114a...
+	addr	_tbuf,r0	#setasg
+	addd	_tbuf_i,r0	#105r
+	movb	41,0(r0)	#59a
+	addqd	1,_tbuf_i	#83
+	#r7 intareg(nasl) 114b...
+	movd	r7,r0	#59b
+	addd	-12,r0	#105r
+movmd	0(r0),_yyval,2	#20a
+	br	L198
+L199:
+	checkd	r0,L808,r0
+	bfs	L807
+L806:	casew	L806+7[r0:w]
+	.word	L200-L806
+	.word	L807-L806
+	.word	L202-L806
+	.word	L206-L806
+	.word	L212-L806
+	.word	L216-L806
+	.word	L219-L806
+	.word	L220-L806
+	.word	L222-L806
+	.word	L224-L806
+	.word	L807-L806
+	.word	L226-L806
+	.word	L228-L806
+	.word	L807-L806
+	.word	L230-L806
+	.word	L232-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L236-L806
+	.word	L239-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L243-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L244-L806
+	.word	L246-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L248-L806
+	.word	L250-L806
+	.word	L254-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L259-L806
+	.word	L260-L806
+	.word	L261-L806
+	.word	L262-L806
+	.word	L263-L806
+	.word	L265-L806
+	.word	L266-L806
+	.word	L267-L806
+	.word	L268-L806
+	.word	L269-L806
+	.word	L271-L806
+	.word	L272-L806
+	.word	L273-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L274-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L276-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L277-L806
+	.word	L807-L806
+	.word	L278-L806
+	.word	L279-L806
+	.word	L807-L806
+	.word	L281-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L282-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L283-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L284-L806
+	.word	L285-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L287-L806
+	.word	L290-L806
+	.word	L292-L806
+	.word	L294-L806
+	.word	L298-L806
+	.word	L299-L806
+	.word	L300-L806
+	.word	L807-L806
+	.word	L302-L806
+	.word	L303-L806
+	.word	L304-L806
+	.word	L807-L806
+	.word	L307-L806
+	.word	L309-L806
+	.word	L807-L806
+	.word	L311-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L312-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L313-L806
+	.word	L807-L806
+	.word	L314-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L315-L806
+	.word	L317-L806
+	.word	L807-L806
+	.word	L318-L806
+	.word	L807-L806
+	.word	L320-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L322-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L324-L806
+	.word	L325-L806
+	.word	L326-L806
+	.word	L328-L806
+	.word	L329-L806
+	.word	L330-L806
+	.word	L331-L806
+	.word	L335-L806
+	.word	L337-L806
+	.word	L807-L806
+	.word	L338-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L339-L806
+	.word	L807-L806
+	.word	L340-L806
+	.word	L341-L806
+	.word	L370-L806
+	.word	L371-L806
+	.word	L372-L806
+	.word	L374-L806
+	.word	L375-L806
+	.word	L377-L806
+	.word	L380-L806
+	.word	L381-L806
+	.word	L382-L806
+	.word	L383-L806
+	.word	L384-L806
+	.word	L807-L806
+	.word	L385-L806
+	.word	L386-L806
+	.word	L387-L806
+	.word	L389-L806
+	.word	L390-L806
+	.word	L391-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L392-L806
+	.word	L394-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L396-L806
+	.word	L807-L806
+	.word	L398-L806
+	.word	L399-L806
+	.word	L400-L806
+	.word	L401-L806
+	.word	L402-L806
+	.word	L403-L806
+	.word	L404-L806
+	.word	L405-L806
+	.word	L406-L806
+	.word	L407-L806
+	.word	L408-L806
+	.word	L409-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L410-L806
+	.word	L413-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L416-L806
+	.word	L417-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L418-L806
+	.word	L807-L806
+	.word	L420-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L421-L806
+	.word	L423-L806
+	.word	L425-L806
+	.word	L427-L806
+	.word	L429-L806
+	.word	L431-L806
+	.word	L434-L806
+	.word	L437-L806
+	.word	L439-L806
+	.word	L441-L806
+	.word	L443-L806
+	.word	L445-L806
+	.word	L447-L806
+	.word	L449-L806
+	.word	L807-L806
+	.word	L451-L806
+	.word	L453-L806
+	.word	L807-L806
+	.word	L457-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L461-L806
+	.word	L464-L806
+	.word	L807-L806
+	.word	L466-L806
+	.word	L807-L806
+	.word	L468-L806
+	.word	L470-L806
+	.word	L473-L806
+	.word	L476-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L478-L806
+	.word	L485-L806
+	.word	L487-L806
+	.word	L490-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L492-L806
+	.word	L807-L806
+	.word	L494-L806
+	.word	L807-L806
+	.word	L496-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L498-L806
+	.word	L807-L806
+	.word	L500-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L502-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L504-L806
+	.word	L807-L806
+	.word	L506-L806
+	.word	L807-L806
+	.word	L508-L806
+	.word	L807-L806
+	.word	L510-L806
+	.word	L512-L806
+	.word	L807-L806
+	.word	L514-L806
+	.word	L807-L806
+	.word	L516-L806
+	.word	L807-L806
+	.word	L518-L806
+	.word	L521-L806
+	.word	L807-L806
+	.word	L530-L806
+	.word	L533-L806
+	.word	L807-L806
+	.word	L534-L806
+	.word	L535-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L536-L806
+	.word	L807-L806
+	.word	L537-L806
+	.word	L538-L806
+	.word	L807-L806
+	.word	L539-L806
+	.word	L540-L806
+	.word	L541-L806
+	.word	L543-L806
+	.word	L544-L806
+	.word	L545-L806
+	.word	L546-L806
+	.word	L547-L806
+	.word	L548-L806
+	.word	L549-L806
+	.word	L550-L806
+	.word	L551-L806
+	.word	L552-L806
+	.word	L553-L806
+	.word	L554-L806
+	.word	L555-L806
+	.word	L556-L806
+	.word	L557-L806
+	.word	L558-L806
+	.word	L559-L806
+	.word	L560-L806
+	.word	L564-L806
+	.word	L565-L806
+	.word	L566-L806
+	.word	L567-L806
+	.word	L807-L806
+	.word	L568-L806
+	.word	L569-L806
+	.word	L570-L806
+	.word	L574-L806
+	.word	L576-L806
+	.word	L579-L806
+	.word	L580-L806
+	.word	L583-L806
+	.word	L586-L806
+	.word	L587-L806
+	.word	L588-L806
+	.word	L589-L806
+	.word	L590-L806
+	.word	L595-L806
+	.word	L596-L806
+	.word	L597-L806
+	.word	L600-L806
+	.word	L601-L806
+	.word	L605-L806
+	.word	L610-L806
+	.word	L611-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L612-L806
+	.word	L807-L806
+	.word	L613-L806
+	.word	L614-L806
+	.word	L617-L806
+	.word	L618-L806
+	.word	L621-L806
+	.word	L622-L806
+	.word	L623-L806
+	.word	L624-L806
+	.word	L625-L806
+	.word	L626-L806
+	.word	L629-L806
+	.word	L630-L806
+	.word	L633-L806
+	.word	L634-L806
+	.word	L807-L806
+	.word	L635-L806
+	.word	L636-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L637-L806
+	.word	L638-L806
+	.word	L639-L806
+	.word	L640-L806
+	.word	L641-L806
+	.word	L642-L806
+	.word	L643-L806
+	.word	L644-L806
+	.word	L645-L806
+	.word	L646-L806
+	.word	L649-L806
+	.word	L650-L806
+	.word	L653-L806
+	.word	L654-L806
+	.word	L657-L806
+	.word	L658-L806
+	.word	L661-L806
+	.word	L662-L806
+	.word	L665-L806
+	.word	L666-L806
+	.word	L669-L806
+	.word	L670-L806
+	.word	L673-L806
+	.word	L674-L806
+	.word	L677-L806
+	.word	L678-L806
+	.word	L681-L806
+	.word	L682-L806
+	.word	L685-L806
+	.word	L686-L806
+	.word	L689-L806
+	.word	L690-L806
+	.word	L691-L806
+	.word	L692-L806
+	.word	L693-L806
+	.word	L695-L806
+	.word	L696-L806
+	.word	L706-L806
+	.word	L715-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L807-L806
+	.word	L716-L806
+	.word	L722-L806
+	.word	L724-L806
+	.word	L728-L806
+	.word	L732-L806
+	.word	L741-L806
+	.word	L747-L806
+	.word	L748-L806
+	.word	L751-L806
+	.word	L753-L806
+	.word	L756-L806
+	.word	L757-L806
+	.word	L760-L806
+	.word	L761-L806
+	.word	L807-L806
+	.word	L762-L806
+	.word	L763-L806
+	.word	L764-L806
+	.word	L770-L806
+	.word	L773-L806
+	.word	L776-L806
+	.word	L780-L806
+	.word	L783-L806
+	.word	L786-L806
+	.word	L790-L806
+	.word	L793-L806
+	.word	L794-L806
+	.word	L795-L806
+	.word	L796-L806
+	.word	L797-L806
+	.word	L798-L806
+	.word	L799-L806
+	.word	L800-L806
+	.word	L801-L806
+	.word	L802-L806
+	.word	L803-L806
+	.word	L804-L806
+	.word	L805-L806
+L808:	.long	460,1
+L807:
+L198:
+	br	L149
+L146:
+	exit	[r4,r5,r6,r7]
+	ret	0
+L147:
+	enter	[r4,r5,r6,r7],316
+	br 	L148
+	.data
+#Sequent C compiler V6.0
+@

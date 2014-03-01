@@ -1,0 +1,50 @@
+head     3.0;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+3.0
+date     86.09.18.16.15.08;  author lynch;  state Exp;
+branches ;
+next     2.1;
+
+2.1
+date     86.07.25.14.36.11;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Version which works up to printing out buffer messages in commun.
+@
+
+
+3.0
+log
+@working final version
+@
+text
+@/*
+** Concurrent C
+**
+** Global variable definitions
+*/
+#ifndef EXTERN
+#define EXTERN extern
+#endif
+
+char	*Filename;
+int	Linenum;
+
+@
+
+
+2.1
+log
+@Version which works up to printing out buffer messages in commun.
+@
+text
+@@

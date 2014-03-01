@@ -1,0 +1,2 @@
+have to pass info through cc_fork because of separate compilation.
+	other choice-- write own linker.

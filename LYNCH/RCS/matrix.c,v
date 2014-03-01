@@ -1,0 +1,589 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    lynch:1.1; strict;
+comment  @ * @;
+
+
+1.1
+date     86.08.05.14.42.38;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@bugged.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#include <ccc/CC_kernel.h>
+static char *DD_convert;
+
+# line 1 matrix.cc
+
+# line 1 /usr/include/stdio.h
+
+extern struct _iobuf {
+	int _cnt ;
+	char *_ptr ;
+	char *_base ;
+	int _bufsiz ;
+	short _flag ;
+	char _file ;
+}
+_iob [20
+# line 26 /usr/include/stdio.h
+];
+
+struct _iobuf *fopen ()
+# line 55 /usr/include/stdio.h
+;
+struct _iobuf *fdopen ();
+struct _iobuf *freopen ()
+# line 57 /usr/include/stdio.h
+;
+long	 ftell ();
+char *gets ()
+# line 59 /usr/include/stdio.h
+;
+char *fgets ();
+char *sprintf ()
+# line 61 /usr/include/stdio.h
+;
+
+# line 21 matrix.cc
+
+typedef float *rowArray [10
+# line 32 matrix.cc
+];
+
+rowArray A 
+# line 34 matrix.cc
+,B ;
+
+/* PROCESS SPEC C */
+CC_pid CC_C();
+
+typedef int CC_headvalue1;
+
+# line 46 matrix.cc
+typedef struct {
+	CC_headvalue1 value;
+	int arg1;
+
+# line 46 matrix.cc
+	int arg2;
+	float arg3;
+
+# line 46 matrix.cc
+} 
+CC_9answer;
+#define CC_9answer_id 0
+
+#define CC_C_numtrans 1
+
+# line 47 matrix.cc
+
+/* PROCESS SPEC DotProd */
+CC_pid CC_DotProd();
+#define CC_DotProd_numtrans 0
+
+# line 51 matrix.cc
+
+/* PROCESS BODY C */
+
+CC_pid CC_C(rows,cols, CC_priority, DD_createId)
+
+# line 67 matrix.cc
+int  rows;
+int  cols;
+int CC_priority;
+unsigned DD_createId;
+{
+
+	rowArray C 
+# line 68 matrix.cc
+	    ;
+	int i ,j 
+# line 69 matrix.cc
+	    ;
+
+	if (CC_fork("C",CC_C_numtrans,CC_priority,DD_createId,DD_convert))
+		return CC_childpid;
+
+# line 71 matrix.cc
+	shmallocMatrix (rows ,cols ,C )
+# line 71 matrix.cc
+		;
+
+	for (i =0
+# line 73 matrix.cc
+;i <rows 
+# line 73 matrix.cc
+;i ++
+# line 73 matrix.cc
+){
+		    for (j =0
+# line 74 matrix.cc
+;j <cols 
+# line 74 matrix.cc
+;j ++
+# line 74 matrix.cc
+){
+			    {
+				CC_tblock CC_tblock0;
+
+# line 75 matrix.cc
+
+# line 75 matrix.cc
+
+# line 75 matrix.cc
+				CC_accept(CC_9answer_id,&CC_tblock0,0,0, 1);
+				{
+
+# line 78 matrix.cc
+					printf ("answer from %d, %d.\n",((CC_9answer *)CC_tblock0)->arg1 ,((CC_9answer *)CC_tblock0)->arg2 );
+
+# line 80 matrix.cc
+					C [((CC_9answer *)CC_tblock0)->arg1 ][((CC_9answer *)CC_tblock0)->arg2 ]=((CC_9answer *)CC_tblock0)->arg3 ;
+					goto CC_treturn0;
+
+				}
+				/*
+				 *  exiting block in which the following were declared:
+				 *  |name                context chain   num     obj     alias               |
+				 *  |col                 0       0       6       14      ((CC_9answer *)CC_tblock0)->arg2|
+				 *  |num                 0       0       6       13      ((CC_9answer *)CC_tblock0)->arg3|
+				 *  |printf              0       25      6       0                           |
+				 *  |row                 0       0       6       14      ((CC_9answer *)CC_tblock0)->arg1|
+				 */
+CC_treturn0: 
+				CC_treturn(1);
+			}
+
+# line 82 matrix.cc
+
+		}
+	}
+
+# line 88 matrix.cc
+	printMatrix (rows ,cols ,C );
+
+	/*
+	 *  exiting block in which the following were declared:
+	 *  |name                context chain   num     obj     alias               |
+	 *  |C                   0       6       6       13                          |
+	 *  |c_mypid             0       25      9       3                           |
+	 *  |i                   0       0       6       14                          |
+	 *  |j                   0       0       6       14                          |
+	 *  |printMatrix         0       25      6       0                           |
+	 *  |shmallocMatrix      0       25      6       0                           |
+	 */
+	CC_complete();
+}
+
+/* PROCESS BODY DotProd */
+
+CC_pid CC_DotProd(Ahigh,Alow,Brows,Bcols,C, CC_priority, DD_createId)
+
+# line 98 matrix.cc
+int  Ahigh;
+int  Alow;
+int  Brows;
+int  Bcols;
+CC_pid  C;
+int CC_priority;
+unsigned DD_createId;
+{
+
+	int bc 
+# line 99 matrix.cc
+	    ;
+	int i ,j 
+# line 100 matrix.cc
+	    ;
+	float product ;
+
+	if (CC_fork("DotProd",CC_DotProd_numtrans,CC_priority,DD_createId,DD_convert))
+		return CC_childpid;
+
+# line 103 matrix.cc
+	for (
+# line 103 matrix.cc
+bc =0;
+# line 103 matrix.cc
+bc <Bcols ;
+# line 103 matrix.cc
+bc ++){
+		    for (
+# line 104 matrix.cc
+i =Alow ;
+# line 104 matrix.cc
+i <Ahigh ;
+# line 104 matrix.cc
+i ++){
+
+# line 106 matrix.cc
+			product =0.0;
+			for (
+# line 107 matrix.cc
+j =0;
+# line 107 matrix.cc
+j <Brows ;
+# line 107 matrix.cc
+j ++){
+
+# line 108 matrix.cc
+				product =A [i ][j ]*B [j ][bc ];
+			}
+
+# line 110 matrix.cc
+			(CC_tcallinit(C ,CC_9answer_id),
+			((CC_9answer *)CC_mytblock)->arg1= i ,
+			((CC_9answer *)CC_mytblock)->arg2= bc ,
+			((CC_9answer *)CC_mytblock)->arg3= product ,
+			CC_tcall(1),
+			((CC_9answer *)CC_mytblock)->value) ;
+		}
+	}
+
+	/*
+	 *  exiting block in which the following were declared:
+	 *  |name                context chain   num     obj     alias               |
+	 *  |bc                  0       0       6       14                          |
+	 *  |c_mypid             0       25      11      3                           |
+	 *  |i                   0       0       6       14                          |
+	 *  |j                   0       0       6       14                          |
+	 *  |product             0       0       6       13                          |
+	 */
+	CC_complete();
+}
+
+shmallocMatrix (rows ,cols ,rowPtrs )
+
+# line 125 matrix.cc
+int rows ,cols 
+# line 125 matrix.cc
+;
+rowArray rowPtrs ;
+{
+	int i 
+# line 128 matrix.cc
+	    ;
+
+	for (i =0
+# line 130 matrix.cc
+;i <rows 
+# line 130 matrix.cc
+;i ++
+# line 130 matrix.cc
+){
+		    rowPtrs [i ]=(float*)shmalloc (sizeof (*rowPtrs [i ])*cols )
+# line 131 matrix.cc
+			;
+	}
+
+	/*
+	 *  exiting block in which the following were declared:
+	 *  |name                context chain   num     obj     alias               |
+	 *  |i                   0       0       6       14                          |
+	 *  |shmalloc            0       25      6       0                           |
+	 */
+}
+/*
+ *  exiting block in which the following were declared:
+ *  |name                context chain   num     obj     alias               |
+ *  |cols                0       0       6       14                          |
+ *  |rowPtrs             0       6       6       13                          |
+ *  |rows                0       0       6       14                          |
+ */
+
+printMatrix (rows ,cols ,matrix )
+int rows 
+# line 138 matrix.cc
+,cols ;
+rowArray matrix 
+# line 139 matrix.cc
+;
+{
+	int i ,j 
+# line 141 matrix.cc
+	    ;
+
+	for (i =0
+# line 143 matrix.cc
+;i <rows 
+# line 143 matrix.cc
+;i ++
+# line 143 matrix.cc
+){
+		    for (j =0
+# line 144 matrix.cc
+;j <cols 
+# line 144 matrix.cc
+;j ++
+# line 144 matrix.cc
+){
+			    printf ("%7.3f ",matrix [i ][j ])
+# line 145 matrix.cc
+				;
+		}
+		printf ("\n")
+# line 147 matrix.cc
+			;
+	}
+
+	/*
+	 *  exiting block in which the following were declared:
+	 *  |name                context chain   num     obj     alias               |
+	 *  |i                   0       0       6       14                          |
+	 *  |j                   0       0       6       14                          |
+	 *  |printf              0       25      6       0                           |
+	 */
+}
+/*
+ *  exiting block in which the following were declared:
+ *  |name                context chain   num     obj     alias               |
+ *  |cols                0       0       6       14                          |
+ *  |matrix              0       6       6       13                          |
+ *  |rows                0       0       6       14                          |
+ */
+
+getMatrix (argc ,argv ,Arows ,Acols ,Brows ,Bcols )
+int argc 
+# line 154 matrix.cc
+;
+char *argv [];
+int *Arows 
+# line 156 matrix.cc
+,*Acols ,*Brows 
+# line 156 matrix.cc
+,*Bcols ;
+
+{
+	int i 
+# line 159 matrix.cc
+	    ,j ;
+
+# line 166 matrix.cc
+	*Arows =10;
+
+# line 167 matrix.cc
+	*Acols =9;
+
+# line 168 matrix.cc
+	*Brows =9;
+
+# line 169 matrix.cc
+	*Bcols =10;
+
+# line 171 matrix.cc
+	shmallocMatrix (*Arows ,*Acols ,A );
+
+# line 172 matrix.cc
+	shmallocMatrix (*Brows ,*Bcols ,B );
+
+	for (
+# line 174 matrix.cc
+i =0;
+# line 174 matrix.cc
+i <*Arows ;
+# line 174 matrix.cc
+i ++){
+		    for (
+# line 175 matrix.cc
+j =0;
+# line 175 matrix.cc
+j <*Acols ;
+# line 175 matrix.cc
+j ++){
+
+# line 176 matrix.cc
+			A [i ][j ]=i +j ;
+		}
+	}
+
+	for (
+# line 180 matrix.cc
+i =0;
+# line 180 matrix.cc
+i <*Brows ;
+# line 180 matrix.cc
+i ++){
+		    for (
+# line 181 matrix.cc
+j =0;
+# line 181 matrix.cc
+j <*Bcols ;
+# line 181 matrix.cc
+j ++){
+
+# line 182 matrix.cc
+			B [i ][j ]=i -j ;
+		}
+	}
+
+# line 187 matrix.cc
+	printf ("A: \n");
+# line 187 matrix.cc
+	printMatrix (*Arows ,*Acols ,A );
+
+# line 188 matrix.cc
+	printf ("B: \n");
+# line 188 matrix.cc
+	printMatrix (*Brows ,*Bcols ,B );
+
+	/*
+	 *  exiting block in which the following were declared:
+	 *  |name                context chain   num     obj     alias               |
+	 *  |i                   0       0       6       14                          |
+	 *  |j                   0       0       6       14                          |
+	 *  |printf              0       25      6       0                           |
+	 */
+}
+/*
+ *  exiting block in which the following were declared:
+ *  |name                context chain   num     obj     alias               |
+ *  |Acols               0       5       6       14                          |
+ *  |Arows               0       5       6       14                          |
+ *  |Bcols               0       5       6       14                          |
+ *  |Brows               0       5       6       14                          |
+ *  |argc                0       0       6       14                          |
+ *  |argv                0       6       6       12                          |
+ */
+
+CC_main (argc ,argv )
+
+# line 203 matrix.cc
+int argc ;
+char *argv []
+# line 204 matrix.cc
+;
+{
+	CC_pid C ;
+	int Arows 
+# line 207 matrix.cc
+	    ,Acols ,Brows 
+# line 207 matrix.cc
+	    ,Bcols ;
+	int Ahigh 
+# line 208 matrix.cc
+	    ;
+	int rowsPerProcess ;
+
+# line 211 matrix.cc
+	getMatrix (argc ,argv ,&Arows ,&Acols ,&Brows ,&Bcols );
+
+# line 212 matrix.cc
+	C =CC_C (Arows ,Bcols ,0, 1 );
+
+# line 215 matrix.cc
+	rowsPerProcess =Arows /2+((Arows %2)>0);
+	for (
+# line 216 matrix.cc
+Ahigh =Arows ;
+# line 216 matrix.cc
+Ahigh >0;
+# line 216 matrix.cc
+Ahigh -=rowsPerProcess ){
+
+# line 217 matrix.cc
+
+		CC_DotProd (Ahigh ,Ahigh >=rowsPerProcess ?Ahigh -rowsPerProcess :0,Brows ,Bcols ,C ,0, 2 );
+
+# line 221 matrix.cc
+		printf ("Started C process, Ahigh = %d.\n",Ahigh );
+
+	}
+
+	/*
+	 *  exiting block in which the following were declared:
+	 *  |name                context chain   num     obj     alias               |
+	 *  |Acols               0       0       6       14                          |
+	 *  |Ahigh               0       0       6       14                          |
+	 *  |Arows               0       0       6       14                          |
+	 *  |Bcols               0       0       6       14                          |
+	 *  |Brows               0       0       6       14                          |
+	 *  |C                   0       0       9       3                           |
+	 *  |printf              0       25      6       0                           |
+	 *  |rowsPerProcess      0       0       6       14                          |
+	 */
+}
+/*
+ *  exiting block in which the following were declared:
+ *  |name                context chain   num     obj     alias               |
+ *  |argc                0       0       6       14                          |
+ *  |argv                0       6       6       12                          |
+ */
+
+/*
+ *  exiting block in which the following were declared:
+ *  |name                context chain   num     obj     alias               |
+ *  |A                   0       6       6       13                          |
+ *  |Ahigh               0       0       6       14                          |
+ *  |Alow                0       0       6       14                          |
+ *  |B                   0       6       6       13                          |
+ *  |Bcols               0       0       6       14                          |
+ *  |Brows               0       0       6       14                          |
+ *  |C                   0       0       9       3                           |
+ *  |CC_main             0       25      6       0                           |
+ *  |_iob                0       5       8       1                           |
+ *  |c_abort             0       25      6       14                          |
+ *  |c_active            0       25      6       14                          |
+ *  |c_associate         0       25      6       14                          |
+ *  |c_changepriority    0       25      6       14                          |
+ *  |c_completed         0       25      6       14                          |
+ *  |c_getpriority       0       25      6       14                          |
+ *  |c_invalid           0       25      6       14                          |
+ *  |c_nullpid           0       0       5       3                           |
+ *  |cols                0       0       6       14                          |
+ *  |fdopen              0       46      8       1                           |
+ *  |fgets               0       46      6       12                          |
+ *  |fopen               0       46      8       1                           |
+ *  |freopen             0       46      8       1                           |
+ *  |ftell               0       25      6       9                           |
+ *  |getMatrix           0       25      6       0                           |
+ *  |gets                0       46      6       12                          |
+ *  |printMatrix         0       25      6       0                           |
+ *  |rowArray            0       6       6       13                          |
+ *  |rows                0       0       6       14                          |
+ *  |shmallocMatrix      0       25      6       0                           |
+ *  |sprintf             0       46      6       12                          |
+ *  |C                   1       0       9       3                           |
+ *  |DotProd             1       0       11      3                           |
+ *  |_iobuf              1       0       8       1                           |
+ *  |anytype             1       0       4       3                           |
+ *  |_base               8       5       6       12                          |
+ *  |_bufsiz             8       0       6       14                          |
+ *  |_cnt                8       0       6       14                          |
+ *  |_file               8       0       6       12                          |
+ *  |_flag               8       0       6       11                          |
+ *  |_ptr                8       5       6       12                          |
+ *  |1                   9       0       6       14                          |
+ *  |2                   9       0       6       14                          |
+ *  |answer              9       0       10      14                          |
+ *  |0                   10      0       3       0                           |
+ *  |1                   10      0       6       14                          |
+ *  |2                   10      0       6       14                          |
+ *  |3                   10      0       6       13                          |
+ *  |=                   10      0       6       14                          |
+ *  |1                   11      0       6       14                          |
+ *  |2                   11      0       6       14                          |
+ *  |3                   11      0       6       14                          |
+ *  |4                   11      0       6       14                          |
+ *  |5                   11      0       9       3                           |
+ */
+CC_shinit()
+{
+	int CC_j,CC_n,CC_ss;
+	char *CC_s;
+
+}
+@

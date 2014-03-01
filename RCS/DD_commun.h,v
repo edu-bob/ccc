@@ -1,0 +1,45 @@
+head     3.0;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+3.0
+date     86.09.18.16.13.30;  author lynch;  state Exp;
+branches ;
+next     2.1;
+
+2.1
+date     86.07.25.14.36.43;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Version which works up to printing out buffer messages in commun.
+@
+
+
+3.0
+log
+@working final version
+@
+text
+@#define accept(id)	DD_Info->specTable->accept[id]
+#define create(id)	DD_Info->specTable->create[id]
+#define transact(id)	DD_Info->specTable->transact[id]
+#define select(id)	DD_Info->specTable->select[id]
+#define delay(id)	DD_Info->specTable->delay[id]
+#define terminate(id)	DD_Info->specTable->terminate[id]
+#define treturn(id)	DD_Info->specTable->treturn[id]
+@
+
+
+2.1
+log
+@Version which works up to printing out buffer messages in commun.
+@
+text
+@@

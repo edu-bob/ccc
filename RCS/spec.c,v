@@ -1,0 +1,1658 @@
+head     3.0;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+3.0
+date     86.09.18.16.12.58;  author lynch;  state Exp;
+branches ;
+next     2.3;
+
+2.3
+date     86.09.12.10.01.11;  author lynch;  state Exp;
+branches ;
+next     2.2;
+
+2.2
+date     86.08.28.14.49.51;  author lynch;  state Exp;
+branches ;
+next     2.1;
+
+2.1
+date     86.07.25.14.35.49;  author lynch;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     86.07.17.12.18.47;  author lynch;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     86.07.16.15.50.57;  author lynch;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     86.07.14.16.11.42;  author lynch;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.07.09.14.51.35;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@working dump version.
+@
+
+
+3.0
+log
+@working final version
+@
+text
+@/*---------------------------------------------------------------------------
+ * 
+ * Table manager for remembering everything about process specs.
+ * 
+ * The specs are kept in a btree sorted by id so that when they are
+   inserted in the object c code as arrays, they are indexable by id
+   number.  create, accept, treturn, and transaction specs contain pointers to the
+   symbol table, used to extract the names.
+ * 
+ * 
+ * The ordering of field entries is kept in a dynamically allocated array,
+   which contains lists of field entries (symbol table pointers).  The
+   array is indexed by namespace.
+ * 
+ * A "spec" (as in printSpec) is one of the things that has no name in the
+   symbol table and is kept separately like treturns, selects, etc.
+ * 
+ * The printing out is done in such a fashion that the arrays are indexed
+   by the id number of the occurrence.
+ * 
+ * William L. Lynch		Wed Jul  9 09:48:46 1986
+ * 				Tue Jul 15 09:47:17 1986
+ *---------------------------------------------------------------------------
+ */
+
+
+
+#include <stdio.h>
+#include "cctypes.h"
+#include "spec.h"
+#include "bool.h"
+
+#define newstr(s)	(char *)strcpy(malloc(strlen(s)+1),s)
+#define instances(n,t)	(t *)calloc((n), sizeof (t))
+#define instance(t)	instances(1,t)
+
+extern char *parmString, *formString;	/* spec print */
+extern bool debugFlag;
+
+/*
+** FORWARDS
+*/
+
+int spec_printNode(), spec_cmp(), spec_processCmp(), spec_numCmp();
+
+
+/*
+** GLOBALS
+*/
+spec_process OutsideSpec = {"", 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+spec_process *CurrentSpec = NULL;  /* used for later insertion of formals */
+
+struct btree *AcceptTable, *mainAcceptTable;
+struct btree *CreateTable, *mainCreateTable;
+struct btree *TransactionTable,  *mainTransactionTable;
+struct btree *SelectTable,  *mainSelectTable;
+struct btree *DelayTable,  *mainDelayTable;
+struct btree *TerminateTable,  *mainTerminateTable;
+struct btree *TreturnTable,  *mainTreturnTable;
+ 
+struct btree *numToProcess;
+
+/* allows linear access to processes without knowing the names */
+spec_process *process = NULL;	
+spec_process *processTail;
+struct btree *ProcessTable;    /* stores create formals and typestrings */
+
+spec_structSpace *StructTable;
+int bound = 100;			/* starting bound of preceding,
+					 dynamically adjusted as necessary */
+
+
+/*
+** METHODS
+*/
+
+spec_init()
+{
+	ProcessTable = (struct btree *)btnew(10, spec_processCmp);
+	numToProcess = (struct btree *)btnew(10, spec_numCmp);
+
+	AcceptTable = mainAcceptTable = (struct btree *)btnew(10, spec_cmp);
+	CreateTable = mainCreateTable = (struct btree *)btnew(10, spec_cmp);
+	TransactionTable = mainTransactionTable =(struct btree *)btnew(10,spec_cmp);
+	SelectTable = mainSelectTable = (struct btree *)btnew(10, spec_cmp);
+	DelayTable = mainDelayTable = (struct btree *)btnew(10, spec_cmp);
+	TerminateTable = mainTerminateTable = (struct btree *)btnew(10, spec_cmp);
+	TreturnTable = mainTreturnTable = (struct btree *)btnew(10, spec_cmp);
+
+	StructTable = instances(bound, spec_structSpace);
+
+	formString = (char *)malloc(FORMsIZE);
+	parmString = (char *)malloc(PARMsIZE);
+}
+
+
+spec_cmp( p1,p2 )
+spec_other *p1, *p2;
+{
+	/* WARNING: id must be the first field in all structures passed here */
+	return p1->id - p2->id;
+}
+
+
+spec_processCmp( p1, p2 )
+spec_process *p1, *p2;
+{
+	return strcmp(p1->name, p2->name);
+}
+
+spec_numCmp( p1, p2 )
+spec_process *p1, *p2;
+{
+	return p1->num - p2->num;
+}
+
+
+spec_start( name, context )
+char *name;
+int context;
+{
+	spec_process *pp;
+	
+	pp = instance( spec_process );
+	pp->name = name;
+	if (pp != (CurrentSpec = (spec_process *)btinsert(ProcessTable, pp)))
+		free(pp);	/* this is an error */
+	listAdd(process, CurrentSpec);
+	CurrentSpec->name = newstr(name);
+	CurrentSpec->num = slookup(name, context)->t.typespec.num;
+	/* list pointers null automatically, calloc */
+	btinsert(numToProcess, CurrentSpec);
+}
+
+
+
+spec_bodyStart( name, context )
+char *name;
+int context;
+{
+	spec_process *pp;
+	
+	
+	AcceptTable = (struct btree *)btnew(10, spec_cmp);
+	CreateTable = (struct btree *)btnew(10, spec_cmp);
+	TransactionTable = (struct btree *)btnew(10,spec_cmp);
+	SelectTable = (struct btree *)btnew(10, spec_cmp);
+	DelayTable = (struct btree *)btnew(10, spec_cmp);
+	TerminateTable = (struct btree *)btnew(10, spec_cmp);
+	TreturnTable = (struct btree *)btnew(10, spec_cmp);
+
+	pp = instance( spec_process );
+	pp->name = name;
+	if (pp != (CurrentSpec = (spec_process *)btinsert(ProcessTable, pp)))
+		free(pp);	/* this not happening is an error */
+}
+
+
+spec_bodyEnd()
+{
+	if ( debugFlag )
+		spec_printOccur(CurrentSpec);
+
+	btfree(AcceptTable, free);
+	AcceptTable = mainAcceptTable;
+	btfree(CreateTable, free);
+	CreateTable = mainCreateTable;
+	btfree(TransactionTable, free);
+	TransactionTable = mainTransactionTable;
+	btfree(SelectTable, free);
+	SelectTable = mainSelectTable;
+	btfree(DelayTable, free);
+	DelayTable = mainDelayTable;
+	btfree(TerminateTable, free);
+	TerminateTable = mainTerminateTable;
+	btfree(TreturnTable, free);
+	TreturnTable = mainTreturnTable;
+
+	CurrentSpec = &OutsideSpec;		/* outside bodies (e.g., main) */
+}
+
+spec_end()
+{
+	int free();
+
+	if ( debugFlag )
+		spec_printConvert(CurrentSpec);
+	CurrentSpec = &OutsideSpec;		/* outside bodies (e.g., main) */
+}
+
+spec_addTransSpec( name, context )
+char *name;
+int context;
+{
+	spec_field *fp;
+	
+	fp = instance( spec_field );
+	fp->symbol = slookup( name, context );
+	listAdd(CurrentSpec->trans, fp);
+}
+
+
+spec_addParam( typeString )	/* add the type string, during process spec */
+char *typeString;
+{
+	spec_parameters *pp;
+
+	pp = instance ( spec_parameters );
+	pp->name = newstr(typeString);
+	pp->next = NULL;
+	listAdd(CurrentSpec->typeString, pp);
+}
+
+
+
+spec_addFormal( name )
+char *name;
+{
+	spec_parameters *pp;
+	
+	pp = instance(spec_parameters);
+	pp->name = newstr( name );
+	pp->next = NULL;
+	listAdd(CurrentSpec->formal, pp);
+}
+
+
+static spec_accept *CurrentAccept;
+
+spec_addAcceptParam( name )
+char *name;
+{
+	spec_parameters *pp;
+
+	pp = instance ( spec_parameters );
+	pp->name = newstr(name);
+	pp->next = NULL;
+	listAdd(CurrentAccept->formal, pp);
+}
+
+
+
+spec_addAccept( name, num, lineNumber, id )
+char *name;
+int num;
+int lineNumber;
+unsigned id;
+{
+	CurrentAccept = instance( spec_accept );
+	CurrentAccept->formal = CurrentAccept->formalTail = NULL;
+	CurrentAccept->lineNumber = lineNumber;
+	CurrentAccept->space = CurrentSpec->num;
+	CurrentAccept->id = id;
+	CurrentAccept->symbol = slookup( name, num );
+	btinsert(AcceptTable, CurrentAccept);
+}
+
+
+				
+spec_addCreate( name, context, lineNumber, id )
+char *name;
+int context;
+int lineNumber;
+unsigned id;
+{
+	spec_create *cp;	/* create pointer */
+	spec_process pp;
+	
+	cp = instance( spec_create );
+	cp->id = id;
+	cp->lineNumber = lineNumber;
+	cp->space =  CurrentSpec->num;
+	/* for  a create, the formal parameters are always the same. */
+	pp.name = name;
+	cp->params = (spec_process *)btsearch(ProcessTable, &pp);
+	btinsert(CreateTable, cp);
+}
+
+
+
+
+spec_addTrans( name, num, lineNumber, id )
+char *name;
+int num;
+int lineNumber;
+unsigned id;
+{
+	spec_transact *tp;
+
+	tp = instance( spec_transact );
+	tp->id = id;
+	tp->lineNumber = lineNumber;
+	tp->space = CurrentSpec->num;
+	tp->symbol = slookup(name, num);
+	btinsert(TransactionTable, tp);
+}
+
+
+
+
+
+/*---------------------------------------------------------------------------
+ *  all of the following are specs, not occurs (i.e., they have no symbol entry).
+ *---------------------------------------------------------------------------
+ */
+static spec_select *CurrentSelect;
+
+spec_addSelect( lineNumber, id )
+int lineNumber;
+unsigned id;
+{
+	spec_select *sp;
+	
+	sp = instance( spec_select );
+	sp->lineNumber = lineNumber;
+	sp->space = CurrentSpec->num;
+	sp->id = id;
+	btinsert(SelectTable, sp);
+	CurrentSelect = sp;
+}
+
+
+spec_addSelectTerminate( lineNumber )
+int lineNumber;
+{
+	CurrentSelect->termLine = lineNumber;
+}
+
+
+spec_addSelectImmediate( lineNumber )
+int lineNumber;
+{
+	CurrentSelect->immedLine = lineNumber;
+}
+
+
+
+spec_addTerminate( lineNumber, id )
+int lineNumber;
+unsigned id;
+{
+	spec_other *tp;
+	
+	tp = instance( spec_other );
+	tp->lineNumber = lineNumber;
+	tp->space = CurrentSpec->num;
+	tp->id = id;
+	btinsert(TerminateTable, tp);
+}
+
+
+spec_addDelay( lineNumber , id)
+int lineNumber;
+unsigned id;
+{
+	spec_other *dp;
+	
+	dp = instance( spec_other );
+	dp->lineNumber = lineNumber;
+	dp->space = CurrentSpec->num;
+	dp->id = id;
+	btinsert(DelayTable, dp);
+}
+
+
+
+spec_addTreturn( name, num,  lineNumber, id )
+char *name;
+int num;
+int lineNumber;
+unsigned id;
+{
+	spec_treturn *rp;
+	
+	rp = instance( spec_treturn );
+	rp->lineNumber = lineNumber;
+	rp->id = id;
+	rp->space = CurrentSpec->num;
+	rp->symbol = slookup(name, num);
+	btinsert(TreturnTable, rp);
+}
+
+
+
+
+spec_addStructField(name, context)
+char *name;
+int context;
+{
+	spec_field *sf;
+	int i;
+
+	if (context >= bound) {
+		i = bound;
+		bound *= 2;
+		realloc(StructTable, bound*sizeof(spec_structSpace));
+		for (; i < bound;i ++)
+			StructTable[i].fields = NULL;
+	}
+
+	sf = instance(spec_field);
+	sf->symbol = slookup(name, context);
+	listAdd(StructTable[context].fields, sf);
+}
+
+
+spec_isOrdered(space)
+unsigned space;
+{
+	return StructTable[space].fields != NULL;
+}
+
+
+
+spec_markProcesses()
+{
+	spec_process *pp;
+
+	for ( pp = process; pp != NULL; pp = pp->next )
+		markSubTree(pp->num);
+}
+
+spec_process *
+spec_lookupByNum( num )
+int num;
+{
+	spec_process key;
+	
+	key.num = num;
+	return (spec_process *)btsearch(numToProcess, &key);
+}
+
+@
+
+
+2.3
+log
+@about to make sweeping changes to occurs.
+@
+text
+@a36 1
+
+d38 1
+d44 1
+a44 1
+int spec_printNode(), spec_cmp(), spec_processCmp();
+d53 9
+a61 7
+struct btree *AcceptTable;
+struct btree *CreateTable;
+struct btree *TransactionTable;
+struct btree *SelectTable;
+struct btree *DelayTable;
+struct btree *TerminateTable;
+struct btree *TreturnTable;
+d69 1
+a69 1
+int bound = 100;			/* starting bound of preceeding,
+a78 8
+	AcceptTable = (struct btree *)btnew(10, spec_cmp);
+	CreateTable = (struct btree *)btnew(10, spec_cmp);
+	TransactionTable = (struct btree *)btnew(10,spec_cmp);
+	SelectTable = (struct btree *)btnew(10, spec_cmp);
+	DelayTable = (struct btree *)btnew(10, spec_cmp);
+	TerminateTable = (struct btree *)btnew(10, spec_cmp);
+	TreturnTable = (struct btree *)btnew(10, spec_cmp);
+
+d80 1
+d82 8
+d111 5
+a117 1
+
+d132 1
+d143 9
+d161 18
+d184 4
+d413 19
+@
+
+
+2.2
+log
+@about to add namespace for occurrences.
+@
+text
+@d50 1
+a50 1
+
+d123 1
+a123 1
+	CurrentSpec->num = context;
+d142 4
+d147 5
+d213 1
+d233 1
+d254 1
+d277 1
+d307 1
+d321 1
+d339 1
+d371 1
+a371 1
+	return (bool)StructTable[space].fields;
+a374 4
+spec_end()
+{
+	return;
+}
+@
+
+
+2.1
+log
+@Version which works up to printing out buffer messages in commun.
+@
+text
+@d31 1
+a36 3
+typedef unsigned short bool;
+#define TRUE 1
+#define FALSE 0
+@
+
+
+1.4
+log
+@just before modifying to remove symbol table output and inserte id tables output.
+@
+text
+@d5 4
+a8 9
+ * The entries for creates and accepts are stored directly in the symbol
+   table, where there are named entries.  The other structures are kept
+   here, as there are no symbol table entries for treturn, terminate,
+   select, tcall, or delay.  Transactions are stored in the symbol table
+   with negative id numbers to differentiate them from accepts of that
+   name.
+
+ * At the end of the create stack of occurrences there is an occurrence with id
+ * and line number 0.  This is the blank holding the formal parameters. 
+a9 4
+ * spec_addCreateTblock is used to save the names of create tblocks which
+   are then used later in the initialization stage.  Of course, this
+   information also exist in the symbol table, but in a relatively
+   incaccessable form.
+d11 4
+d18 3
+d40 1
+d46 1
+a46 1
+int spec_printNode(), spec_cmp(), spec_selectCmp();
+d48 1
+d53 1
+a53 12
+static symbol	*CurrentSpec = NULL;
+static symbol	*NullSpec;
+static parameters *CurrentParam;	/* used for later insertion of
+					 formals */
+static struct spec *DelayTable;
+static bool delaysExist = FALSE;
+static struct spec_select *SelectTable;
+static bool selectsExist = FALSE;
+static struct spec *TerminateTable;
+static bool terminatesExist = FALSE;
+static struct spec *TreturnTable;
+static bool treturnsExist = FALSE;
+d55 7
+a61 6
+struct createTblock {			/* stores the names of created
+					 create tblocks for later
+					 intialization */
+	char *name;
+	struct createTblock *next;
+};
+d63 4
+a66 1
+static struct createTblock *CreateTblocks = NULL;
+d68 3
+a70 1
+static char *comma;
+d79 14
+a92 6
+	DelayTable = (struct spec *)btnew(10,spec_cmp);
+	SelectTable = (struct spec_select *)btnew(10,spec_selectCmp);
+	TerminateTable = (struct spec *)btnew(10,spec_cmp);
+	TreturnTable = (struct spec *)btnew(10,spec_cmp);
+	NullSpec = instance( symbol );
+	NullSpec->occurrence = instance( occur );
+d96 6
+d104 5
+d110 3
+d117 10
+a126 4
+	if ((CurrentSpec = slookup(name, context))== NULL)
+		CurrentSpec = NullSpec;
+	CurrentSpec->occurrence = instance( occur );
+	CurrentParam = CurrentSpec->occurrence->param;
+d131 11
+d143 3
+a145 2
+spec_bodyStart( name, context )		/* sets up Currents* for a process body
+				 declaration */
+d149 1
+d151 3
+a153 3
+	if ((CurrentSpec = slookup(name, context)) == NULL) 
+		CurrentSpec = NullSpec;
+	CurrentParam = CurrentSpec->occurrence->param;
+d156 1
+d160 1
+a160 1
+	parameters *pp;
+d162 2
+a163 3
+	pp = instance ( parameters );
+	pp->typeString = newstr(typeString);
+	pp->formal = NULL;
+d165 1
+a165 6
+	if ( CurrentSpec->occurrence->paramTail == NULL ) 
+		CurrentSpec->occurrence->param = pp;
+	else
+		CurrentSpec->occurrence->paramTail->next = pp;
+	CurrentSpec->occurrence->paramTail = pp;
+	CurrentSpec->occurrence->numParams++;
+d173 6
+a178 6
+	if (CurrentParam == NULL) {
+		yyerror("More formals than types");
+	} else {
+		CurrentParam->formal = newstr( name );
+		CurrentParam = CurrentParam->next;
+	}
+d182 1
+a182 1
+static occur *CurrentAccept;
+d187 1
+a187 1
+	parameters *pp;
+d189 2
+a190 3
+	pp = instance ( parameters );
+	pp->typeString = NULL;
+	pp->formal = newstr(name);
+d192 1
+a192 7
+
+	if ( CurrentAccept->paramTail == NULL )
+		CurrentAccept->param = pp;
+	else
+		CurrentAccept->paramTail->next = pp;
+	CurrentAccept->paramTail = pp;
+	CurrentAccept->numParams++;
+d203 2
+a204 5
+	symbol *sp;
+	
+	CurrentAccept = instance( occur );
+	CurrentAccept->numParams = 0;
+	CurrentAccept->param = CurrentAccept->paramTail = NULL;
+d207 2
+a208 2
+	sp = slookup( name, num );
+	spec_insertOccur( sp, CurrentAccept );
+d219 2
+a220 2
+	occur *cp;	/* create pointer */
+	symbol *sp;
+d222 2
+a223 2
+	sp = slookup(name, e_complex);
+	cp = instance( occur );
+a224 1
+	cp->id = id;
+d226 3
+a228 4
+	cp->numParams = sp->occurrence->numParams;
+	cp->param = sp->occurrence->param;
+	cp->paramTail = sp->occurrence->paramTail;
+	spec_insertOccur( sp, cp );
+d240 1
+a240 2
+	occur *tp;
+	symbol *sp;
+d242 2
+a243 1
+	tp = instance( occur );
+d245 2
+a246 5
+	tp->id = -id;			/* to be able to tell from accepts */
+	tp->numParams = 0;
+	tp->param = tp->paramTail = NULL;
+	sp = slookup( name, num );
+	spec_insertOccur( sp, tp );
+a250 12
+spec_insertOccur( sp, op )
+symbol *sp;
+occur *op;
+{
+	if (sp) {
+		op->next = sp->occurrence;
+		sp->occurrence = op;
+	}
+	/* else I believe this error is reported already */
+	/* certain code might go here for separate compilation, depending
+	 on how it is done */
+}
+a252 2
+
+
+d254 1
+a254 1
+ *  all of the following are specs, not occurs 
+d257 1
+a257 1
+static struct spec_select *CurrentSelect;
+d263 1
+a263 1
+	struct spec_select *sp;
+d265 3
+a267 4
+	selectsExist = TRUE;
+	sp = instance( struct spec_select );
+	sp->spec.lineNumber = lineNumber;
+	sp->spec.id = id;
+d292 1
+a292 1
+	struct spec *tp;
+d294 1
+a294 2
+	terminatesExist = TRUE;
+	tp = instance( struct spec );
+d305 1
+a305 1
+	struct spec *dp;
+d307 1
+a307 2
+	delaysExist = TRUE;
+	dp = instance( struct spec );
+d315 2
+a316 1
+spec_addTreturn( num,  lineNumber, id )
+d321 1
+a321 1
+	struct spec *rp;
+d323 1
+a323 3
+	treturnsExist = TRUE;
+	rp = instance( struct spec );
+	rp->context = num;
+d326 1
+d332 2
+a333 1
+spec_addCreateTblock( name )
+d335 1
+d337 2
+a338 7
+	struct createTblock *cp;
+	
+	cp = instance( struct createTblock );
+	cp->name = newstr( name );
+	cp->next = CreateTblocks;
+	CreateTblocks = cp;
+}
+d340 6
+a345 137
+
+
+spec_end()
+{
+	return;
+}
+
+
+
+
+
+/*---------------------------------------------------------------------------
+ * The following deals with output, rather than input
+ *---------------------------------------------------------------------------
+ */
+
+static FILE *SpecFd;
+
+spec_printall(fd)
+FILE *fd;
+{
+	int spec_printNode();
+	int spec_printSelectNode();
+
+	SpecFd = fd;
+	spec_printSymbols();
+	spec_printSpecs("delays", DelayTable,spec_printNode, delaysExist);
+	spec_printSpecs("selects", SelectTable,spec_printSelectNode, selectsExist);
+	spec_printSpecs("terminates", TerminateTable,spec_printNode, terminatesExist);
+	spec_printSpecs("treturns", TreturnTable,spec_printNode, treturnsExist);
+	spec_printSpecTable();
+	spec_printProcessInfos();
+}
+
+
+
+spec_printSpecs( type, table, printFunction, exists )
+char *type;
+struct spec *table;
+int (*printFunction)();
+bool exists;
+{
+	char *typeStr;
+	
+	if (strcmp(type, "selects") == 0)
+		typeStr = "selectSpec";
+	else 
+		typeStr = "spec";
+		
+	if (exists) {
+		fprintf(SpecFd, "static DD_%ss DD_%s = {\n", typeStr, type);
+		comma = "";
+		btprint(table, printFunction);	
+		fprintf(SpecFd, "};\n");
+	} else 
+		fprintf(SpecFd, "static DD_%s DD_%s[1];\n", typeStr, type);
+}
+
+
+
+spec_printNode(s)
+struct spec *s;
+{
+	fprintf(SpecFd, "%s{%d, %d}", comma, s->id, s->lineNumber );
+	comma = ",\n";
+}
+
+
+spec_printSelectNode(s)
+struct spec_select *s;
+{
+	fprintf(SpecFd, "%s{",comma);
+	comma = "";
+	spec_printNode(&(s->spec));
+	fprintf(SpecFd, ", %d, %d}", s->termLine, s->immedLine);
+}
+
+
+spec_dump()
+{
+		spec_printall(stdout);
+}
+
+
+spec_selectCmp( p1, p2 )
+struct spec_select *p1, *p2;
+{
+	spec_cmp( &p1->spec, &p2->spec );
+}
+
+
+spec_cmp(p1,p2)
+struct spec *p1, *p2;
+{
+	return p1->id - p2->id;
+}
+
+
+extern struct table_tag *tables;
+
+spec_printSymbols()
+{
+	int spec_printFormals();
+	int spec_printOccurrences();
+	int spec_printSymbolTable();
+	
+	btprint(tables->table, spec_printFormals);
+	btprint(tables->table, spec_printOccurrences);
+	fprintf(SpecFd, "static DD_symEntry DD_SymbolTable[] = {\n");
+	comma = "";
+	btprint(tables->table, spec_printSymbolTable);
+	fprintf(SpecFd, "};\n");
+}
+
+
+
+
+spec_printFormals(s)
+symbol *s;
+{	
+	occur *op;
+
+	if (s->occurrence == NULL)
+		return;
+	if (s->num == e_complex) {		/* is a process create */
+		fprintf(SpecFd, "static DD_formals DD_formals_%s = {\n", s->name);
+		spec_printFormalList(s->occurrence->param);
+	} else {				/* is an accept, or transact */
+		op = s->occurrence;
+		while (op) { 
+			if (op->id > 0) {	/* is an accept */
+				fprintf(SpecFd, "static DD_formals DD_acceptFormals_%s_%d = {\n",
+							s->name, op->id);
+				spec_printFormalList(op->param);
+			} /* else is a transact, has no parameters */
+			op = op->next;
+		}
+a346 1
+}
+d348 3
+a350 9
+
+spec_printFormalList(pp)
+parameters *pp;
+{
+	while (pp) {
+		fprintf(SpecFd, " \"%s\"%c", pp->formal, pp->next ? ',' : '}');
+		pp = pp->next;
+	}
+		fprintf(SpecFd, ";\n");
+d354 2
+a355 3
+
+spec_printOccurrences(s)
+symbol *s;
+d357 1
+a357 31
+	occur *op;
+	
+	if (s->occurrence == NULL) 
+		return;
+	op = s->occurrence;
+	fprintf(SpecFd, "static DD_occurs DD_occurs_%s = {\n", s->name);
+	while (op) {
+		if (s->num == e_complex) {	/* is a create occur */
+			fprintf(SpecFd, "{%d, %d, DD_sizeAnd(DD_formals_%s)}",
+			op->id, op->lineNumber, s->name);
+			if (op->next == NULL)	{
+				/* there were no occurrences, only the blank */
+				fprintf(SpecFd, "};\n");
+				op = op->next;
+			} else {
+				fprintf(SpecFd,"%s\n", op->next->next ? "," : "};");
+				/* handle the create parameter blank */
+				op = op->next->id ? op->next : 0;  
+			}
+
+		} else {			/* is an accept or transact */
+			fprintf(SpecFd, "{%d, %d, ", op->id, op->lineNumber);
+			if (op->id > 0) 	/* is accept */
+				fprintf(SpecFd, "DD_sizeAnd(DD_acceptFormals_%s_%d)"
+					, s->name, op->id);
+			else			/* is transact */
+				fprintf(SpecFd, "0, 0");
+			fprintf(SpecFd, "}%s\n", op->next ? "," : "};" );
+			op = op->next;
+		}
+	}
+d361 1
+a361 3
+
+spec_printSymbolTable(s)
+symbol *s;
+d363 1
+a363 11
+	fprintf(SpecFd, "%s{\"%s\", %d, %d, %d, ", comma, s->name, s->num, s->t.typespec.num, s->t.typespec.obj );
+	comma = ",\n";
+	if (s->occurrence) {
+		if (s->num == e_complex)
+			fprintf(SpecFd, "sizeof DD_create_%s , ", s->name);
+		else
+			fprintf(SpecFd, "sizeof (CC_%d%s) , ", s->num, s->name);
+		fprintf(SpecFd, "DD_sizeAnd(DD_occurs_%s)", s->name);
+	} else 
+		fprintf(SpecFd, "0, 0, 0");
+	fprintf(SpecFd, "}");
+a364 54
+
+
+spec_printProcessInfos()
+{
+	while (CreateTblocks) {
+		fprintf(SpecFd, "DD_info DD_%s = {\n", CreateTblocks->name);
+		fprintf(SpecFd, "(char *)&DD_create_%s, &DD_SpecTable};\n", CreateTblocks->name);
+		CreateTblocks = CreateTblocks->next;
+	}
+}
+
+
+
+#define PSA(x)		fprintf(SpecFd, "DD_sizeAnd(x),\n") /* print size And */
+#define P0A(x)		fprintf(SpecFd, "0, x,\n")	   /* print 0 size And */
+#define PSor0A(e,x)	if (e) PSA(x); else P0A(x)	   /* decide which */
+
+spec_printSpecTable()
+{
+	fprintf(SpecFd, "static DD_specTable DD_SpecTable = {\n");
+	PSA(DD_SymbolTable);
+	PSor0A(selectsExist, DD_selects);
+	PSor0A(delaysExist, DD_delays);
+	PSor0A(terminatesExist, DD_terminates);
+	PSor0A(treturnsExist, DD_treturns);
+	fprintf(SpecFd, "};\n");
+}
+
+
+
+
+/*
+** Retrieval routines
+**
+** These are relatively inefficient because they are strictly random access,
+** they do not first say which process, then ask for the next-parameter.
+*/
+
+char *
+spec_get_param_type(proc, pnum)
+char *proc;
+int pnum;
+{
+	parameters *pp;
+	int i;
+
+
+	pp = slookup( proc, 1 )->occurrence->param;
+	for ( i=0; i<pnum ; i++ )
+		pp = pp->next;
+	return pp->typeString;
+}
+
+
+@
+
+
+1.3
+log
+@working added static arrays of compile time data.
+@
+text
+@a0 1
+
+d8 3
+a10 1
+   select, tcall, or delay.
+d20 3
+a62 2
+static struct spec *TransactionTable;
+static bool transactionsExist = FALSE;
+a86 1
+	TransactionTable = (struct spec *)btnew(10,spec_cmp);
+a150 24
+				
+spec_addCreate( name, context, lineNumber, id )
+char *name;
+int context;
+int lineNumber;
+unsigned id;
+{
+	occur *cp;	/* create pointer */
+	symbol *sp;
+	
+	sp = slookup(name, e_complex);
+	cp = instance( occur );
+	cp->lineNumber = lineNumber;
+	cp->id = id;
+	/* for  a create, the formal parameters are always the same. */
+	cp->numParams = sp->occurrence->numParams;
+	cp->param = sp->occurrence->param;
+	cp->paramTail = sp->occurrence->paramTail;
+	cp->next = sp->occurrence;
+	sp->occurrence = cp;
+}
+
+
+
+a168 1
+	
+d187 1
+a187 2
+	CurrentAccept->next = sp->occurrence;
+	sp->occurrence = CurrentAccept;
+d191 20
+d212 3
+d221 4
+a224 6
+	struct spec *tp;
+	
+	transactionsExist = TRUE;
+	tp = instance( struct spec );
+	tp->name = newstr(name);
+	tp->context = num;
+d226 5
+a230 2
+	tp->id = id;
+	btinsert(TransactionTable, tp);
+d235 12
+d248 7
+a372 1
+	spec_printSpecs("transactions", TransactionTable,spec_printNode, transactionsExist);
+d374 1
+d407 1
+a407 1
+	fprintf(SpecFd, "%s{\"%s\", %d, %d, %d}", comma, s->name, s->context, s->id, s->lineNumber );
+d438 1
+a438 9
+	int temp;
+	
+	if (temp = p1->context - p2->context)
+		return temp;
+	if (temp = p1->id - p2->id)
+		return (temp);
+	if (temp = strcmp(p1->name,p2->name))
+		return temp;
+
+d471 1
+a471 1
+	} else {				/* is an accept */
+d474 5
+a478 2
+			fprintf(SpecFd, "static DD_formals DD_acceptFormals_%s_%d = {\n", s->name, op->id);
+			spec_printFormalList(op->param);
+a480 1
+				
+d508 1
+a508 1
+			fprintf(SpecFd, "{%d, %d, DD_formals_%s}",
+d510 1
+a510 2
+			
+			if (op->next == NULL) 
+d513 2
+a514 1
+			else 
+d516 12
+a527 4
+			op = op->next->id ? op->next : 0;  /* the create parameter blank */
+		} else {				/* is an accept */
+			fprintf(SpecFd, "{%d, %d, DD_acceptFormals_%s_%d}%s\n",
+				op->id, op->lineNumber, s->name, op->id, op->next ? "," : "};");
+d545 1
+a545 1
+		fprintf(SpecFd, "DD_occurs_%s", s->name);
+d547 1
+a547 1
+		fprintf(SpecFd, "0, 0");
+d556 1
+a556 1
+		fprintf(SpecFd, "(char *)&DD_create_%s, DD_standardDefs};\n", CreateTblocks->name);
+d561 16
+@
+
+
+1.2
+log
+@save before large revision.
+@
+text
+@d1 1
+d6 7
+a12 8
+ * Remembers run time system information for the debugger, and process
+ * parameter type strings for the compiler to output.  The structure is
+ * fairly self-explanatory.  Some fields are included (such as delay
+ * number) for completeness.  They are not currently used because the
+ * compiler does not create them for itself.  Eventually, there will be
+ * something like a -g flag to ccc which will turn on numbering of things
+ * like delays and selects, and will generate code which passes those
+ * numbers as parameters to the run time system.
+d14 4
+a17 3
+ * The type strings are used by the compiler in generating the process
+ * headers.  These strings are not included in the accept paramters.  It
+ * is easily accessible to the debugger from the symbol table.
+d20 1
+d34 3
+d38 1
+d43 1
+a43 1
+int spec_printnode(), spec_cmp();
+d49 3
+a51 3
+static struct spec *SpecTable;
+static struct spec *CurrentSpec = NULL;
+static struct spec_param *CurrentParam;	/* used for later insertion of
+d53 10
+d64 6
+d71 1
+d73 3
+d82 7
+a88 1
+	SpecTable = (struct spec *)btnew(10,spec_cmp);
+d94 2
+a95 1
+spec_start( name, context, isProcess )
+d99 5
+a103 1
+	struct spec *sp;
+a104 20
+	sp = instance(struct spec);
+	sp->name = newstr(name);
+	sp->context = context;
+	sp->isProcess = isProcess;
+	sp->numParams = 0;
+	sp->param = sp->paramTail = NULL;
+	sp->create.number = 0;
+	sp->create.head = sp->create.tail = NULL;
+	sp->accept.number = 0;
+	sp->accept.head = sp->accept.tail = NULL;
+	sp->transaction.number = 0;
+	sp->transaction.head = sp->transaction.tail = NULL;
+	sp->select.number = 0;
+	sp->select.head = sp->select.tail = NULL;
+	sp->delay.number = 0;
+	sp->delay.head = sp->delay.tail = NULL;
+	sp->terminate.number = 0;
+	sp->terminate.head = sp->terminate.tail = NULL;
+	sp->treturn.number = 0;
+	sp->treturn.head = sp->treturn.tail = NULL;
+a105 3
+	btinsert(SpecTable,sp);
+	CurrentSpec = sp;
+}
+d108 1
+a108 2
+
+spec_bodyStart( name )		/* sets up Currents* for a process body
+d111 1
+a112 1
+	struct spec *sp;
+d114 3
+a116 5
+	sp = instance( struct spec );
+	sp->name = name;
+	CurrentSpec = (struct spec *)btsearch(SpecTable, sp);
+	CurrentParam = CurrentSpec ? CurrentSpec->param : NULL;		
+	free(sp);
+d122 1
+a122 1
+	struct spec_param *pp;
+d124 1
+a124 1
+	pp = instance ( struct spec_param );
+d128 2
+a129 2
+	if ( CurrentSpec->paramTail == NULL ) 
+		CurrentSpec->param = pp;
+d131 3
+a133 3
+		CurrentSpec->paramTail->next = pp;
+	CurrentSpec->paramTail = pp;
+	CurrentSpec->numParams++;
+a148 5
+#define AddSpec( type, addPtr )	if (CurrentSpec->type.tail == NULL) \
+					CurrentSpec->type.head = addPtr;\
+				else    CurrentSpec->type.tail->next = addPtr;\
+				CurrentSpec->type.tail = addPtr;\
+				CurrentSpec->type.number++;
+d157 2
+a158 1
+	struct spec_oneCreate *cp;
+d160 2
+a161 3
+	cp = instance( struct spec_oneCreate );
+	cp->name = newstr(name);
+	cp->num = context;
+d164 6
+a169 1
+	AddSpec(create, cp);
+d174 1
+a174 1
+static struct spec_oneAccept *CurrentAccept;
+d179 1
+a179 1
+	struct spec_param *pp;
+d181 1
+a181 1
+	pp = instance ( struct spec_param );
+d203 1
+a203 1
+	struct spec_oneAccept *ap;
+d205 8
+a212 8
+	ap = instance( struct spec_oneAccept );
+	ap->param = ap->paramTail = NULL;
+	ap->name = newstr(name);
+	ap->num = num;
+	ap->lineNumber = lineNumber;
+	ap->id = id;
+	AddSpec(accept, ap);
+	CurrentAccept = ap;
+a220 1
+
+d223 1
+a223 1
+	struct spec_oneTrans *tp;
+d225 2
+a226 1
+	tp = instance( struct spec_oneTrans );
+d228 1
+a228 1
+	tp->num = num;
+d231 1
+a231 1
+	AddSpec(transaction, tp);
+d237 1
+a237 1
+static struct spec_oneSelect *CurrentSelect;
+d243 1
+a243 1
+	struct spec_oneSelect *sp;
+d245 5
+a249 4
+	sp = instance( struct spec_oneSelect );
+	sp->lineNumber = lineNumber;
+	sp->id = id;
+	AddSpec(select, sp);
+d264 1
+a264 1
+	CurrentSelect->immediateLine = lineNumber;
+d273 1
+a273 1
+	struct spec_oneTerminate *tp;
+d275 2
+a276 1
+	tp = instance( struct spec_oneTerminate );
+d279 1
+a279 1
+	AddSpec(terminate, tp);
+d287 1
+a287 1
+	struct spec_oneDelay *dp;
+d289 2
+a290 1
+	dp = instance( struct spec_oneDelay );
+d293 1
+a293 1
+	AddSpec(delay, dp);
+d303 1
+a303 1
+	struct spec_oneTreturn *rp;
+d305 3
+a307 2
+	rp = instance( struct spec_oneTreturn );
+	rp->num = num;
+d310 1
+a310 1
+	AddSpec(treturn, rp);
+d315 10
+d326 2
+d347 2
+a348 1
+	int spec_printnode();
+d351 7
+a357 1
+	btprint(SpecTable,spec_printnode);
+d362 5
+a366 2
+spec_printnode(s)
+struct spec *s;				/* spec */
+d368 4
+a371 12
+ 	struct spec_param *pp;
+	struct spec_oneCreate *cp;
+	struct spec_oneAccept *ap;
+	struct spec_oneTrans *tp;
+	struct spec_oneSelect *sp;
+	struct spec_oneTerminate *kp;	/* kill pointer */
+	struct spec_oneDelay *dp;
+	struct spec_oneTreturn *rp;	/* return pointer */
+	char *comma;
+
+	if (s->isProcess)
+		fprintf(SpecFd,"process spec %s(",s->name);		
+d373 10
+a382 2
+		fprintf(SpecFd,"function %s(",s->name);		
+	
+d384 14
+d399 3
+a401 7
+	for ( pp=s->param; pp!=NULL ; pp=pp->next ) {
+		fprintf(SpecFd,"%s%s",comma,pp->typeString);
+		if ( pp->formal != NULL )
+			fprintf(SpecFd," %s",pp->formal);
+		comma = ", ";
+	}
+	fprintf(SpecFd,");\n");
+a402 8
+	/* print out creates */
+	if (s->create.head)
+		fprintf(SpecFd, "%15s %10s %10s %10s\n",
+					"Create", "Number", "Line", "Id" );
+	for (cp = s->create.head; cp != NULL; cp = cp->next) {
+		fprintf(SpecFd, "%15s %10d %10d %10d\n", 
+			          cp->name, cp->num, cp->lineNumber, cp->id);
+	}
+d404 17
+a420 12
+	/* print out accepts */
+	if (s->accept.head)
+		fprintf(SpecFd, "%15s %10s %10s %10s\n", 
+					"Accept", "Number", "Line", "Id" );
+	for (ap = s->accept.head; ap != NULL; ap = ap->next) {
+		fprintf(SpecFd, "%15s %10d %10d %10d\n", 
+			          ap->name, ap->num, ap->lineNumber, ap->id );
+		if (ap->param) fprintf(SpecFd, "%15sFormals:", "");
+		for (pp = ap->param; pp != NULL; pp = pp->next) {
+			fprintf(SpecFd, " %s%c", pp->formal, pp->next ? ',' : '\n');
+		}
+	}
+d422 6
+a427 17
+	/* print out transactions */
+	if (s->transaction.head)
+		fprintf(SpecFd, "%15s %10s %10s %10s %10s\n",
+				"Transaction", "Number", "Line", "Id" );
+	for (tp = s->transaction.head; tp != NULL; tp = tp->next) {
+		fprintf(SpecFd, "%15s %10d %10d %10d\n", 
+				tp->name, tp->num, tp->lineNumber, tp->id );
+		
+	}
+	
+	/*print out selects */
+	if (s->select.head)
+		fprintf(SpecFd, "%15s %10s %10s\n", "Select", "Line", "Id" );
+	for (sp = s->select.head; sp != NULL; sp = sp->next) {
+		fprintf(SpecFd, "%15s %10d %10d\n", 
+					"", sp->lineNumber, sp->id );
+	}
+d429 10
+d440 7
+a446 23
+	/*print out terminates */
+	if (s->terminate.head)
+		fprintf(SpecFd, "%15s %10s %10s\n", "Terminate", "Line", "Id" );
+	for (kp =s->terminate.head; kp != NULL; kp = kp->next) {
+		fprintf(SpecFd, "%15s %10d %10d\n", 
+					"", kp->lineNumber, kp->id );
+	}
+	
+	/*print out delays */
+	if (s->delay.head)
+		fprintf(SpecFd, "%15s %10s %10s\n", "Delay", "Line", "Id" );
+	for (dp = s->delay.head; dp != NULL; dp = dp->next) {
+		fprintf(SpecFd, "%15s %10d %10d\n", 
+					"", dp->lineNumber, dp->id );
+	}
+	/*print out treturns */
+	if (s->treturn.head)
+		fprintf(SpecFd, "%15s %10s %10s %10s\n", 
+						"Treturn", "Number", "Line", "Id" );
+	for (rp = s->treturn.head; rp != NULL; rp = rp->next) {
+		fprintf(SpecFd, "%15s %10d %10d %10d\n", 
+					"", rp->num, rp->lineNumber, rp->id);
+	}
+d451 19
+d473 9
+d484 3
+a486 1
+spec_dump()
+d488 23
+a510 3
+	FILE *fd;
+	if ((fd=fopen("spec.out","w"))!=NULL)
+		spec_printall(fd);
+d515 2
+a516 2
+spec_cmp(p1,p2)
+struct spec *p1, *p2;
+d518 11
+a528 1
+	return strcmp(p1->name,p2->name);
+d532 13
+d557 1
+a557 2
+	struct spec *sp, spec;
+	struct spec_param *pp;
+d560 2
+a561 6
+	spec.name = proc;
+	if((sp=(struct spec *)btsearch(SpecTable,&spec)) == NULL ) {
+		yyerror("undefined process name");
+		exit(1);
+	}
+	pp = sp->param;
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d44 1
+a44 1
+static struct spec *CurrentSpec;
+d86 2
+d95 1
+a95 1
+spec_bodyStart( name )		/* sets up Currents for a process body
+d145 1
+a145 1
+spec_addCreate( name, context, lineNumber )
+d149 1
+d155 1
+a155 1
+	cp->context = context;
+d157 1
+d186 1
+a186 2
+
+spec_addAccept( name, acceptNum, lineNumber )
+d188 1
+a188 1
+int acceptNum;
+d190 1
+d195 1
+d197 1
+a197 1
+	ap->acceptNum = acceptNum;
+d199 1
+d206 1
+a206 1
+spec_addTrans( name, transNum, transId, lineNumber )
+d208 1
+a208 1
+int transNum;
+d210 2
+d217 1
+a217 2
+	tp->transNum = transNum;
+	tp->transId = transId;
+d219 1
+d226 3
+a228 2
+spec_addSelect( selectNum, lineNumber )
+int selectNum;
+d230 1
+a234 1
+	sp->selectNum = selectNum;
+d236 1
+d238 1
+d242 1
+a242 2
+spec_addTerminate( terminateNum, lineNumber )
+int terminateNum;
+d245 16
+a263 1
+	tp->terminateNum = terminateNum;
+d265 1
+d270 1
+a270 2
+spec_addDelay( delayNum, lineNumber )
+int delayNum;
+d272 1
+a276 1
+	dp->delayNum = delayNum;
+d278 1
+d283 18
+d338 1
+d358 2
+a359 1
+		fprintf(SpecFd, "%15s %10s %10s\n", "Create", "Number", "Line" );
+d361 2
+a362 2
+		fprintf(SpecFd, "%15s %10d %10d\n", 
+				          cp->name, cp->context, cp->lineNumber);
+d367 2
+a368 1
+		fprintf(SpecFd, "%15s %10s %10s\n", "Accept", "Number", "Line" );
+d370 3
+a372 3
+		fprintf(SpecFd, "%15s %10d %10d\n", 
+				          ap->name, ap->acceptNum, ap->lineNumber);
+		fprintf(SpecFd, "%15sFormals:", "");
+d380 2
+a381 1
+		fprintf(SpecFd, "%15s %10s %10s\n", "Transaction", "Number", "Line" );
+d383 2
+a384 2
+		fprintf(SpecFd, "%15s %10d %10d\n", 
+					tp->name, tp->transNum, tp->lineNumber);
+d390 1
+a390 1
+		fprintf(SpecFd, "%15s %10s %10s\n", "Select", "Number", "Line" );
+d393 1
+a393 1
+					"", sp->selectNum, sp->lineNumber);
+d399 1
+a399 1
+		fprintf(SpecFd, "%15s %10s %10s\n", "Terminate", "Number", "Line" );
+d402 1
+a402 1
+					"", kp->terminateNum, kp->lineNumber);
+d407 1
+a407 1
+		fprintf(SpecFd, "%15s %10s %10s\n", "Delay", "Number", "Line" );
+d410 1
+a410 1
+					"", dp->delayNum, dp->lineNumber);
+d412 12
+d471 2
+@

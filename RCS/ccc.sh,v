@@ -1,0 +1,113 @@
+head     2.1;
+branch   ;
+access   ;
+symbols  ;
+locks    lynch:2.1; strict;
+comment  @# @;
+
+
+2.1
+date     86.07.25.14.37.55;  author lynch;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     86.07.16.15.57.46;  author lynch;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.06.30.16.50.35;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Not necessary for compilation.
+@
+
+
+2.1
+log
+@Version which works up to printing out buffer messages in commun.
+@
+text
+@#!/bin/sh
+#
+# Top level concurrent C driver
+#
+LIBDIR=$(LIBDIR)
+LIB=libccc.a
+debug=false
+keep=false
+link=true
+trace=false
+while test $# -gt 0; do
+	case "$1" in
+	-G)	debug=true ;;
+	-x)	trace=true ;;
+	-K)	keep=true ;;
+	-g)	cc1args="$cc1args $1"
+		ccargs="$ccargs $1" ;;
+	-O)	cc1args="$cc1args $1 -i"
+		ccargs="$ccargs $1 -i" ;;
+	*.cc)	cccfiles="$cccfiles $1"
+		ccargs="$ccargs `basename $1 .cc`.o" ;;
+	-c)	link=false ;;
+	*)	ccargs="$ccargs $1" ;;
+	esac
+	shift
+done
+okay=true
+$trace && set -x
+$debug && cccargs=-G ; LIB=libccd.a
+for i in $cccfiles; do
+	dotsee=/tmp/cc$$.c
+	/lib/cpp $i | $LIBDIR/cccom $cccargs > "$dotsee"
+	if test $? -ne 0
+	then
+		echo Concurrent C errors detected
+		okay=false
+	else
+		$keep && cb < $dotsee | cat -s > `basename $i .cc`.c 2>/dev/null
+		if cc $cc1args -c $dotsee ;then
+			mv cc$$.o `basename $i .cc`.o 
+		else
+			okay=false
+		fi
+	fi
+	rm -f $dotsee
+done
+$okay && $link && cc $ccargs $LIBDIR/$LIB -lpps
+$okay
+@
+
+
+1.2
+log
+@implements the debug options, compiling and linking.
+@
+text
+@@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d6 2
+d13 1
+d29 1
+d32 1
+a32 1
+	/lib/cpp $i | $LIBDIR/cccom > "$dotsee"
+d45 1
+a45 3
+	if $remove; then
+		rm -f $dotsee
+	fi
+d47 1
+a47 1
+$okay && $link && cc $ccargs $LIBDIR/libccc.a -lpp
+@

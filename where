@@ -1,0 +1,3 @@
+# LIST makes an even number
+apply -P5 -2 "grep -n $*" *.c *.h *.l *.y LIST
+

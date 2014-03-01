@@ -1,0 +1,33 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.1
+date     86.06.30.16.49.13;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@I think this is an old level method.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#
+if (! $?cccpath) then
+    set cccpath="/u1/joe/cccpath"
+endif
+alias	ccc	'/lib/cpp \!:1:r.cc | $cccpath/cccom > /tmp/,;cb </tmp/, >\!:1:r.c'
+alias	link	'cc -g -w -o \!:1:r \!:1:r.c $cccpath/libccc.a -lpp -I$cccpath'
+alias	mlink	'cc -g -w -o \!:1:r \!:1:r.c $cccpath/libccc.a -lm -lpp -I$cccpath'
+@

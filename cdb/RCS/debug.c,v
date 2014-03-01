@@ -1,0 +1,152 @@
+head     3.0;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+3.0
+date     86.09.18.16.03.52;  author lynch;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.09.11.13.45.50;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@works.
+@
+
+
+3.0
+log
+@ working version, last day
+@
+text
+@#include <stdio.h>
+#include "../bool.h"
+#include "cdb.h"
+#include "static.h"
+#include "dynamic.h"
+#include "tables.h"
+static
+#include "stateString.h"
+
+extern processList *all;
+FILE *fd;
+bool init = FALSE;
+
+debug_dump()
+{
+	processList *plp;
+	process *pp;
+	staticProcessInfo *info;
+	int i;
+		
+	if (!init) debug_open();
+	
+	for ( plp=all; plp != NULL; plp = plp->next ) {
+		pp = plp->process;
+		fprintf(fd, "\n%s\nSTATE: %s, ID: %d, UNIXPID: %d\n",
+			pp->tag, stateString[(int)pp->state], pp->id, pp->pid);
+		fprintf(fd, "PARMS: %d in space %d\n", 
+				pp->numParms, pp->spaceParms);
+		fprintf(fd, "POINTS: traces, breaks\n");
+		info = pp->info;
+#define prPt(pt,cap, quoted)\
+		fprintf(fd, "%s:\n", quoted);\
+		for ( i=0; i<info->points.num/**/cap; i++ )\
+			fprintf(fd, "%d, %d\n", pp->point.pt[i].traces,pp->point.pt[i].breaks)
+
+		prPt(accept,Accepts, "accept");
+		prPt(create,Creates, "create");
+		prPt(transact,Transacts, "transact");
+		prPt(select,Selects, "select");
+		prPt(delay,Delays, "delay");
+		prPt(terminate,Terminates, "terminate");
+		prPt(treturn,Treturns, "treturn");
+		
+		
+
+	}
+}
+
+debug_printf(s, p1, p2, p3, p4, p5, p6, p7, p8, p9)
+char *s;
+{
+	char debugString[160];
+	
+	if (!init) debug_open();
+	sprintf(debugString, s, p1, p2, p3, p4, p5, p6, p7, p8, p9);
+	write(fileno(fd), debugString, strlen(debugString));
+}
+
+debug_open()
+{
+	fd = fopen("cdebug.out", "w");
+	setbuf(fd,0);
+	init = TRUE;
+}
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d4 1
+a5 1
+#include "static.h"
+d11 2
+a13 1
+
+a17 1
+	FILE *fd;
+d21 1
+a21 2
+	fd =  fopen("debug.out", "a");
+	setbuf(fd, 0);
+d30 5
+a34 1
+		info = static_infoLookup(pp->name);
+d36 7
+a42 13
+#define prPt(type, quoted) \
+		fprintf(fd, "%s(%d):\n", quoted, info->points.type/**/s);\
+		for ( i=0; i < info->points.type/**/s; i++ )\
+			fprintf(fd, "\t%d, %d\n",\
+ 			   pp->point.type[i].traces, pp->point.type[i].breaks)
+
+		prPt(accept, "accept");
+		prPt(create, "create");
+		prPt(transact, "transact");
+		prPt(select, "select");
+		prPt(delay, "delay");
+		prPt(treturn, "treturn");
+		prPt(terminate, "terminate");
+d44 1
+d47 1
+a47 5
+	fprintf(fd, "\nTRANSLATES:\n");
+#define prTr(type, quoted) \
+	fprintf(fd, "%s\n", quoted);\
+	for ( i=1; i < occurTable.type/**/s; i++ )\
+		fprintf(fd, "\t%d to %d\n", i, translate.type[i])
+d49 9
+a57 7
+	prTr(accept, "accept");
+	prTr(create, "create");
+	prTr(transact, "transact");
+	prTr(select, "select");
+	prTr(delay, "delay");
+	prTr(treturn, "treturn");
+	prTr(terminate, "terminate");
+d59 5
+a64 1
+
+@

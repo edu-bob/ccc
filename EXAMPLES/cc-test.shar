@@ -1,0 +1,2137 @@
+----cut here----
+: To unbundle, sh this file
+echo accept.cc 1>&2
+cat >accept.cc <<'@@@ Fin de accept.cc'
+/* accept.cc */
+
+/*
+ *  This program tests out various types of accept statements.
+ */
+
+process spec a()
+{
+    trans int x(int);
+};
+
+process spec b(process a, int);
+
+process body a()
+{
+    int zzz;
+
+    accept x(i);
+    accept x(i) {
+	printf("In the second accept.\n");
+	treturn;
+    }
+    accept x(i) {
+	printf("In the third accept, returning -1.\n");
+	treturn -1;
+    }
+    accept x(i) {
+	int j;
+	j=i;
+	printf("In the fourth accept, we were passed %d.\n", j);
+    }
+    printf("We are going to wait three seconds while some requests queue up.\n");
+    delay 3.0;
+    printf("Done waiting.\n");
+    for (zzz=5; zzz<8; zzz++)
+	accept x(i) by i {
+	    int j;
+	    j=i;
+	    printf("accept number %d gets arg %d.\n",zzz,j);
+	}
+    for (;;) {
+	select {
+	    accept x(i) {
+		int j;
+		j=i;
+		printf("and yet another accept, arg=%d.\n",j);
+	    }
+	or
+	    terminate;
+	}
+    }
+}
+
+process body b(A, arg)
+{
+    printf("just created, about to call A with arg=%d.\n",arg);
+    A.x(arg);
+}
+
+main()
+{
+    process a A;
+    int ret;
+
+    A = create a();
+    printf("calling first accept.\n");
+    A.x(1);
+    printf("calling second accept.\n");
+    A.x(1);
+    printf("calling third accept.\n");
+    ret = A.x(1);
+    printf("third accept returned %d.\n", ret);
+    printf("calling fourth accept, arg=666.\n");
+    A.x(666);
+    printf("creating processes to call A with differing args.\n");
+    create b(A, 444);
+    delay 0.25;
+    create b(A, 333);
+    delay 0.25;
+    create b(A, 222);
+    delay 0.25;
+    create b(A, 111);
+    delay 0.25;
+    printf("created four calling tasks.\n");
+    delay 4.00;
+    printf("by now they should all be accepted...\n");
+    printf("calling A with arg=9.\n");
+    A.x(9);
+    printf("calling A with arg=99.\n");
+    A.x(99);
+    printf("calling A with arg=999.\n");
+    A.x(999);
+    printf("calling A with arg=9999.\n");
+    A.x(9999);
+    printf("all done!\n");
+}
+@@@ Fin de accept.cc
+echo bettersort.cc 1>&2
+cat >bettersort.cc <<'@@@ Fin de bettersort.cc'
+/* bettersort.cc */
+
+/*
+ * Based on quickwait.cc, but with (hopefully) better partioning.
+ */
+
+#include <stdio.h>
+
+#define S_LENGTH 20000
+shared int s[S_LENGTH];
+
+minisort(aa, zz)
+int aa, zz;
+{
+    int temp;
+
+    if (s[aa] > s[zz]) {
+	temp = s[aa];
+	s[aa] = s[zz];
+	s[zz] = temp;
+    }
+}
+
+int partition(aa, az, za, zz)
+int aa, *az, *za, zz;
+{
+    int r;
+
+/*    r = s[(aa + zz)/2];*/
+    r = (s[aa] + s[aa+1] + s[zz-1] + s[zz])/4;
+    while (aa <= zz) {
+	while (s[aa] < r)
+	    aa++;
+	while (s[zz] > r)
+	    zz--;
+	if (aa <= zz) {
+	    minisort(aa, zz);
+	    aa++;
+	    zz--;
+	}
+    }
+    *az = zz;
+    *za = aa;
+}
+
+sequential_sorter(aa, zz)
+int aa,zz;
+{
+    int az, za;
+
+    partition(aa, &az, &za, zz);
+    if (az - aa < 2)
+	minisort(aa, az);
+    else
+	sequential_sorter(aa, az);
+    if (zz - za < 2)
+	minisort(za, zz);
+    else
+	sequential_sorter(za, zz);
+}
+
+process spec parallel_sorter(int, int, int);
+
+process body parallel_sorter(aa, zz, makechildren)
+{
+    int az, za;
+
+    partition(aa, &az, &za, zz);
+    if (makechildren) {
+	if (az - aa < 2)
+	    minisort(aa, az);
+	else
+	    create parallel_sorter(aa, az, makechildren - 1);
+	if (zz - za < 2)
+	    minisort(za, zz);
+	else
+	    create parallel_sorter(za, zz, makechildren - 1);
+    } else {
+/*
+	fprintf(stderr,"sequential_sorter(%d);\n",az-aa);
+	fprintf(stderr,"sequential_sorter(%d);\n",zz-za);
+*/
+	sequential_sorter(aa, az);
+	sequential_sorter(za, zz);
+/*
+	fprintf(stderr,"done\n");
+*/
+    }
+}
+
+main(argc,argv)
+int argc;
+char *argv[];
+{
+    int j,length=0,children;
+    process parallel_sorter top_sorter;
+
+    if ( argc > 1 )
+	children = atoi(argv[1]);
+    else
+	children = 3;
+    fprintf(stderr,"Using %d processes\n",(1<<(children+1))-1);
+/*
+ *  Read in the data from stdin.... Well, actually, we just create random data.
+ */
+    for ( j=0; j<S_LENGTH ; j++ )
+	s[j] = rand() % 10000;
+    length = S_LENGTH;
+    if (children < 0) {
+	for (j=0; j<length; j++)
+	    printf("s[%d]=%d.\n",j,s[j]);
+	exit();
+    }
+
+/*
+ *  Start the first sorter process. The value of three
+ *  allows 2**(3+1) - 1 or 15 processes to be started.
+ *  Each process waits for its children, and we wait
+ *  for the top process.
+ */
+    top_sorter = create parallel_sorter(0, length-1, children);
+    c_wait();
+/*
+ *  Finally, print out the values.
+ */
+    for (j=0; j<length; j++)
+	printf("s[%d]=%d.\n",j,s[j]);
+}
+@@@ Fin de bettersort.cc
+echo bettor.cc 1>&2
+cat >bettor.cc <<'@@@ Fin de bettor.cc'
+/* bettor.cc */
+
+/*
+ *  This was an example in the Concurrent C papers.
+ *  I have stuck in some print statements so that you can
+ *  see what is going on.
+ */
+
+#include <stdio.h>
+#define BETTING_LIMIT    1000
+
+process spec bettor()
+{
+    trans void init(process bettor, int, int);
+    trans void placebet(int);
+};
+
+process body bettor()
+{
+    int i_am_first, mylimit;
+    int mynextbet = 1, oplastbet = 1;
+    process bettor opponent;
+
+    accept init(other_player, first_or_not, limit) {
+	opponent = other_player;
+	i_am_first = first_or_not;
+	mylimit = limit;
+    }
+    if (i_am_first) {
+	opponent.placebet(mynextbet);
+	printf("I begin the game by betting $%d.\n",mynextbet);
+    }
+    while (mynextbet > 0 && oplastbet > 0) {
+	accept placebet(bet) {
+	    oplastbet = bet;
+	}
+	if (oplastbet > 0) {
+	    mynextbet = oplastbet + 1 + rand()%100;
+	    if (i_am_first)
+		printf("I just got a bet of $%d, so I will bet $%d.\n",
+		oplastbet,mynextbet);
+	    if (mynextbet > BETTING_LIMIT) {
+		mynextbet=0;
+		if (i_am_first)
+		    printf("but that's too much so I lose.\n");
+	    }
+	    opponent.placebet(mynextbet);
+	}
+    }
+    if (i_am_first) {
+        if (mynextbet > 0)
+	    printf("I won; last bet %d\n", mynextbet);
+	else
+	    printf("I lost; last bet %d\n", oplastbet);
+    }
+}
+
+main()
+{
+    process bettor a, b;
+
+    a = create bettor();
+    b = create bettor();
+    printf("May the bettor process win. Good luck!\n");
+    a.init(b, 1, BETTING_LIMIT);
+    b.init(a, 0, BETTING_LIMIT);
+}
+@@@ Fin de bettor.cc
+echo broken_cc.cc 1>&2
+cat >broken_cc.cc <<'@@@ Fin de broken_cc.cc'
+/* broken_cc.cc */
+
+/*
+ *  Here are two problems I don't intend to fix for a while.
+ *  First, cc complains about floatarray having null dimension,
+ *  which ccc has no way of catching.
+ *  Second, ccc does not catch mismatch in # of params for process
+ *  specs and bodies, but it generates code that makes cc die.
+ */
+typedef float floatarray[][];
+
+process spec noparam();
+
+process body noparam(a)
+{
+}
+
+main()
+{
+}
+@@@ Fin de broken_cc.cc
+echo delay.cc 1>&2
+cat >delay.cc <<'@@@ Fin de delay.cc'
+/* delay.cc */
+
+/*
+ *  This program was used to find a bug in the timing routines.
+ *  The routine that split floats into two longs rounded the
+ *  usec part, causing 1.000000 -> 0.99999999999999 to be turned into
+ *  0 sec, 1000000 = 0 usec.
+ */
+main()
+{
+    float count;
+
+    for (count=0.90; count<1.10; count+=0.01) {
+	delay count;
+	printf("I was delayed for %f seconds.\n",count);
+    }
+}
+@@@ Fin de delay.cc
+echo fake.cc 1>&2
+cat >fake.cc <<'@@@ Fin de fake.cc'
+/* fake.cc */
+
+/*
+ *  This program fakes a perfectly parallelizable algorithm.
+ *  It requires two parameters on the command line.
+ */
+
+#include <stdio.h>
+
+hardwork(howmuch)
+int howmuch;
+{
+    int j;
+
+    for (j=0; j<howmuch; j++)
+	rand();
+}
+
+process spec sharework(int, int);
+
+process body sharework(howmuch, makechildren)
+{
+    if (makechildren) {
+	create sharework(howmuch/2, makechildren - 1);
+	create sharework(howmuch/2, makechildren - 1);
+    } else
+	hardwork(howmuch);
+}
+
+main(argc,argv)
+int argc;
+char *argv[];
+{
+    int howmuch,children;
+
+    if ( argc != 3 ) {
+	printf("usage : fake processdepth howmuchwork\n");
+	return;
+    }
+    howmuch = atoi(argv[2]);
+    children = atoi(argv[1]);
+    create sharework(howmuch, children);
+}
+@@@ Fin de fake.cc
+echo fft.cc 1>&2
+cat >fft.cc <<'@@@ Fin de fft.cc'
+/* fft.cc */
+
+/*
+ *  This program gives the process skeleton for an fft routine.
+ *  It has the right accepts, tcalls, etc. but not the math.
+ */
+
+process spec vertex(int)
+{
+    trans start();
+    trans compute();
+};
+
+int numproc;
+float alpha;
+#define MAXNUMPROC 256
+shared float A[MAXNUMPROC];
+shared process vertex pids[MAXNUMPROC];
+
+process body vertex(me)
+{
+    int mask, you;
+    float temp;
+
+    accept start();
+    for (mask=1; mask<numproc; mask <<= 1) {
+	you = me ^ mask;
+	if (me & mask)
+	    accept compute() {
+		temp  = (alpha*A[you] + A[me]) / (alpha +  1.0);
+		A[me] = (alpha*A[me] + A[you]) / (alpha +  1.0);
+		A[you] = temp;
+	    }
+	else
+	    pids[you].compute();
+    }
+}
+
+main(argc, argv)
+int argc;
+char **argv;
+{
+    int j;
+    float atof();
+
+/*
+ *  Numproc must be a power of two.
+ *
+ *  Alpha=0.0 reverses values;
+ *  alpha=1.0 averages values;
+ *  alpha->infinity keeps values in original order.
+ *  Intermediate values of alpha do intermediate sorts of things.
+ */
+    if (argc > 1)
+	numproc = atoi(argv[1]);
+    else
+	numproc = 4;
+    if (argc > 2)
+	alpha = atof(argv[2]);
+    else
+	alpha = 1.0;
+    for (j=0; j<numproc; j++)
+	A[j] = j;
+    for (j=0; j<numproc; j++)
+	pids[j] = create vertex(j);
+    for (j=0; j<numproc; j++)
+	pids[j].start();
+    c_wait();
+    for (j=0; j<numproc; j++)
+	printf("A[%d] = %f.\n",j,A[j]);
+}
+@@@ Fin de fft.cc
+echo fooltoterm.cc 1>&2
+cat >fooltoterm.cc <<'@@@ Fin de fooltoterm.cc'
+/* fooltoterm.cc */
+
+/*
+ *  This program was used to find a bug in the termination conditions:
+ *  when the last B died, it forced A to select termination;
+ *  this happened because the check for parent completion was missing.
+ */
+
+process spec a()
+{
+    trans int x(int);
+};
+
+process spec b(process a, int);
+
+process body a()
+{
+    int zzz;
+
+    accept x(i);
+    accept x(i) {
+	treturn;
+    }
+    accept x(i) {
+	treturn -1;
+    }
+    accept x(i) {
+	int j;
+	j=i;
+    }
+    delay 3.0;
+    for (zzz=5; zzz<8; zzz++)
+	accept x(i) by i {
+	    int j;
+	    j=i;
+	}
+    for (;;) {
+	printf("in the select loop.\n");
+	select {
+	    accept x(i) {
+		int j;
+		j=i;
+		printf("and yet another accept, arg=%d.\n",j);
+	    }
+	or
+	    terminate;
+	}
+    }
+}
+
+process body b(A, arg)
+{
+    A.x(arg);
+}
+
+main()
+{
+    process a A;
+    int ret;
+
+    A = create a();
+    A.x(1);
+    A.x(1);
+    ret = A.x(1);
+    A.x(666);
+    create b(A, 444);
+    delay 0.25;
+    create b(A, 333);
+    delay 0.25;
+    create b(A, 222);
+    delay 0.25;
+    create b(A, 111);
+    delay 0.25;
+    delay 4.00;
+    printf("by now they should all be accepted...\n");
+    A.x(9);
+    A.x(99);
+    A.x(999);
+    A.x(9999);
+    printf("all done!\n");
+}
+@@@ Fin de fooltoterm.cc
+echo makes-time-error.cc 1>&2
+cat >makes-time-error.cc <<'@@@ Fin de makes-time-error.cc'
+/* makes-time-error.cc */
+
+/*
+ *  This is a version of numerical.cc before being hacked into working.
+ *  This program will (sometimes, give it a few runs) produce the
+ *  very subtle false convergence bug, where process A produces the
+ *  same values in a row (as the data it uses have not been updated in
+ *  between the two calculations; meanwhile process B calculates one value
+ *  from the first of A's new values, and one from the second.
+ *  Thus both A and B (the only processes) have produced two prefectly
+ *  consistant results, and thus they both let eachother quit,
+ *  BEFORE any real convergence has taken place!!!
+ *
+ *  Output when the bug manifests itself:
+ *
+
+% makes-time-error 
+R,C,NumRegions = 2, 1, 2.
+[1][1] MyRowLow=1 MyRowHi=1 MyColLow=1 MyColHi=1.
+[2][1] MyRowLow=2 MyRowHi=2 MyColLow=1 MyColHi=1.
+Abs(New_Value - U[1][1])=1.375000, New_Value=1.375000, U[1][1]=0.000000.
+Abs(New_Value - U[2][1])=2.000000, New_Value=2.000000, U[2][1]=0.000000.
+[1][1]MyDone must be false, and it is 0.
+[2][1]MyDone must be false, and it is 0.
+Abs(New_Value - U[1][1])=0.500000, New_Value=1.875000, U[1][1]=1.375000.
+[1][1]MyDone must be false, and it is 0.
+after Incr, Counter is now 3.
+Abs(New_Value - U[1][1])=0.000000, New_Value=1.875000, U[1][1]=1.875000.
+[1][1]MyDone must be true, and it is 1.
+Abs(New_Value - U[2][1])=0.468750, New_Value=2.468750, U[2][1]=2.000000.
+after Decr, Counter is now 2.
+[2][1]MyDone must be false, and it is 0.
+Abs(New_Value - U[2][1])=0.000000, New_Value=2.468750, U[2][1]=2.468750.
+Abs(New_Value - U[1][1])=0.117188, New_Value=1.992188, U[1][1]=1.875000.
+[2][1]MyDone must be true, and it is 1.
+[1][1]MyDone must be false, and it is 0.
+after Decr, Counter is now 1.
+Abs(New_Value - U[1][1])=0.000000, New_Value=1.992188, U[1][1]=1.992188.
+[1][1]MyDone must be true, and it is 1.
+after Decr, Counter is now 0.
+It did converge.
+matrix is now:
+1.000000	1.500000	2.000000	2.500000	
+1.500000	1.992188	2.500000	3.000000	
+2.000000	2.468750	3.000000	3.500000	
+2.500000	3.000000	3.500000	4.000000	
+%
+
+ *
+ */
+
+#include <math.h>
+typedef float Real;
+typedef Real **RealMatrix;
+
+#define Abs(i)		((i)<0.0 ? -(i) : (i))
+#define Min(a,b)	((a)<(b) ? (a) : (b))
+#define Floor(x)	((int)floor(x))
+#define Sqrt(x)		sqrt(x)
+
+process spec Protected_Counter()
+{
+    trans Initialize(int);
+    trans Incr(int);		/* no default value */
+    trans Decr(int);		/* no default value */
+    trans int Read();		/* value returned as value, not out param */
+    trans WakeWhenZero();
+};
+
+process spec Region_Task(int,int)
+{
+    trans SetParameter(int,int);
+};
+
+process spec Coordinator_Task()
+{
+    trans Wait();
+    trans KeepOnGoing();
+    trans Finish();
+};
+
+#define MaxDim 50
+process Region_Task Regions[MaxDim][MaxDim];
+process Coordinator_Task Coordinators[MaxDim][MaxDim];
+process Protected_Counter Unfinished_Counter;
+int RowRegions, ColRegions;
+int NumRegions;
+int RowsPerRegion, ColsPerRegion;
+
+RealMatrix U;
+shared int DidNotConverge;
+Real MaxErr,Omega;
+int MaxIterations,NumberOfRegions;
+int RowHi,ColHi;
+
+Parallel_Relaxation(p_U, p_MaxErr, p_MaxIterations, p_NumberOfRegions,
+		    p_DidNotConverge, p_Omega, p_RowHi, p_ColHi)
+RealMatrix p_U;
+Real p_MaxErr,p_Omega;
+int p_MaxIterations,p_NumberOfRegions,*p_DidNotConverge;
+int p_RowHi,p_ColHi; /* highest legal index in p_U */
+{
+/*
+ *  MaxErr determines when we have converged (i.e., we have converged
+ *	when the change in the value of all point <= MaxErr)
+ *  MaxIterations is a limit on how many iterations to perform.  If
+ *	we perform this many iterations without converging, then we set
+ *	DidNotConverge to True and return.
+ *  NumberOfRegions is the maximum number of Ada tasks in use.
+ *  Omega is the acceleration parameter to the successive overrelaxation
+ *	formula.
+ */
+
+#define RowLo	0
+#define ColLo	0
+#define LenInteriorRows (RowHi-1)
+#define LenInteriorCols (ColHi-1)
+/*
+ *  subtype InteriorRows is Integer range RowLo+1..RowHi-1;
+ *  subtype InteriorCols is Integer range ColLo+1..ColHi-1;
+ */
+    int I,J;
+
+/*
+ *  Copy local parameters into global variables:
+ */
+    U = p_U;
+    MaxErr = p_MaxErr;
+    Omega = p_Omega;
+    MaxIterations = p_MaxIterations;
+    NumberOfRegions = p_NumberOfRegions;
+    RowHi = p_RowHi;
+    ColHi = p_ColHi;
+/*
+ *  Initially, assume that the system will converge:
+ */
+    DidNotConverge=0;
+
+/*
+ *  See if the matrix U has any interior points.  If not, return:
+ */
+    if (RowHi < 2 || ColHi < 2)
+	return;
+/*
+ *  We zero the interior points initially:
+ */
+    for (I=1; I<RowHi; I++)
+	for (J=1; J<ColHi; J++)
+	    U[I][J] = 0.0;
+/*
+ *  Determine the layout of the regions on the matrix.
+ *  Each region is itself a rectangular sub-matrix.  We lay down a
+ *  rectangular array of regions on the top of the matrix.  The
+ *  array is RowRegions by ColRegions:
+ *
+ *  But first... make sure NumberOfRegions isn't too LARGE!
+ */
+
+/*    RowRegions = Floor(Sqrt((Real)NumberOfRegions));*/
+
+    NumberOfRegions = Min(NumberOfRegions, LenInteriorRows * LenInteriorCols);
+    RowRegions = Floor(Sqrt(NumberOfRegions*LenInteriorRows/(Real)LenInteriorCols));
+    ColRegions = NumberOfRegions / RowRegions;
+    NumRegions = RowRegions * ColRegions;
+    printf("R,C,NumRegions = %d, %d, %d.\n",RowRegions,ColRegions,NumRegions);
+/*
+ *  E.g. for NumberOfRegions = 33, we get 5, 6, and 30.
+ *  Only the 30 regions are actually used.
+ */
+
+/*
+ *  Each region is a rectangle of RowsPerRegions rows by
+ *  ColsPerRegion columns.  The regions at the right edge
+ *  and the bottom may be smaller however:
+ */
+    RowsPerRegion = (LenInteriorRows + (RowRegions - 1)) / RowRegions;
+    ColsPerRegion = (LenInteriorCols + (ColRegions - 1)) / ColRegions;
+/*
+ *  Now that we know how many tasks we actually want, call
+ *  a procedure which declares them & does the relaxation:
+ *
+ *  (Actually, the body of ParRelax_Inner_Proc is inserted here.)
+ */
+
+/*
+ *  Create the unfinished task counter. The count of unfinished
+ *  tasks is initially all of the region tasks:
+ */
+    Unfinished_Counter = create Protected_Counter();
+    Unfinished_Counter.Initialize(NumRegions);
+/*
+ *  Initialize arrays with processes:
+ *  (There is an implicit bound not enforced here, set by MaxDim!)
+ */
+    for (I=1; I<=RowRegions; I++)
+	for (J=1; J<=ColRegions; J++) {
+	    Regions[I][J] = create Region_Task(I,J);
+	    Coordinators[I][J] = create Coordinator_Task();
+	}
+/*
+ *  Set the parameters of the region tasks:
+ */
+    for (I=1; I<=RowRegions; I++)
+	for (J=1; J<=ColRegions; J++)
+	    Regions[I][J].SetParameter(I,J);
+/*
+ *  Wait until there are no more unfinished tasks,
+ *  set the convergence flag, and return.
+ */
+    Unfinished_Counter.WakeWhenZero();
+    *p_DidNotConverge = DidNotConverge;
+}
+
+
+/*
+ *  And now... the process bodies.
+ */
+
+process body Protected_Counter()
+{
+    int Counter;
+
+    accept Initialize(Z) {
+	Counter = Z;
+    }
+    for (;;)
+	select {
+	    accept Incr(Z) {
+		Counter = Counter + Z;
+		printf("after Incr, Counter is now %d.\n",Counter);
+	    }
+	or
+	    accept Decr(Z) {
+	        if (Counter != 0) /* this needs to be here to avoid time error */
+		    Counter = Counter - Z;
+		printf("after Decr, Counter is now %d.\n",Counter);
+	    }
+	or
+	    accept Read() {
+		treturn Counter;
+	    }
+	or (Counter == 0):
+	    accept WakeWhenZero();
+	or
+	    terminate;
+	}
+}
+
+process body Coordinator_Task()
+{
+    int Had_KeepOnGoing=0;
+    int Had_Finish=0;
+
+    for (;;)
+	select {
+	    accept KeepOnGoing() {
+		if (!Had_KeepOnGoing) {
+		    Unfinished_Counter.Incr(1);
+		    Had_KeepOnGoing=1;
+		}
+	    }
+	or (Had_KeepOnGoing || Had_Finish):
+	    accept Wait() {
+		Had_KeepOnGoing=0;
+	    }
+	or
+	    accept Finish() {
+		Had_Finish=1;
+	    }
+	or
+	    terminate;
+	}
+}
+
+/*
+ *  Definition of All_Finish, used by the Region_Tasks.
+ *  All_Finish calls the Finish entries of all coordinators.
+ */
+All_Finish()
+{
+    int Rreg, Creg;
+
+    for (Rreg=1; Rreg<=RowRegions; Rreg++)
+	for (Creg=1; Creg<=ColRegions; Creg++)
+	    Coordinators[Rreg][Creg].Finish();
+}
+
+process body Region_Task(II,JJ)
+{
+    int MyRowRegion, MyColRegion;
+    int MyDone, CurCount;
+    Real New_Value;
+    int MyRowLow, MyRowHi, MyColLow, MyColHi;
+    int Iters,I,J;
+
+/*
+ *  Task starts by finding out what region it has been assigned:
+ */
+    accept SetParameter(SetMyRowRegion, SetMyColRegion) {
+	MyRowRegion = SetMyRowRegion;
+	MyColRegion = SetMyColRegion;
+    }
+    
+/*
+ *  Compute the boundaries of my region.  These are
+ *  the points that will be computed by me:
+ */
+    MyRowLow = (MyRowRegion - 1) * RowsPerRegion + 1;
+    MyColLow = (MyColRegion - 1) * ColsPerRegion + 1;
+/*
+ *  If we're at the bottom edge, then MyRowHi should not exceed
+ *  InteriorRows'LAST; likewise, if we're at the right edge.
+ */
+    MyRowHi = Min(RowHi - 1, MyRowLow + RowsPerRegion - 1);
+    MyColHi = Min(ColHi - 1, MyColLow + ColsPerRegion - 1);
+printf("[%d][%d] MyRowLow=%d MyRowHi=%d MyColLow=%d MyColHi=%d.\n",
+II,JJ,MyRowLow,MyRowHi,MyColLow,MyColHi);
+    for (Iters=1; Iters<=MaxIterations; Iters++) {
+	MyDone=1;
+/*
+ *	Compute a new value for each point in my region:
+ */
+	for (I=MyRowLow; I<=MyRowHi; I++) {
+	    for (J=MyColLow; J<=MyColHi; J++) {
+		New_Value = U[I][J] + Omega * 0.25 *
+		    (U[I-1][J] + U[I][J-1] + U[I+1][J] + U[I][J+1] - 4.0*U[I][J]);
+
+printf("Abs(New_Value - U[%d][%d])=%f, New_Value=%f, U[%d][%d]=%f.\n",I,J,
+	Abs(New_Value - U[ I][ J]),    New_Value,I,J,U[ I][ J]);
+
+		if (Abs(New_Value - U[I][J]) >= MaxErr)
+		    MyDone = 0;
+		U[I][J] = New_Value;
+New_Value = U[I][J];
+/*
+		printf("MyDone=%d.\n",MyDone);
+
+printf("U[%d][%d] := %f.\n",II,JJ,New_Value);
+*/
+	    }
+	}
+        if (!MyDone) {  /*Tell my neighbors to keep on going */
+printf("[%d][%d]MyDone must be false, and it is %d.\n",II,JJ,MyDone);
+	    if (MyRowRegion != 1)
+		Coordinators[MyRowRegion-1][MyColRegion].KeepOnGoing();
+
+	    if (MyRowRegion != RowRegions)
+		Coordinators[MyRowRegion+1][MyColRegion].KeepOnGoing();
+
+	    if (MyColRegion != 1)
+		Coordinators[MyRowRegion][MyColRegion-1].KeepOnGoing();
+
+	    if (MyColRegion != ColRegions)
+		Coordinators[MyRowRegion][MyColRegion+1].KeepOnGoing();
+	} else {
+printf("[%d][%d]MyDone must be true, and it is %d.\n",II,JJ,MyDone);
+	    Unfinished_Counter.Decr(1);
+	    CurCount = Unfinished_Counter.Read();
+	    if (CurCount == 0) {
+		/* We're all done.  Wake up everybody who's sleeping: */
+		All_Finish;
+		terminate;
+	    } else {
+/*
+ *		Wait to hear of some change from my neighbors, or
+ *		for all tasks to finish.
+ */
+		Coordinators[MyRowRegion][MyColRegion].Wait();
+/*
+ *		We are all awakened.  See whether this is
+ *		because of a KeepOnGoing message:
+ */
+		CurCount = Unfinished_Counter.Read();
+		if (CurCount == 0)
+		    terminate;
+	    }
+	}
+/*
+ *	See if some other task has taken too many
+ *	iterations already and if so stop iterating.
+ */
+	if (DidNotConverge)
+	    break;
+    }
+/*
+ *  Here iff some task (either my task or some
+ *  other task) has taken too many iterations.
+ */
+    DidNotConverge = 1;
+    All_Finish;
+}
+
+main()
+{
+    int i,j,did_not_converge;
+    static Real init_matrix[4][4] = {
+	{1.0,	1.5,	2.0,	2.5},
+	{1.5,	2.0,	2.5,	3.0},
+	{2.0,	2.5,	3.0,	3.5},
+	{2.5,	3.0,	3.5,	4.0} };
+    shared Real matrix[4][4];
+
+/*
+ *  Shared arrays cannot be initialized, so we have to do it ourselves.
+ */
+    for (i=0; i<4; i++)
+	for (j=0; j<4; j++)
+	    matrix[i][j] = init_matrix[i][j];
+    Parallel_Relaxation(matrix, 0.001, 1000, 16, &did_not_converge, 1.0, 3, 2);
+    printf("It did ");
+    if (did_not_converge)
+	printf("not ");
+    printf("converge.\n");
+    printf("matrix is now:\n");
+    for (i=0; i<4; i++) {
+	for (j=0; j<4; j++)
+	    printf("%f\t",matrix[i][j]);
+	printf("\n");
+    }
+}
+@@@ Fin de makes-time-error.cc
+echo numerical.cc 1>&2
+cat >numerical.cc <<'@@@ Fin de numerical.cc'
+/* numerical.cc */
+
+/*
+ *  This is a program adapted from a very flawed Ada routine which performed
+ *  relaxation over a grid. Two bugs have been brutally hacked away:
+ *  The first concerned the fact that in part of the code, the
+ *  protected counter would be decremented, and THEN its value would be
+ *  checked. The problem was that the counter can go below zero,
+ *  and thus you would have:
+ *
+ *	(counter = 1)
+ *			A: decrement
+ *	(counter = 0)
+ *						B: decrement
+ *	(counter = -1)
+ *			A: counter = 0? no...
+ *						B: counter = 0? no...
+ *
+ *  Thus the program would not complete. The hack for this was to
+ *  ignore decrements when counter=0. The second bug is the one discussed
+ *  in makes-time-error.cc. The hack for this is a "cynic" factor
+ *  which forces reevaluation when an error of exactly 0.0 is found.
+ *  The need for this factor (as given via the command line) is
+ *  seen in the output below. The first time, no reevaluation is done;
+ *  the second time, errors of zero cause the calculation to be reevaluated
+ *  up to three times.
+ *
+
+% numerical
+RowRegions = 2, ColRegions = 2.
+Attempt to Decr below zero!
+Attempt to Decr below zero!
+It did converge.
+matrix is now:
+1.000000	1.500000	2.000000	2.500000	
+1.500000	1.985275	2.495485	3.000000	
+2.000000	2.492638	2.997031	3.500000	
+2.500000	3.000000	3.500000	4.000000	
+
+% numerical 3
+RowRegions = 2, ColRegions = 2.
+[1,1] I don't believe it.
+[1,1] I don't believe it.
+[1,1] I don't believe it.
+[1,1] I don't believe it.
+[1,1] I don't believe it.
+[1,1] I don't believe it.
+[1,1] I don't believe it.
+[1,1] I don't believe it.
+[1,1] I don't believe it.
+[1,2] I don't believe it.
+[1,1] I don't believe it.
+[1,1] I don't believe it.
+[1,1] I don't believe it.
+[1,2] I don't believe it.
+[1,2] I don't believe it.
+[2,1] I don't believe it.
+It did converge.
+matrix is now:
+1.000000	1.500000	2.000000	2.500000	
+1.500000	1.999798	2.499407	3.000000	
+2.000000	2.499785	2.999798	3.500000	
+2.500000	3.000000	3.500000	4.000000	
+
+ *
+ */
+
+#include <math.h>
+typedef float Real;
+typedef Real **RealMatrix;
+
+#define Abs(i)		((i)<0.0 ? -(i) : (i))
+#define Min(a,b)	((a)<(b) ? (a) : (b))
+#define Floor(x)	((int)floor(x))
+#define Sqrt(x)		sqrt(x)
+
+process spec Protected_Counter()
+{
+    trans Initialize(int);
+    trans Incr(int);		/* no default value */
+    trans Decr(int);		/* no default value */
+    trans int Read();		/* value returned as value, not out param */
+    trans Quit();
+    trans WakeWhenAllQuit();
+};
+
+process spec Region_Task(int,int)
+{
+    trans SetParameter(int,int);
+};
+
+process spec Coordinator_Task()
+{
+    trans Wait();
+    trans KeepOnGoing();
+    trans Finish();
+};
+
+#define MaxDim 50
+process Region_Task Regions[MaxDim][MaxDim];
+process Coordinator_Task Coordinators[MaxDim][MaxDim];
+process Protected_Counter Unfinished_Counter;
+int RowRegions, ColRegions;
+int NumRegions;
+int RowsPerRegion, ColsPerRegion;
+int cynic_max=1;
+
+RealMatrix U;
+shared int DidNotConverge;
+Real MaxErr,Omega;
+int MaxIterations,NumberOfRegions;
+int RowHi,ColHi;
+
+Parallel_Relaxation(p_U, p_MaxErr, p_MaxIterations, p_NumberOfRegions,
+		    p_DidNotConverge, p_Omega, p_RowHi, p_ColHi)
+RealMatrix p_U;
+Real p_MaxErr,p_Omega;
+int p_MaxIterations,p_NumberOfRegions,*p_DidNotConverge;
+int p_RowHi,p_ColHi; /* highest legal index in p_U */
+{
+/*
+ *  MaxErr determines when we have converged (i.e., we have converged
+ *	when the change in the value of all point <= MaxErr)
+ *  MaxIterations is a limit on how many iterations to perform.  If
+ *	we perform this many iterations without converging, then we set
+ *	DidNotConverge to True and return.
+ *  NumberOfRegions is the maximum number of Ada tasks in use.
+ *  Omega is the acceleration parameter to the successive overrelaxation
+ *	formula.
+ */
+
+#define RowLo	0
+#define ColLo	0
+#define LenInteriorRows (RowHi-1)
+#define LenInteriorCols (ColHi-1)
+/*
+ *  subtype InteriorRows is Integer range RowLo+1..RowHi-1;
+ *  subtype InteriorCols is Integer range ColLo+1..ColHi-1;
+ */
+    int I,J;
+
+/*
+ *  Copy local parameters into global variables:
+ */
+    U = p_U;
+    MaxErr = p_MaxErr;
+    Omega = p_Omega;
+    MaxIterations = p_MaxIterations;
+    NumberOfRegions = p_NumberOfRegions;
+    RowHi = p_RowHi;
+    ColHi = p_ColHi;
+/*
+ *  Initially, assume that the system will converge:
+ */
+    DidNotConverge=0;
+
+/*
+ *  See if the matrix U has any interior points.  If not, return:
+ */
+    if (RowHi < 2 || ColHi < 2)
+	return;
+/*
+ *  We zero the interior points initially:
+ */
+    for (I=1; I<RowHi; I++)
+	for (J=1; J<ColHi; J++)
+	    U[I][J] = 0.0;
+/*
+ *  Determine the layout of the regions on the matrix.
+ *  Each region is itself a rectangular sub-matrix.  We lay down a
+ *  rectangular array of regions on the top of the matrix.  The
+ *  array is RowRegions by ColRegions:
+ *
+ *  But first... make sure NumberOfRegions isn't too LARGE!
+ */
+
+/*    RowRegions = Floor(Sqrt((Real)NumberOfRegions));*/
+
+    NumberOfRegions = Min(NumberOfRegions, LenInteriorRows * LenInteriorCols);
+    RowRegions = Floor(Sqrt(NumberOfRegions*LenInteriorRows/(Real)LenInteriorCols));
+    ColRegions = NumberOfRegions / RowRegions;
+    NumRegions = RowRegions * ColRegions;
+    printf("RowRegions = %d, ColRegions = %d.\n",RowRegions,ColRegions);
+/*
+ *  E.g. for NumberOfRegions = 33, we get 5, 6, and 30.
+ *  Only the 30 regions are actually used.
+ */
+
+/*
+ *  Each region is a rectangle of RowsPerRegions rows by
+ *  ColsPerRegion columns.  The regions at the right edge
+ *  and the bottom may be smaller however:
+ */
+    RowsPerRegion = (LenInteriorRows + (RowRegions - 1)) / RowRegions;
+    ColsPerRegion = (LenInteriorCols + (ColRegions - 1)) / ColRegions;
+/*
+ *  Now that we know how many tasks we actually want, call
+ *  a procedure which declares them & does the relaxation:
+ *
+ *  (Actually, the body of ParRelax_Inner_Proc is inserted here.)
+ */
+
+/*
+ *  Create the unfinished task counter. The count of unfinished
+ *  tasks is initially all of the region tasks:
+ */
+    Unfinished_Counter = create Protected_Counter();
+    Unfinished_Counter.Initialize(NumRegions);
+/*
+ *  Initialize arrays with processes:
+ *  (There is an implicit bound not enforced here, set by MaxDim!)
+ */
+    for (I=1; I<=RowRegions; I++)
+	for (J=1; J<=ColRegions; J++) {
+	    Regions[I][J] = create Region_Task(I,J);
+	    Coordinators[I][J] = create Coordinator_Task();
+	}
+/*
+ *  Set the parameters of the region tasks:
+ */
+    for (I=1; I<=RowRegions; I++)
+	for (J=1; J<=ColRegions; J++)
+	    Regions[I][J].SetParameter(I,J);
+/*
+ *  Wait until there are no more unfinished tasks,
+ *  set the convergence flag, and return.
+ */
+    Unfinished_Counter.WakeWhenAllQuit();
+    *p_DidNotConverge = DidNotConverge;
+}
+
+
+/*
+ *  And now... the process bodies.
+ */
+
+process body Protected_Counter()
+{
+    int Counter,NumberReallyAlive;
+
+    accept Initialize(Z) {
+	Counter = Z;
+	NumberReallyAlive = Z;
+    }
+    for (;;)
+	select {
+	    accept Incr(Z) {
+		Counter = Counter + Z;
+	    }
+	or
+	    accept Decr(Z) {
+	        if (Counter != 0) /* this needs to be here to avoid time error */
+		    Counter = Counter - Z;
+		else
+		    printf("Attempt to Decr below zero!\n");
+	    }
+	or
+	    accept Read() {
+		treturn Counter;
+	    }
+	or
+	    accept Quit() {
+		NumberReallyAlive--;
+	    }
+	or (NumberReallyAlive == 0):
+	    accept WakeWhenAllQuit();
+	or
+	    terminate;
+	}
+}
+
+process body Coordinator_Task()
+{
+    int Had_KeepOnGoing=0;
+    int Had_Finish=0;
+
+    for (;;)
+	select {
+	    accept KeepOnGoing() {
+		if (!Had_KeepOnGoing) {
+		    Unfinished_Counter.Incr(1);
+		    Had_KeepOnGoing=1;
+		}
+	    }
+	or (Had_KeepOnGoing || Had_Finish):
+	    accept Wait() {
+		Had_KeepOnGoing=0;
+	    }
+	or
+	    accept Finish() {
+		Had_Finish=1;
+	    }
+	or
+	    terminate;
+	}
+}
+
+/*
+ *  Definition of All_Finish, used by the Region_Tasks.
+ *  All_Finish calls the Finish entries of all coordinators.
+ */
+All_Finish()
+{
+    int Rreg, Creg;
+
+    for (Rreg=1; Rreg<=RowRegions; Rreg++)
+	for (Creg=1; Creg<=ColRegions; Creg++)
+	    Coordinators[Rreg][Creg].Finish();
+}
+
+process body Region_Task(II,JJ)
+{
+    int MyRowRegion, MyColRegion;
+    int MyDone, CurCount;
+    Real New_Value, abs_error;
+    int MyRowLow, MyRowHi, MyColLow, MyColHi;
+    int Iters,I,J,cynic;
+
+/*
+ *  Task starts by finding out what region it has been assigned:
+ */
+    accept SetParameter(SetMyRowRegion, SetMyColRegion) {
+	MyRowRegion = SetMyRowRegion;
+	MyColRegion = SetMyColRegion;
+    }
+    
+/*
+ *  Compute the boundaries of my region.  These are
+ *  the points that will be computed by me:
+ */
+    MyRowLow = (MyRowRegion - 1) * RowsPerRegion + 1;
+    MyColLow = (MyColRegion - 1) * ColsPerRegion + 1;
+/*
+ *  If we're at the bottom edge, then MyRowHi should not exceed
+ *  InteriorRows'LAST; likewise, if we're at the right edge.
+ */
+    MyRowHi = Min(RowHi - 1, MyRowLow + RowsPerRegion - 1);
+    MyColHi = Min(ColHi - 1, MyColLow + ColsPerRegion - 1);
+    for (Iters=1; Iters<=MaxIterations; Iters++) {
+	MyDone=1;
+/*
+ *	Compute a new value for each point in my region:
+ */
+	for (I=MyRowLow; I<=MyRowHi; I++) {
+	    for (J=MyColLow; J<=MyColHi; J++) {
+		for (cynic=0;cynic<cynic_max;cynic++) {
+		    New_Value = U[I][J] + Omega * 0.25 *
+		      (U[I-1][J] + U[I][J-1] + U[I+1][J] + U[I][J+1] - 4.0*U[I][J]);
+		    abs_error = Abs(New_Value - U[I][J]);
+		    if (abs_error > 0.0)
+			break;
+		    if (cynic+1 < cynic_max)
+			printf("[%d,%d] I don't believe it.\n",II,JJ);
+		}
+		if (abs_error >= MaxErr)
+		    MyDone = 0;
+		U[I][J] = New_Value;
+	    }
+	}
+        if (!MyDone) {  /*Tell my neighbors to keep on going */
+	    if (MyRowRegion != 1)
+		Coordinators[MyRowRegion-1][MyColRegion].KeepOnGoing();
+
+	    if (MyRowRegion != RowRegions)
+		Coordinators[MyRowRegion+1][MyColRegion].KeepOnGoing();
+
+	    if (MyColRegion != 1)
+		Coordinators[MyRowRegion][MyColRegion-1].KeepOnGoing();
+
+	    if (MyColRegion != ColRegions)
+		Coordinators[MyRowRegion][MyColRegion+1].KeepOnGoing();
+	} else {
+	    Unfinished_Counter.Decr(1);
+	    CurCount = Unfinished_Counter.Read();
+	    if (CurCount == 0) {
+		/* We're all done.  Wake up everybody who's sleeping: */
+		All_Finish;
+		Unfinished_Counter.Quit();
+		terminate;
+	    } else {
+/*
+ *		Wait to hear of some change from my neighbors, or
+ *		for all tasks to finish.
+ */
+		Coordinators[MyRowRegion][MyColRegion].Wait();
+/*
+ *		We are all awakened.  See whether this is
+ *		because of a KeepOnGoing message:
+ */
+		CurCount = Unfinished_Counter.Read();
+		if (CurCount == 0) {
+		    Unfinished_Counter.Quit();
+		    terminate;
+		}
+	    }
+	}
+/*
+ *	See if some other task has taken too many
+ *	iterations already and if so stop iterating.
+ */
+	if (DidNotConverge)
+	    break;
+    }
+/*
+ *  Here iff some task (either my task or some
+ *  other task) has taken too many iterations.
+ */
+    DidNotConverge = 1;
+    All_Finish;
+    Unfinished_Counter.Quit();
+}
+
+main(argc, argv)
+int argc;
+char **argv;
+{
+    int i,j,did_not_converge;
+    static Real init_matrix[4][4] = {
+	{1.0,	1.5,	2.0,	2.5},
+	{1.5,	2.0,	2.5,	3.0},
+	{2.0,	2.5,	3.0,	3.5},
+	{2.5,	3.0,	3.5,	4.0} };
+    shared Real matrix[4][4];
+
+/*
+ *  Set level of cynicism, if given on command line.
+ */
+    if (argc>1)
+	sscanf(argv[1],"%d",&cynic_max);
+/*
+ *  Shared arrays cannot be initialized, so we have to do it ourselves.
+ */
+    for (i=0; i<4; i++)
+	for (j=0; j<4; j++)
+	    matrix[i][j] = init_matrix[i][j];
+    Parallel_Relaxation(matrix, 0.001, 1000, 16, &did_not_converge, 1.0, 3, 3);
+    printf("It did ");
+    if (did_not_converge)
+	printf("not ");
+    printf("converge.\n");
+    printf("matrix is now:\n");
+    for (i=0; i<4; i++) {
+	for (j=0; j<4; j++)
+	    printf("%f\t",matrix[i][j]);
+	printf("\n");
+    }
+}
+@@@ Fin de numerical.cc
+echo quicksort.cc 1>&2
+cat >quicksort.cc <<'@@@ Fin de quicksort.cc'
+#include <stdio.h>
+
+#define S_LENGTH 5000
+shared int s[S_LENGTH];
+
+minisort(aa, zz)
+int aa, zz;
+{
+    int temp;
+
+    if (s[aa] > s[zz]) {
+	temp = s[aa];
+	s[aa] = s[zz];
+	s[zz] = temp;
+    }
+}
+
+int partition(aa, az, za, zz)
+int aa, *az, *za, zz;
+{
+    int r;
+
+    r = s[(aa + zz)/2];
+    while (aa <= zz) {
+	while (s[aa] < r)
+	    aa++;
+	while (s[zz] > r)
+	    zz--;
+	if (aa <= zz) {
+	    minisort(aa, zz);
+	    aa++;
+	    zz--;
+	}
+    }
+    *az = zz;
+    *za = aa;
+}
+
+sequential_sorter(aa, zz)
+int aa,zz;
+{
+    int az, za;
+
+    partition(aa, &az, &za, zz);
+    if (az - aa < 2)
+	minisort(aa, az);
+    else
+	sequential_sorter(aa, az);
+    if (zz - za < 2)
+	minisort(za, zz);
+    else
+	sequential_sorter(za, zz);
+}
+
+process spec parallel_sorter(int, int, process parallel_sorter, int)
+{
+    trans i_am_done();
+    trans are_you_done();
+};
+
+process body parallel_sorter(aa, zz, parent, makechildren)
+{
+    int az, za;
+
+    partition(aa, &az, &za, zz);
+    if (makechildren) {
+	if (az - aa < 2)
+	    minisort(aa, az);
+	else
+	    create parallel_sorter(aa, az, c_mypid(), makechildren - 1);
+	if (zz - za < 2)
+	    minisort(za, zz);
+	else
+	    create parallel_sorter(za, zz, c_mypid(), makechildren - 1);
+	if (az - aa >= 2)
+	    accept i_am_done();
+	if (zz - za >= 2)
+	    accept i_am_done();
+    } else {
+	sequential_sorter(aa, az);
+	sequential_sorter(za, zz);
+    }
+    if (parent != c_nullpid)
+	parent.i_am_done();
+    else
+	accept are_you_done();
+}
+
+main(argc,argv)
+int argc;
+char *argv[];
+{
+    int j,length=0,children;
+    process parallel_sorter top_sorter;
+
+    if ( argc > 1 )
+	children = atoi(argv[1]);
+    else
+	children = 3;
+    fprintf(stderr,"Using %d processes\n",(2<<(children+1))-1);
+/*
+ *  Read in the data from stdin.
+ */
+    for ( j=0; j<S_LENGTH ; j++ )
+	s[j] = rand() % 10000;
+    length = S_LENGTH;
+
+/*
+ *  Start the first sorter process. The value of three
+ *  allows 2**(3+1) - 1 or 15 processes to be started.
+ *  Each process waits for its children, and we wait
+ *  for the top process.
+ */
+    top_sorter = create parallel_sorter(0, length-1, c_nullpid, children);
+    top_sorter.are_you_done();
+/*
+ *  Finally, print out the values.
+ */
+    for (j=0; j<length; j++)
+	printf("s[%d]=%d.\n",j,s[j]);
+}
+@@@ Fin de quicksort.cc
+echo quickwait.cc 1>&2
+cat >quickwait.cc <<'@@@ Fin de quickwait.cc'
+#include <stdio.h>
+
+#define S_LENGTH 20000
+shared int s[S_LENGTH];
+
+minisort(aa, zz)
+int aa, zz;
+{
+    int temp;
+
+    if (s[aa] > s[zz]) {
+	temp = s[aa];
+	s[aa] = s[zz];
+	s[zz] = temp;
+    }
+}
+
+int partition(aa, az, za, zz)
+int aa, *az, *za, zz;
+{
+    int r;
+
+    r = s[(aa + zz)/2];
+    while (aa <= zz) {
+	while (s[aa] < r)
+	    aa++;
+	while (s[zz] > r)
+	    zz--;
+	if (aa <= zz) {
+	    minisort(aa, zz);
+	    aa++;
+	    zz--;
+	}
+    }
+    *az = zz;
+    *za = aa;
+}
+
+sequential_sorter(aa, zz)
+int aa,zz;
+{
+    int az, za;
+
+    partition(aa, &az, &za, zz);
+    if (az - aa < 2)
+	minisort(aa, az);
+    else
+	sequential_sorter(aa, az);
+    if (zz - za < 2)
+	minisort(za, zz);
+    else
+	sequential_sorter(za, zz);
+}
+
+process spec parallel_sorter(int, int, int);
+
+process body parallel_sorter(aa, zz, makechildren)
+{
+    int az, za;
+
+    partition(aa, &az, &za, zz);
+    if (makechildren) {
+	if (az - aa < 2)
+	    minisort(aa, az);
+	else
+	    create parallel_sorter(aa, az, makechildren - 1);
+	if (zz - za < 2)
+	    minisort(za, zz);
+	else
+	    create parallel_sorter(za, zz, makechildren - 1);
+    } else {
+	fprintf(stderr,"sequential_sorter(%d);\n",az-aa);
+	fprintf(stderr,"sequential_sorter(%d);\n",zz-za);
+	sequential_sorter(aa, az);
+	sequential_sorter(za, zz);
+	fprintf(stderr,"done\n");
+    }
+}
+
+main(argc,argv)
+int argc;
+char *argv[];
+{
+    int j,length=0,children;
+    process parallel_sorter top_sorter;
+
+    if ( argc > 1 )
+	children = atoi(argv[1]);
+    else
+	children = 3;
+    fprintf(stderr,"Using %d processes\n",(1<<(children+1))-1);
+/*
+ *  Read in the data from stdin.... Well, actually, we just create random data.
+ */
+    for ( j=0; j<S_LENGTH ; j++ )
+	s[j] = rand() % 10000;
+    length = S_LENGTH;
+    if (children < 0) {
+	for (j=0; j<length; j++)
+	    printf("s[%d]=%d.\n",j,s[j]);
+	exit();
+    }
+
+/*
+ *  Start the first sorter process. The value of three
+ *  allows 2**(3+1) - 1 or 15 processes to be started.
+ *  Each process waits for its children, and we wait
+ *  for the top process.
+ */
+    top_sorter = create parallel_sorter(0, length-1, children);
+    c_wait();
+/*
+ *  Finally, print out the values.
+ */
+#ifdef notdef
+    for (j=0; j<length; j++)
+	printf("s[%d]=%d.\n",j,s[j]);
+#endif
+}
+@@@ Fin de quickwait.cc
+echo select.cc 1>&2
+cat >select.cc <<'@@@ Fin de select.cc'
+/* select.cc */
+
+/*
+ *  This program tests various select alternatives.
+ *  The exact times can be fiddled with to look at various aspects
+ *  of the select statement.
+ */
+
+shared int guard1, guard2, guard3, guard4, guard5;
+
+process spec fred()
+{
+    trans t();
+};
+
+process body fred()
+{
+    select {
+	(0):
+	    immediate
+	    printf("this should not be printed.\n");
+	otherwise
+	    printf("this should be printed.\n");
+    }
+    select {
+	(1):
+	    immediate
+	    printf("this should be printed.\n");
+	otherwise
+	    printf("this should not be printed.\n");
+    }
+    for (;;) {
+	delay 0.25;
+	printf("at top of select.\n");
+	select {
+	    (guard1):
+		immediate
+		printf("guard 1 true, ");
+		printf("immediate alternative chosen.\n");
+	or
+	    (guard2):
+		accept t() {
+		    printf("guard2 true, transaction t is being accepted.\n");
+		}
+		printf("transaction t is done being accepted.\n");
+	or
+	    (guard3):
+		delay 10.0;
+		printf("guard3 true, ten seconds have past.\n");
+	or
+	    (guard4):
+		delay 20.0;
+		printf("guard4 true, twenty seconds have past.\n");
+	or
+	    (guard5):
+		terminate;
+	}
+    }
+}
+
+main(argc)
+int argc;
+{
+    process fred f;
+
+    guard1 = 0;
+    guard2 = 0;
+    guard3 = 0;
+    guard4 = 0;
+    guard5 = (argc > 1);
+    printf("guard5 (for terminate) is now true.\n");
+    f = create fred();
+    guard4=1;
+    printf("guard4 (for delay 2.0) is now true.\n");
+    delay 29.5;
+    guard3=1;
+    printf("guard3 (for delay 1.0) is now true.\n");
+    delay 29.5;
+    guard2=1;
+    printf("guard2 (for accept t) is now true.\n");
+    delay 29.5;
+    f.t();
+    delay 29.5;
+    guard1=1;
+    printf("guard1 (for immediate) is now true.\n");
+    delay 1.0;
+    guard1=0;
+    printf("guard1 (for immediate) is now false again.\n");
+}
+@@@ Fin de select.cc
+echo semaphore.cc 1>&2
+cat >semaphore.cc <<'@@@ Fin de semaphore.cc'
+/* semaphore.cc */
+
+/*
+ *  This program demonstrates how to implement semaphores in Concurrent C.
+ *  It prints cute pattern (arrows) when the semaphores are enabled.
+ *  When the semaphores are disabled (by supplying an argument on the
+ *  command line), the 'a' arrows and the 'b' arrows get mixed up.
+ */
+
+process spec sema(int)
+{
+    trans V();
+    trans P();
+};
+
+process body sema(count)
+{
+    for (;;) {
+	select {
+	    accept V();
+	    count++;
+	or (count>0):
+	    accept P();
+	    count--;
+	or
+	    terminate;
+	}
+    }
+}
+
+process spec printer(process sema,char);
+
+process body printer(s,c)
+{
+    int j;
+
+    for (j=0;;j++) {
+	s.P();
+	printf("   %c%c%c\n",c,c,c);
+	delay 0.1;
+	printf("   %c%c%c\n",c,c,c);
+	delay 0.1;
+	printf("   %c%c%c\n",c,c,c);
+	delay 0.1;
+	printf("%c%c%c%c%c%c%c%c%c\n",c,c,c,c,c,c,c,c,c);
+	delay 0.1;
+	printf(" %c%c%c%c%c%c%c\n",c,c,c,c,c,c,c);
+	delay 0.1;
+	printf("  %c%c%c%c%c\n",c,c,c,c,c);
+	delay 0.1;
+	printf("   %c%c%c\n",c,c,c);
+	delay 0.1;
+	printf("    %c\n",c);
+	delay 0.1;
+	printf("\n");
+	if (c=='a')
+	    delay 0.15;
+	s.V();
+    }
+}
+
+main(argc)
+int argc;
+{
+    process printer p1,p2;
+    process sema s;
+
+    if (argc > 1)
+	s = create sema(2);	/* no mutual exclusion if arg on command line */
+    else
+	s = create sema(1);	/* otherwise, semaphores work as they should */
+    p1 = create printer(s, 'a');
+    p2 = create printer(s, 'b');
+}
+@@@ Fin de semaphore.cc
+echo swap.cc 1>&2
+cat >swap.cc <<'@@@ Fin de swap.cc'
+/* swap.cc */
+
+/*
+ *  This is a test of nested accepts.
+ */
+
+pragma nolinesynch;
+
+process spec agent()
+{
+    trans swap_A(int *);
+    trans int swap_B(int);
+};
+
+process body agent()
+{
+    for(;;) {
+	select {
+	    accept swap_A(i) {
+		int temp;
+		accept swap_A(j) {
+		    temp = *j;
+		    *j = *i;
+		}
+		*i = temp;
+	    }
+	or
+	    accept swap_B(i) {
+		int temp;
+		accept swap_B(j) {
+		    temp = j;
+		    treturn i;
+		}
+	    treturn temp;
+	    }
+	or
+	    terminate;
+	}
+    }
+}
+
+process spec sema(int)
+{
+    trans P();
+    trans V();
+};
+
+process body sema(count)
+{
+    for (;;) {
+	select {
+	    accept V();
+	    count++;
+	or (count>0):
+	    accept P();
+	    count--;
+	or
+	    terminate;
+	}
+    }
+}
+
+process sema printsema;
+process agent x;
+
+#define COUNT 20
+
+process spec trader(int);
+
+process body trader(oddp)
+{
+    int j;
+    shared int s;
+    int list_A[COUNT][2],list_B[COUNT][2];
+
+    for (j=0;j<COUNT;j++) {
+	list_A[j][0] = oddp + 2*j;
+	s = list_A[j][0];
+	x.swap_A(&s);
+	list_A[j][1] = s;
+    }
+    for (j=0;j<COUNT;j++) {
+	list_B[j][0] = oddp + 2*j;
+	list_B[j][1] = x.swap_B(list_B[j][0]);
+    }
+    printsema.P();
+    printf("\nHi, I'm %s!\n", (oddp ? "odd" : "even"));
+    printf("using transaction swap_A:\n");
+    for (j=0;j<COUNT;j++)
+	printf("exchanged %d for %d\n",list_A[j][0],list_A[j][1]);
+    printf("using transaction swap_B:\n");
+    for (j=0;j<COUNT;j++)
+	printf("exchanged %d for %d\n",list_B[j][0],list_B[j][1]);
+    printsema.V();
+}
+
+main()
+{
+    process trader even,odd;
+
+    printsema = create sema(1);
+    x = create agent();
+    even = create trader(0);
+    odd = create trader(1);
+}
+@@@ Fin de swap.cc
+echo tcall.cc 1>&2
+cat >tcall.cc <<'@@@ Fin de tcall.cc'
+/* tcall.c */
+
+/*
+ *  This program tests the timed transaction call.
+ *  It found some bugs in the queue stuff (particularly CC_dequeue()).
+ */
+process spec x()
+{
+    trans float t();
+};
+
+float count=0.90;
+
+process body x()
+{
+    for (;;) {
+	delay count;
+	count += 0.01;
+	select {
+	    accept t() {
+		treturn count;
+	    }
+	or
+	    terminate;
+	}
+    }
+}
+
+main()
+{
+    process x X;
+    float c;
+
+    X = create x();
+    while ((c = within 1.0 ? X.t() : -1.0) >= 0)
+	printf("I was accepted after %f seconds.\n",c);
+    printf("I got impatient and timed out.\n");
+}
+@@@ Fin de tcall.cc
+echo test-timed-select.cc 1>&2
+cat >test-timed-select.cc <<'@@@ Fin de test-timed-select.cc'
+/* test-timed-select.cc */
+
+/*
+ *  You'll never guess.
+ */
+
+float frandom()
+{
+    long random();
+    static float twotothe31 = 256.0 * 256.0 * 256.0 * 128.0;
+
+    return random()/twotothe31;
+}
+
+process spec s(float)
+{
+    trans t(int);
+};
+
+process body s(time)
+{
+    for (;;)
+	select {
+	    accept t(j) {
+		printf("selected accept.\n",j);
+	    }
+	or
+	    delay time;
+	    printf("selected delay.\n");
+	or
+	    terminate;
+	}
+}
+
+main()
+{
+    process s p;
+    float time;
+    int j;
+
+    p = create s(2.0);
+    for (j=0;j<10;j++) {
+	time= 1.5 + 1.0 * frandom();
+	delay time;
+	p.t(j);
+	printf("That tcall was made after a delay of %f seconds.\n",time);
+    }
+}
+@@@ Fin de test-timed-select.cc
+echo testshared.cc 1>&2
+cat >testshared.cc <<'@@@ Fin de testshared.cc'
+/* testshared.cc */
+
+/*
+ *  This program tests various shared variable declarations.
+ */
+
+process spec writer()
+{
+    trans write1();
+    trans write2();
+};
+
+process spec reader()
+{
+    trans read();
+};
+
+shared int a[10];
+shared int b;
+shared char c[10];
+shared int d[2][2][2][2];
+
+process body writer()
+{
+    int j,k,l,m;
+
+    accept write1() {
+	for (j=0;j<10;j++)
+	    a[j]=j;
+	b=333;
+	strcpy(c,"hi there!");
+	for (j=0;j<2;j++)
+	    for (k=0;k<2;k++)
+		for (l=0;l<2;l++)
+		    for (m=0;m<2;m++)
+			d[j][k][l][m]=j*1000 + k*100 + l*10 + m;
+    }
+    accept write2() {
+	for (j=0;j<10;j++)
+	    a[j]=10-j;
+	b= -777;
+	strcpy(c,"123456789");
+	for (j=0;j<2;j++)
+	    for (k=0;k<2;k++)
+		for (l=0;l<2;l++)
+		    for (m=0;m<2;m++)
+			d[j][k][l][m]=j*8 + k*4 + l*2 + m;
+    }
+}
+
+process body reader()
+{
+    int j,k,l,m;
+
+    accept read() {
+	for (j=0;j<10;j++)
+	    printf("a[%d] = %d.\n",j,a[j]);
+	printf("b = %d.\n",b);
+	printf("c = \"%s\"\n",c);
+	for (j=0;j<2;j++)
+	    for (k=0;k<2;k++)
+		for (l=0;l<2;l++)
+		    for (m=0;m<2;m++)
+			printf("d[%d][%d][%d][%d] = %d.\n",j,k,l,m,d[j][k][l][m]);
+    }
+}
+
+main()
+{
+    process reader r;
+    process writer w;
+
+    w = create writer();
+    r = create reader();
+
+    w.write1();
+    r.read();
+
+
+    r = create reader();
+
+    w.write2();
+    r.read();
+}
+@@@ Fin de testshared.cc
+echo testshared2.cc 1>&2
+cat >testshared2.cc <<'@@@ Fin de testshared2.cc'
+/* testshared2.cc */
+
+/*
+ *  At one point the following declaration was not being handled correctly.
+ */
+shared int a,b;
+
+main()
+{
+}
+@@@ Fin de testshared2.cc

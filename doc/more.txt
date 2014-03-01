@@ -1,0 +1,1 @@
+add statistics, like time waiting per type of block

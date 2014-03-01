@@ -1,0 +1,14 @@
+Most of these guys work as advertised.
+
+However....
+
+numerical.cc is acting wierd.
+i did not have time to find out quite what its problem is but
+it is definitely something to be looked into.
+
+in particular the print statement for the counter, when removed,
+makes the program hang?????????
+
+its probably something obvious and my brain is just too fried.
+Or maybe its a serious bug with the compiler...
+who knows

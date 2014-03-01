@@ -1,0 +1,6 @@
+minimum overhead
+maximum observation of RTS
+not dbx-like control
+graphical representation
+bigger picture of communication
+not a debugger for Cc (like pdbx), but a Cc debugger.

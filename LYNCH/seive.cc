@@ -1,0 +1,117 @@
+/*---------------------------------------------------------------------------
+ * Seive of Eratosthenes, where multiples are crossed out of an array,
+ * leaving the primes.
+ *  
+ * In this implementation, the array is in shared memory.  A process for
+ * the factor two is started initially.  Each process looks for the first
+ * integer in the array which is not crossed out (including by itself) and
+ * starts another process with that factor (numbers greater that the
+ * square root of the max cannot be factors).
+ * 
+ * The algorithm is scheduling dependent.  If a new process can get an
+ * integer before an earlier process can cross it out, a useless (but not
+ * dangerous) process will be created.  While inefficient, this should
+ * prove to be a useful test case.
+ * 
+ * William L. Lynch	Wed Jun 18 15:13:33 1986
+ * 
+ *---------------------------------------------------------------------------
+ */
+
+pragma map;
+
+
+#define DEBUG 1
+#include <stdio.h>
+
+/* time between polls of completion, in seconds */
+#define DELAY 1
+/* cross out value */
+#define NOTpRIME 0
+/* this is actually one more than is checked, because arrays start at 0*/
+#define MAX 101
+/* largest possible factor is ceiling(square root) */
+#define MAXfACTOR 10
+
+#define Uncrossed(i) seive[(i)] != NOTpRIME
+typedef int factor;
+
+shared int seive[MAX];		/* locations 0 and 1 ignored */
+
+
+process spec Crossout(factor);
+ 
+
+
+process body Crossout(fact) 
+{
+	process Crossout newFactor;
+	int i;
+	int nextCross;		/* so you don't have to divide while you
+				   are searching by ones for the next
+				   factor */
+	
+
+#if DEBUG
+	fprintf(stderr,"A new Crossout factor: %d\n", fact);
+#endif
+	
+	/* look for a new potential factor (not crossed out yet) */
+	nextCross=fact;
+	for (i = fact; i <= MAXfACTOR; i++) {
+		if (i == nextCross) {
+			seive[i] = NOTpRIME;
+			nextCross += fact;
+		} else {
+			if (Uncrossed(i)) {
+				newFactor = create Crossout(i);
+
+#if DEBUG
+				if (newFactor == c_nullpid) {
+					fprintf(stderr,"problem with process creation.\n");
+				}
+#endif
+
+			}
+		}
+		
+	}
+	/* now we have found a new factor, lets go on jumping by our own
+	   factor insead of 1 */
+	for (i = nextCross; i < MAX; i += fact) {
+		seive[i] = NOTpRIME;
+	}
+}
+ 
+
+main  ()
+{
+
+	process Crossout firstFactor;
+	int i, delayed;
+	
+	/* setup seive */
+	for (i=2; i < MAX; i++) {		/* 0 and 1 ignored */
+		seive[i] = i;
+	}
+	firstFactor = create Crossout(2);	/* start !! */
+
+	/* now wait for the process to finish */
+	delayed = 0;
+	while (!c_invalid(firstFactor)) {
+		delay DELAY;
+		delayed++;
+	}
+	printf("Delayed %d seconds.\n");
+	
+	
+	/* Finished!  Print out the results */
+	printf("Primes through %1d: ", MAX-1);
+	for (i=2; i < MAX; i++) {
+		if (Uncrossed(i)) {
+			printf("%1d, ",i);
+		}
+	}
+}
+
+

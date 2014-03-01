@@ -1,0 +1,66 @@
+head     3.0;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+3.0
+date     86.09.18.16.05.21;  author lynch;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.09.11.13.47.24;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@wor
+@
+
+
+3.0
+log
+@ working version, last day
+@
+text
+@typedef struct {
+	unsigned short traces:1;
+	unsigned short breaks:1;
+} pointType;
+
+
+typedef struct {
+	pointType *accept, *create, *transact, *delay, 
+						*terminate, *select, *treturn;
+} pointsType;
+
+
+typedef int point;
+typedef point *idToPoint;
+
+
+#define ON 1
+#define OFF 0
+#define TRACE 1
+#define BREAK 0
+
+bool points_accept(), points_create(), points_transact(), points_select(), 
+	points_delay(), points_terminate(), points_treturn();
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@a16 4
+struct {
+	idToPoint accept, create, transact, select, delay, terminate, treturn;
+} translate;
+
+@

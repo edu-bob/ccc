@@ -1,0 +1,2 @@
+it is interesting that trans, accept and create appear in the symbol table,
+ while delay, select, treturn, and terminate do not.

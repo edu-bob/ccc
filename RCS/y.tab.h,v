@@ -1,0 +1,104 @@
+head     3.0;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+3.0
+date     86.09.18.16.15.22;  author lynch;  state Exp;
+branches ;
+next     2.1;
+
+2.1
+date     86.07.25.14.35.27;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Version which works up to printing out buffer messages in commun.
+
+@
+
+
+3.0
+log
+@working final version
+@
+text
+@# define IDENTIFIER 257
+# define STRING_LITERAL 258
+# define SIZEOF 259
+# define CONSTANT 260
+# define X_ASSIGN 261
+# define A_ASSIGN 262
+# define PTR_OP 263
+# define INC_OP 264
+# define TYPEDEF 265
+# define SSC 266
+# define STRUCT 267
+# define UNION 268
+# define ENUM 269
+# define BTYPE 270
+# define VOID 271
+# define TYPE_NAME 272
+# define CASE 273
+# define DEFAULT 274
+# define IF 275
+# define ELSE 276
+# define SWITCH 277
+# define WHILE 278
+# define DO 279
+# define FOR 280
+# define GOTO 281
+# define CONTINUE 282
+# define BREAK 283
+# define RETURN 284
+# define ACCEPT 285
+# define BODY 286
+# define BY 287
+# define CREATE 288
+# define DELAY 289
+# define IMMEDIATE 290
+# define OR 291
+# define OTHERWISE 292
+# define PRIORITY 293
+# define PROCESS 294
+# define SELECT 295
+# define SPEC 296
+# define TERMINATE 297
+# define TRANS 298
+# define TRETURN 299
+# define WITH 300
+# define WITHIN 301
+# define LABEL 302
+# define SHARED 303
+# define IS_NEW 304
+# define C_COUNT 305
+# define UNSIGNED 306
+# define UNSIGNEDINT 307
+# define UNSIGNEDCHAR 308
+# define UNSIGNEDSHORT 309
+# define UNSIGNEDLONG 310
+# define LONGINT 311
+# define DOUBLE 312
+# define SHORT 313
+# define CHAR 314
+# define FLOAT 315
+# define INT 316
+# define OR_OP 317
+# define AND_OP 318
+# define EQ_OP 319
+# define REL_OP 320
+# define SHIFT_OP 321
+@
+
+
+2.1
+log
+@Version which works up to printing out buffer messages in commun.
+@
+text
+@@

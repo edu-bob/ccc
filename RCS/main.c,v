@@ -1,0 +1,100 @@
+head     3.0;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+3.0
+date     86.09.18.16.12.55;  author lynch;  state Exp;
+branches ;
+next     2.1;
+
+2.1
+date     86.07.25.14.34.05;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Version which works up to printing out buffer messages in commun.
+
+@
+
+
+3.0
+log
+@working final version
+@
+text
+@/*
+** Concurrent C translator
+**
+** Joe Barerra, RIACS, 1985
+**
+** Input - named .cc file on argument list (just one!)
+** Output - translated programs on stdout
+**
+** System interface done by Bob Brown, RIACS, 1986
+*/
+#include <stdio.h>
+#define EXTERN
+#include "common.h"
+#include "bool.h"
+bool debugFlag;
+
+
+main(argc, argv)
+int argc;
+char *argv[];
+{
+	int yyparse();
+	int status;
+
+		
+	Filename = "stdin";
+	while ( argc > 1 ) {
+		if ( strcmp(argv[1], "-G") == 0) {
+			debugFlag = TRUE;
+		} else {
+			if (freopen(argv[1],"r", stdin) == NULL ) {
+				perror(argv[1]);
+				exit(1);
+			}
+		Filename = argv[1];
+		}
+	argv++;
+	argc--;
+	}
+	Linenum = 1;
+	spec_init();
+	gram_init();
+	capture_init();
+	status=yyparse();
+	gram_end();
+	flusherrors();
+	if ( debugFlag )
+		spec_printGlobals();
+	
+	return status;
+}
+@
+
+
+2.1
+log
+@Version which works up to printing out buffer messages in commun.
+@
+text
+@d14 2
+a15 1
+char debugFlag;
+d29 1
+a29 1
+			debugFlag = 1;
+d47 2
+a48 2
+	if (debugFlag)
+		spec_dump();
+@

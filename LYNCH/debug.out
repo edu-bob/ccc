@@ -1,0 +1,52 @@
+added,434, sig 434(4). Empty added 435, sig 435.(0)
+buffer 0, told 1, full 0, event waiting on a transaction
+buffer 1, told 1, full 0, event I got a return
+buffer 2, told 1, full 0, event accepting a client
+buffer 3, told 1, full 0, event treturn
+buffer 4, told 1, full 0, event I got a return
+buffer 5, told 1, full 0, event waiting on a transaction
+buffer 6, told 1, full 0, event accepting a client
+buffer 7, told 1, full 0, event treturn
+buffer 8, told 1, full 0, event accepting a client
+buffer 9, told 1, full 0, event treturn
+buffer 10, told 1, full 0, event accept waiting
+buffer 11, told 1, full 0, event I got a return
+buffer 12, told 1, full 0, event waiting on a transaction
+buffer 13, told 1, full 0, event I got a return
+buffer 14, told 1, full 0, event waiting on a transaction
+buffer 15, told 1, full 0, event serve me
+buffer 16, told 1, full 0, event accepting a client
+buffer 17, told 1, full 0, event treturn
+buffer 18, told 1, full 0, event accepting a client
+buffer 19, told 1, full 0, event treturn
+buffer 20, told 1, full 0, event I got a return
+buffer 21, told 1, full 0, event serve me
+buffer 22, told 1, full 0, event waiting on a transaction
+buffer 23, told 1, full 0, event accept waiting
+buffer 24, told 1, full 0, event waiting on a transaction
+buffer 25, told 1, full 0, event accepting a client
+buffer 26, told 1, full 0, event I got a return
+buffer 27, told 1, full 0, event I'm exiting
+buffer 28, told 1, full 0, event treturn
+buffer 29, told 1, full 0, event I got a return
+buffer 30, told 1, full 0, event I'm exiting
+buffer 31, told 1, full 0, event last child dying
+buffer 32, told 1, full 0, event I'm exiting
+buffer 33, told 1, full 0, event I'm exiting
+buffer 34, told 1, full 0, event debugger ending
+buffer 35, told 1, full 0, event treturn
+buffer 36, told 1, full 0, event accepting a client
+buffer 37, told 1, full 0, event waiting on a transaction
+buffer 38, told 1, full 0, event treturn
+buffer 39, told 1, full 0, event I got a return
+buffer 40, told 1, full 0, event I'm exiting
+buffer 41, told 1, full 0, event I got a return
+buffer 42, told 1, full 0, event waiting on a transaction
+buffer 43, told 1, full 0, event accepting a client
+buffer 44, told 1, full 0, event treturn
+buffer 45, told 1, full 0, event accepting a client
+buffer 46, told 1, full 0, event treturn
+buffer 47, told 1, full 0, event accept waiting
+buffer 48, told 1, full 0, event I got a return
+buffer 49, told 1, full 0, event serve me
+empty 34, full 35.

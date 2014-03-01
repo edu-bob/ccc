@@ -1,0 +1,32 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    lynch:1.1; strict;
+comment  @ * @;
+
+
+1.1
+date     86.09.11.13.46.55;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@works.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@main( )
+{
+	win_init();
+	win_end();
+}
+
+@

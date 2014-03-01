@@ -1,0 +1,78 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    lynch:1.1; strict;
+comment  @ * @;
+
+
+1.1
+date     86.06.27.16.40.25;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@I think this is junk output.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#include <ccc/CC_kernel.h>
+
+# line 1 MAPPINGS/spec1.cc
+
+
+
+typedef int CC_8foo_arg1;
+typedef float CC_8foo_arg2;
+
+#define CC_foo_numtrans 0
+CC_pid CC_foo();
+
+CC_pid CC_foo(i ,x ,
+CC_priority)
+int i;
+float x;
+int CC_priority;
+{
+
+int temp ;
+
+if (CC_fork("foo",CC_foo_numtrans,CC_priority))
+    return CC_childpid;
+temp =i ;
+CC_complete();
+}
+
+typedef CC_pid CC_9bar_arg1;
+typedef char CC_9bar_arg2;
+
+#define CC_bar_numtrans 0
+CC_pid CC_bar();
+
+CC_pid CC_bar(y ,ch ,
+CC_priority)
+process foo y;
+char ch;
+int CC_priority;
+{
+
+
+if (CC_fork("bar",CC_bar_numtrans,CC_priority))
+    return CC_childpid;
+CC_complete();
+}
+
+CC_shinit()
+{
+int CC_j,CC_n,CC_ss;
+char *CC_s;
+
+}
+@

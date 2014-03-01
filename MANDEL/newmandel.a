@@ -1,0 +1,163 @@
+0 main is running from main pid=27806
+0 main is creating ticket ()
+761 ticket<0> is running from main pid=27807
+764 main is creating queue ()
+773 ticket<0> is wait select
+775 queue<0> is running from main pid=27808
+776 main is creating display (queue<0>)
+783 queue<0> is wait select
+786 display<0> is running from main pid=27809
+786 main is creating mandel (0,ticket<0>,queue<0>,{a=-2,b=-1.25},{a=0.5,b=1.25})
+794 display<0> is waiting on queue<0>.get line 152 ()
+798 mandel<0> is running from main pid=27810
+801 mandel<0> is waiting on ticket<0>.next line 79 ()
+802 main is creating mandel (1,ticket<0>,queue<0>,{a=-2,b=-1.25},{a=0.5,b=1.25})
+809 ticket<0> is accepting next from mandel<0> line 95 ()
+817 mandel<1> is running from main pid=27811
+818 ticket<0> is running, treturned  (0)
+817 ticket<0> is wait select
+819 mandel<0> is running
+819 mandel<1> is waiting on ticket<0>.next line 79 ()
+824 main is creating mandel (2,ticket<0>,queue<0>,{a=-2,b=-1.25},{a=0.5,b=1.25})
+828 ticket<0> is accepting next from mandel<1> line 95 ()
+830 ticket<0> is running, treturned  (1)
+830 mandel<2> is running from main pid=27812
+831 ticket<0> is wait select
+831 mandel<1> is running
+831 mandel<2> is waiting on ticket<0>.next line 79 ()
+833 mandel<0> is waiting on queue<0>.put line 85 (0)
+836 main is creating mandel (3,ticket<0>,queue<0>,{a=-2,b=-1.25},{a=0.5,b=1.25})
+838 queue<0> is accepting put from mandel<0> line 124 (line)
+840 ticket<0> is accepting next from mandel<2> line 95 ()
+840 mandel<3> is running from main pid=27813
+842 ticket<0> is running, treturned  (2)
+840 queue<0> is running, treturned  (0)
+841 ticket<0> is wait select
+841 mandel<2> is running
+842 queue<0> is accepting get from display<0> line 128 ()
+842 mandel<0> is running
+843 mandel<3> is waiting on ticket<0>.next line 79 ()
+843 queue<0> is running, treturned  (0)
+843 display<0> is running
+845 mandel<0> is waiting on ticket<0>.next line 79 ()
+845 main is creating mandel (4,ticket<0>,queue<0>,{a=-2,b=-1.25},{a=0.5,b=1.25})
+850 queue<0> is wait select
+852 display<0> is waiting on queue<0>.get line 152 ()
+852 ticket<0> is accepting next from mandel<3> line 95 ()
+852 mandel<1> is waiting on queue<0>.put line 85 (1)
+852 ticket<0> is running, treturned  (3)
+853 ticket<0> is accepting next from mandel<0> line 95 ()
+853 mandel<4> is running from main pid=27814
+854 ticket<0> is running, treturned  (4)
+853 queue<0> is accepting put from mandel<1> line 124 (line)
+853 mandel<3> is running
+853 ticket<0> is wait select
+854 mandel<0> is running
+854 queue<0> is running, treturned  (1)
+854 queue<0> is accepting get from display<0> line 128 ()
+855 mandel<1> is running
+855 queue<0> is running, treturned  (1)
+855 mandel<1> is waiting on ticket<0>.next line 79 ()
+855 queue<0> is wait select
+856 display<0> is running
+855 main is dying
+856 mandel<4> is waiting on ticket<0>.next line 79 ()
+856 ticket<0> is accepting next from mandel<1> line 95 ()
+856 ticket<0> is running, treturned  (5)
+857 ticket<0> is accepting next from mandel<4> line 95 ()
+857 mandel<1> is running
+857 ticket<0> is running, treturned  (6)
+857 mandel<2> is waiting on queue<0>.put line 85 (2)
+858 ticket<0> is wait select
+858 mandel<4> is running
+859 queue<0> is accepting put from mandel<2> line 124 (line)
+859 queue<0> is running, treturned  (2)
+859 mandel<2> is running
+860 queue<0> is wait select
+860 mandel<2> is waiting on ticket<0>.next line 79 ()
+860 display<0> is waiting on queue<0>.get line 152 ()
+861 ticket<0> is accepting next from mandel<2> line 95 ()
+861 ticket<0> is running, treturned  (7)
+861 queue<0> is accepting get from display<0> line 128 ()
+862 ticket<0> is wait select
+862 queue<0> is running, treturned  (2)
+862 mandel<2> is running
+862 queue<0> is wait select
+862 display<0> is running
+863 display<0> is waiting on queue<0>.get line 152 ()
+868 mandel<0> is waiting on queue<0>.put line 85 (4)
+869 mandel<3> is waiting on queue<0>.put line 85 (3)
+869 queue<0> is accepting put from mandel<0> line 124 (line)
+870 queue<0> is running, treturned  (4)
+870 queue<0> is accepting put from mandel<3> line 124 (line)
+871 mandel<0> is running
+873 queue<0> is running, treturned  (3)
+874 mandel<1> is waiting on queue<0>.put line 85 (5)
+875 mandel<0> is waiting on ticket<0>.next line 79 ()
+877 mandel<3> is running
+878 mandel<4> is waiting on queue<0>.put line 85 (6)
+882 mandel<3> is waiting on ticket<0>.next line 79 ()
+883 mandel<2> is waiting on queue<0>.put line 85 (7)
+885 ticket<0> is accepting next from mandel<0> line 95 ()
+886 queue<0> is accepting put from mandel<1> line 124 (line)
+887 ticket<0> is running, treturned  (8)
+889 queue<0> is running, treturned  (5)
+890 ticket<0> is accepting next from mandel<3> line 95 ()
+892 mandel<0> is running
+893 queue<0> is accepting put from mandel<4> line 124 (line)
+894 mandel<1> is running
+896 ticket<0> is running, treturned  (9)
+897 queue<0> is running, treturned  (6)
+899 mandel<1> is waiting on ticket<0>.next line 79 ()
+900 mandel<3> is running
+901 queue<0> is accepting put from mandel<2> line 124 (line)
+903 mandel<4> is running
+904 ticket<0> is accepting next from mandel<1> line 95 ()
+906 queue<0> is running, treturned  (7)
+907 mandel<4> is waiting on ticket<0>.next line 79 ()
+908 ticket<0> is running, treturned  (10)
+910 queue<0> is accepting get from display<0> line 128 ()
+911 mandel<2> is running
+912 mandel<0> is waiting on queue<0>.put line 85 (8)
+914 ticket<0> is accepting next from mandel<4> line 95 ()
+915 mandel<1> is running
+917 queue<0> is running, treturned  (4)
+918 mandel<2> is waiting on ticket<0>.next line 79 ()
+920 ticket<0> is running, treturned  (11)
+922 mandel<3> is waiting on queue<0>.put line 85 (9)
+923 display<0> is running
+924 ticket<0> is accepting next from mandel<2> line 95 ()
+926 mandel<4> is running
+927 queue<0> is accepting put from mandel<0> line 124 (line)
+928 ticket<0> is running, treturned  (12)
+930 queue<0> is running, treturned  (8)
+931 display<0> is waiting on queue<0>.get line 152 ()
+933 ticket<0> is wait select
+934 mandel<2> is running
+936 mandel<0> is running
+937 mandel<1> is waiting on queue<0>.put line 85 (10)
+939 queue<0> is accepting put from mandel<3> line 124 (line)
+940 mandel<0> is waiting on ticket<0>.next line 79 ()
+942 queue<0> is running, treturned  (9)
+945 mandel<4> is waiting on queue<0>.put line 85 (11)
+946 mandel<3> is running
+948 ticket<0> is accepting next from mandel<0> line 95 ()
+949 queue<0> is accepting put from mandel<1> line 124 (line)
+951 mandel<3> is waiting on ticket<0>.next line 79 ()
+952 ticket<0> is running, treturned  (13)
+953 queue<0> is running, treturned  (10)
+955 mandel<2> is waiting on queue<0>.put line 85 (12)
+956 ticket<0> is accepting next from mandel<3> line 95 ()
+958 mandel<0> is running
+959 mandel<1> is running
+961 queue<0> is accepting put from mandel<4> line 124 (line)
+962 ticket<0> is running, treturned  (14)
+964 mandel<1> is waiting on ticket<0>.next line 79 ()
+965 queue<0> is running, treturned  (11)
+966 mandel<3> is running
+968 ticket<0> is accepting next from mandel<1> line 95 ()
+969 queue<0> is accepting put from mandel<2> line 124 (line)
+971 mandel<4> is running
+972 ticket<0> is running, treturned  (15)
+974 queue<0> is running, treturned  (12)
+975 mandel<4> is waiting on ticket<0>.next line 79 ()

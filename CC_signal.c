@@ -1,0 +1,246 @@
+/* Qpause.c -- message and signal handling facilities */
+
+#include "CC_include.h"
+#include <sys/time.h>
+
+int timer_going=0;
+
+/*
+ *  (explain modes?)
+ *
+ *  handler bindings, in block_mode:
+ *
+ *	CC_null()         -> SIGUNBLOCK   (blocked)
+ *	CC_selfabort()    -> SIGTERMINATE (unblocked)
+ *	...               -> SIGALRM      (ignored)
+ *
+ *  handler bindings, in message_mode:
+ *
+ *	CC_SIGACCEPT()    -> SIGUNBLOCK   (blocked)
+ *	CC_SIGTERMINATE() -> SIGTERMINATE (blocked)
+ *	CC_SIGDELAY()     -> SIGALRM      (blocked)
+ *
+ *  handler routines:
+ *  (CC_selfabort() can be found in Qdeath.c)
+ */
+
+CC_message_handler(sig)
+int sig;
+{
+    if (signal_mode==MESSAGE_MODE)
+	switch (sig) {
+	    case SIGUNBLOCK:
+		message=RENDEZVOUS;
+		break;
+	    case SIGTERMINATE:
+		message=TERMINATE;
+		break;
+	    case SIGALRM:
+		message=DELAY;
+		timer_going=0;
+		break;
+	}
+    else if (sig==SIGTERMINATE)
+	CC_selfabort();
+	/* do we have to fiddle with signal mask? probably... */
+}
+
+CC_install_handler()
+{
+    struct sigvec sv;
+
+    sigblock(SIGBIT(SIGALRM) | SIGBIT(SIGUNBLOCK));
+    signal_mode=BLOCK_MODE;
+    sv.sv_handler=CC_message_handler;
+    sv.sv_mask=SIGBIT(SIGALRM) | SIGBIT(SIGUNBLOCK) | SIGBIT(SIGTERMINATE);
+    sv.sv_onstack=0;
+    sigvec(SIGALRM,&sv,0);
+    sigvec(SIGUNBLOCK,&sv,0);
+    sigvec(SIGTERMINATE,&sv,0);
+}
+
+CC_message_mode()
+{
+    int currentmask;
+
+    signal_mode=MESSAGE_MODE;
+    currentmask=sigblock(0);
+    sigsetmask(currentmask & ~SIGBIT(SIGTERMINATE));
+}
+
+CC_block_mode()
+{
+    sigblock(SIGBIT(SIGTERMINATE));
+    signal_mode=BLOCK_MODE;
+}
+
+/*
+ *  Flushing routines.
+ *  These routines prevent any messages of a particular type from being sent.
+ *  If no such message has been sent yet, a 1 is returned; otherwise,
+ *  a 0 is returned. In some contexts this return value is used to determine
+ *  whether the flushing process may ignore the flushed message.
+ *  (A better word than flush should be used -- perhaps "close"?)
+ */
+
+CC_flush_DELAY()
+{
+    static struct itimerval zero={{0,0},{0,0}};
+    struct itimerval timewas;
+
+    if (!timer_going)
+	return;
+    setitimer(ITIMER_REAL,&zero,&timewas);
+    if (!timewas.it_value.tv_sec && !timewas.it_value.tv_usec)
+	CC_block(DD_EATtIMER, 0 ); /* if it already went off, *** no id */
+    timer_going=0;
+}
+
+int CC_flush_ACCEPT()
+{
+    int j;
+
+    if (me->selectedtrans != NOTRANS) {
+	CC_block(DD_EATtRANS, 0);	/*** no id */
+	return 0;
+    }
+    me->selectedtrans=DUMMYTRANS;
+    return 1;
+}
+
+int CC_flush_TCALL(t,n)
+task t;
+int n;
+{
+    int success;
+
+    s_lock(t->queuelock);
+    if (success=CC_remqueue(t,n))
+	me->waiting=0;
+    s_unlock(t->queuelock);
+    return success;
+}
+
+CC_flush_TERMINATE()
+{
+    int selected;
+
+    s_lock(pp->statelock);
+    s_lock(me->statelock);
+    if (!(selected = me->choseterm)) {
+	pp->numprepared--;
+	me->prepared=0;
+    }
+    s_unlock(me->statelock);
+    s_unlock(pp->statelock);
+    if (selected)
+	CC_block(DD_EATtERM, 0);	/*** no id */
+    return !selected;
+}
+
+/*
+ *  CC_block() and CC_unblock() are used to wait for an event and to
+ *  signal a process that the event has occured.
+ *
+ *  CC_kill() is used to force a process to terminate itself.
+ *  CC_kill() should be used in this way only when a process is completedly
+ *  checked out.
+ *
+ *  CC_unblock() and CC_kill() are also used to send messages when the
+ *  destination process is in message_mode:
+ *
+ *	CC_unblock()	sends a RENDEZVOUS message, and
+ *	CC_kill()	sends a TERMINATE message.
+ * 
+ * This is where the alterations for debugging come in, with calls to
+ * DD_event in block, unblock, and kill.
+ * 
+ */
+
+
+
+
+#ifndef NORMAL      /* debugger compilation, see include.h for alternate 
+			definitions */
+CC_block(event, id)
+DD_eventType event;
+unsigned id;
+{
+	DD_event(event, id);
+	sigpause(0);
+}
+
+
+
+CC_unblock(t, event, id)
+task t;
+DD_eventType event;
+unsigned id;
+{
+	DD_event2(event, (unsigned)t->unixpid, id);
+	kill(t->unixpid,SIGUNBLOCK);
+}
+
+CC_kill(t, event, id)
+task t;
+DD_eventType event;
+unsigned id;
+{
+	DD_event2(event,(unsigned)t->unixpid, id);
+	kill(t->unixpid,SIGTERMINATE);
+}
+#endif
+
+
+/*
+ *  CC_settimer() sets a timer going which will send a DELAY message
+ *  when it goes off. We handle zero delays as a special case since
+ *  a call to setitimer with a time of 0 is treated as a request to
+ *  shut the timer off.
+ */
+
+struct itimerval *float_to_itvp(f)
+double f;
+{
+    static struct itimerval itv;
+    double dsec,modf();
+
+    if (f<0.0)
+	f=0.0;
+    itv.it_interval.tv_usec = 0;
+    itv.it_interval.tv_sec = 0;
+    itv.it_value.tv_usec = (long)(1.0e6 * modf(f,&dsec));
+    itv.it_value.tv_sec = (long)dsec;
+    return &itv;
+}
+
+CC_settimer(time)
+float time;
+{
+    timer_going=1;
+    if (time==0.0) {
+	kill(me->unixpid,SIGALRM);
+	return;
+    }
+    setitimer(ITIMER_REAL,float_to_itvp(time),0);
+}
+
+/*
+ *  A call to CC_delay() is generated by a delay statement outside of
+ *  a select statement. It sets a timer and waits for a DELAY message
+ *  from the clock. If it gets a TERMINATE message instead, it sends
+ *  itself a kill signal, AND this code is probably flakey!!!
+ */
+CC_delay(time, id)
+float time;
+unsigned id;
+{
+    CC_message_mode();
+    CC_settimer(time);
+    CC_block(DD_DELAY, id);
+    CC_block_mode();
+    if (message==TERMINATE) {
+	CC_flush_DELAY();
+	CC_kill(me, id);
+    }
+}

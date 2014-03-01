@@ -1,0 +1,177 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @# @;
+
+
+1.1
+date     86.06.30.16.51.30;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@documentation
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@.sh 1 PROGRAMMING
+.sh 2 "Miscellaneous Compiler Warning Messages"
+.pp
+A common construct for a server in concurrent C is
+.(l
+while ( 1 ) {
+	select {
+		accept \fIfoo\fP(\fIbar\fP) {
+			...
+			treturn \fIresult\fP;
+		}
+	or
+		terminate;
+	}
+}
+.)l
+If this construct appears at the end of a process body (which is the only
+place that makes sense), the compiler will generate warning messages of the
+form
+.(l
+\fImyprog\fP.cc, line \fIN\fP: warning: statement not reached
+.)l
+These can be disregarded, because the concurrent C translator places
+statements at the end of each process body to handle the process terminating
+by falling out its bottom.
+.sh 2 "Dynamically allocated shared memory"
+.pp
+All shared memory (storage class
+.b shared )
+in concurrect C is allocated at run time.
+However, if you need to dynamically allocate shared memory, you can do it in
+the same way you would allocate non-shared memory, except that you must
+change calls to
+.b malloc
+into calls to
+.b p_shmalloc.
+The single argument is the number of bytes to allocate.
+The pointer to this peice of shared memory need not be shared itself if the
+memory is allocated before any processes are created.
+Otherwise, the pointer must be shared and it is up to the user to
+synchronize processes properly so that no process tries to use that pointer
+before it is assigned a value.
+.sh 1 USAGE
+.pp
+Concurrent C programs should be named with a
+.b .cc
+suffix.
+A new command is supplied, called
+.b ccc ,
+which translates the
+.b .cc
+files into object files.
+In actuality, this command is a shell script that filters the
+.b .cc
+files through the C preprocessor, then through the concurrent C translator,
+and then through the C compiler.
+.B Ccc
+behaves much like
+.b cc ,
+in that if it is given only files ending in
+.b .o ,
+it will not try to compile anything.
+Rather, it will only invoke the linker (via
+.b .cc )
+to link the modules with the appropriate libraries.
+.pp
+The best way to use the translator is the
+.b make .
+The following three lines at the top of your
+.b Makefile
+will tell
+.b make
+how to translate
+.b .cc
+files into
+.b .o
+files:
+.(l
+.SUFFIXES:.cc
+.cc.o:
+	ccc $(CCFLAGS) $(CFLAGS) -c $<
+.)l
+.lp
+Then, if your concurrent C program is named
+.i foo.cc ,
+you shold add the following lines to your
+.b Makefile :
+.(l
+foo:foo.o
+	ccc $(CFLAGS) -o foo foo.o
+.)l
+.pp
+.b Ccc
+supports all the options that can be passed to
+.b cc 
+plus one new one,
+.b \-K ,
+which means to keep a copy of the concurrent C program, translated into
+standard C, in the current directory (see BUGS below).
+If you intend to read this file with any degree of success, you should use
+the
+.b "pragma nolinesync;"
+statement described above.
+.sh 2 "Caution about the \fB-O\fP Flag"
+.pp
+The Sequent Manual entitled
+.i "Guide to Parallel Programming"
+contains the following warning:
+.(l F
+.i
+.ce 1
+CAUTION
+.sp
+If you ise the \fB-O\fP (optimize) of the C compiler when compiling code
+that accesses shared memory or ALM, be sure to specify the \fB-i\fP flag as
+well.
+Otherwise, incorrect optimizations may result from the compiler's assumption
+that variables do not change values spontaneously.
+.)l
+.pp
+The shell script
+.b ccc
+adds the
+.b -i
+option whenever
+.b -O
+is specified.
+This way, the concurrent C programmer need no give it explicitly.
+When in doubt, use the
+.b -x
+option to turn on debugging in the
+.b ccc
+shell script.
+
+.sh 1 BUGS
+.sh 2 "Left-over .c Files Confuse Make"
+.pp
+If you compile a concurrent C program with the -K option so that you can
+look at the generates .c file, you absolutely must remove that .c file
+before you next use make with the Makefile rules given above.
+Otherwise, make will see the .c file in the current directory and, instead
+of recompiling the .cc file, it will take a shortcut and recompile the .c
+file instead.
+Hence, any changes you may have made in the .cc file will not exist in the
+newly compiled and linked program.
+This can be very confusing.
+.sh 2 "Line Numbers Reported are Off by One"
+.pp
+When the concurrent C translator reports an error, it usually shows the line
+number as one greater than where the error actually occurs.
+This bug will be fixed in a future release.
+@

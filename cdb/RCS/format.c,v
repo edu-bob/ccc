@@ -1,0 +1,144 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     86.08.19.16.07.30;  author lynch;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.08.19.16.02.14;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@uses tables
+@
+
+
+1.2
+log
+@junk
+@
+text
+@/*---------------------------------------------------------------------------
+ * tables which determine the initial layout of the cdb screen.
+ * 
+ * William L. Lynch		Mon Aug 18 13:27:05 1986
+ *---------------------------------------------------------------------------
+ */
+
+#include "cdb.h"
+#include "/u2/rlb/src/winlib/gtrlib.h"
+#include "format.h"
+#include "command.h"
+
+#define COLS		85
+#define LINES		64
+
+#define USEReRRlINES	3+2
+#define USERiolINES	10+2
+#define CDBeRRlINES	2+2
+#define CONTROLlINES	2+2
+
+#define CDBlINES	LINES-(USEReRRlINES+USERiolINES+CDBeRRlINES+CONTROLlINES)
+
+#define USEReRRsTART	1
+#define USERiosTART	USEReRRsTART+USEReRRlINES
+#define CONTROLsTART	USERiosTART+USERiolINES
+#define CDBeRRsTART	CONTROLsTART+CONTROLlINES
+#define CDBsTART	CDBeRRsTART+CDBeRRlINES
+
+
+
+window UserErr = {
+	USEReRRsTART, 1, USEReRRlINES, COLS,
+	0, 0,
+	0, 0
+};
+	
+window UserIO = {
+	USERiosTART, 1, USERiolINES, COLS,
+	0, 0,
+	0, 0
+};
+
+window CdbErr = {
+	CDBeRRsTART, 1, CDBeRRlINES, COLS,
+	0, 0,
+	0, 0
+};
+
+window CdbIO = {
+	CDBsTART, 1, CDBlINES, COLS,
+	0, 0,
+	0, 0
+};
+
+button step = {
+	1, 1,
+	"step", 6,
+	command_single,
+	1
+};
+
+button print = {
+	1, 50,
+	"print", 7,
+	command_print,
+	1
+};
+
+buttons commandButtons = {
+	step, print
+};
+	
+menuEntries speedEntries = {
+	{"slower", command_slower, 0},
+	{"faster", command_faster, 0},
+	{"QUIT", command_quit, 0}		
+};
+
+menu speed = {
+	1, 10,
+	"execute", 9,
+	number(speedEntries), speedEntries
+};
+
+
+cycleEntries runEntries = {
+	{"single", 0},
+	{"cont", 0}	
+};
+	
+cycle run = {
+	1, 23,
+	"mode",
+	10,
+	command_mode,
+	0,
+	number(runEntries), runEntries	
+};
+
+window Control = {
+	CONTROLsTART, 1, CONTROLlINES, COLS,
+	number(commandButtons), commandButtons,
+	1, &speed,
+	1, &run
+};
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@@

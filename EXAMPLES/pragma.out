@@ -1,0 +1,35 @@
+pragma.cc, line 44: state undefined
+pragma.cc, line 44: syntax error
+pragma.cc, line 27: syntax error
+pragma.cc, line 44: warning: statement not reached
+pragma.cc, line 28: syntax error
+pragma.cc, line 28: syntax error
+pragma.cc, line 43: CC_guard4_1 undefined
+pragma.cc, line 29: warning: old-fashioned initialization: use =
+pragma.cc, line 29: syntax error
+pragma.cc, line 29: warning: old-fashioned initialization: use =
+pragma.cc, line 30: warning: old-fashioned initialization: use =
+pragma.cc, line 30: warning: undeclared initializer name reduce
+pragma.cc, line 30: warning: old-fashioned initialization: use =
+pragma.cc, line 31: warning: old-fashioned initialization: use =
+pragma.cc, line 31: warning: old-fashioned initialization: use =
+pragma.cc, line 31: warning: old-fashioned initialization: use =
+pragma.cc, line 32: warning: old-fashioned initialization: use =
+pragma.cc, line 32: warning: old-fashioned initialization: use =
+pragma.cc, line 33: warning: old-fashioned initialization: use =
+pragma.cc, line 33: warning: old-fashioned initialization: use =
+pragma.cc, line 33: warning: old-fashioned initialization: use =
+pragma.cc, line 34: warning: old-fashioned initialization: use =
+pragma.cc, line 34: warning: old-fashioned initialization: use =
+pragma.cc, line 35: warning: old-fashioned initialization: use =
+pragma.cc, line 35: warning: old-fashioned initialization: use =
+pragma.cc, line 35: warning: old-fashioned initialization: use =
+pragma.cc, line 38: warning: old-fashioned initialization: use =
+pragma.cc, line 39: syntax error
+pragma.cc, line 40: warning: old-fashioned initialization: use =
+pragma.cc, line 40: syntax error
+pragma.cc, line 40: warning: old-fashioned initialization: use =
+pragma.cc, line 40: syntax error
+pragma.cc, line 40: warning: old-fashioned initialization: use =
+pragma.cc, line 31: warning: old-fashioned initialization: use =
+pragma.cc, line 33: cannot recover from earlier errors: goodbye!

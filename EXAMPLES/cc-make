@@ -1,0 +1,9 @@
+#
+foreach i (*.cc)
+	echo ../ccc -K $i
+	rm -f $i:r.out
+	../ccc -K $i >& $i:r.out
+	mv -f a.out $i:r
+	mv -f spec.out $i:r.spec
+	mv -f sym.out $i:r.sym
+end

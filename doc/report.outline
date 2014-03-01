@@ -1,0 +1,55 @@
+goals
+
+
+
+overview
+	converstion & monitor, buffer & commun, display
+	details of libccc vs libccd, -G
+
+
+implementation
+	input hooks (DD_event)
+	output hooks (display)
+	DD_convert
+	buffers(dist. control), sockets (extra process)
+	rexec.
+	tell if cdb started.	
+	front end: dynamic, static, points, throttle
+	
+
+
+
+
+
+	
+
+================================================================
+report
+convert goes with spec, occur with bodies.
+simultaneous occurrence very difficult to debug->trace is NB!!!!
+lack of real programs was a hindrance.
+having front end on remote machine is a lot of work, but nice functionality.
+
+
+results
+	timing is critical.  near Simultaneous have to be sent in the proper order.
+	low-overhead not reached, to some extent.
+	
+	building debugger on without knowledge of underlying data structures 
+	requires that any examination of variables occur in C code.
+	
+	arrows and lines are great.
+
+problems
+	if a process dies on error, no notification.
+	separate compilation.
+	hitting buffer end eventually.
+	socket buffering.
+
+enhancements. link stopping, clock sweep/clock real rate, blocked fraction
+(per occur, type, total).  conditional breaks & traces.  dbx underneath.
+dynamic window size (if expecting a lot of stderr, for example).  
+	no password for localhost.
+	separate compilation, build linker for symtab and process tab.
+	change number of buffers dynamically.
+	turn dying processes black, blocked processes gray.

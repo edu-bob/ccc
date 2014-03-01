@@ -1,0 +1,312 @@
+.po 1.25i
+.sz 12
+.nr sp 12
+.nr pp 12
+.fo ''-%-''
+.(b C
+Creation and Initial Use of \fBcdb\fR, a Concurrent C Debugger
+William L. Lynch
+\*(td
+.)b
+
+.sh 1 Introduction
+
+.pp
+In 1985, Joe Barrera and Bob Brown implemented Bell Lab's specification of 
+Concurrent C on the Sequent Balance multiprocessor.  Debugging the resulting
+concurrent programs proved to be a difficult task, and from the desire for
+more efficient debugging, the idea for
+.b cdb
+was born.
+
+.pp
+.b cdb
+was designed to be a low-overhead graphical monitor of executing Concurrent
+C programs.  
+.b cdb
+only monitors events having to do with the constructs of Concurrent C
+that make it different from C;  it is a monitor of concurrency in programs,
+not a monitor of Concurrent C programs.
+
+.pp
+This document describes experiences gained from creation and use of
+.b cdb .
+To learn how to use 
+.b cdb ,
+or how it works, the reader is referred to
+"A User's Manual for \fBcdb\fR, a Concurrent C Debugger," or
+"An Owner's Guide for \fBcdb\fR, a Concurrent C Debugger,"
+both by this author.
+
+.sh + "Concurrent C"
+
+.pp
+Concurrent C is a superset of C that provides concurrent programming
+facilities, designed by N. H. Gehani and W. D. Roome at AT&T Bell
+Laboratories.  The superset defines extensions for the declaration and
+creation of processes, for inter-process communcation with 
+.i rendevous
+semantics, and for process termination.  Only the briefest of summaries is
+provided here.  The reader is referred to Gehani & Roome for further details.
+
+.pp
+Processes are declared in two parts:  the
+.i "process spec"
+part, and the 
+.i "process body"
+part.  The process spec part defines the communication  and creation interface
+for the process.  Communication occurs with 
+.i "transaction calls" ,
+where one process specifies a desired process and communcation point, and
+the desired process
+.i accept s
+the communication.  Transaction calls have parameters, which mate with
+formal parameters in the accept statement.
+Both transacting and accepting are synchronized
+blocking communication.  The receiving process may have many instances of an
+entry point within its body;  the transaction is accepted at whichever instance the
+receiver is executing.  The receiver can wait for any one of a number of
+accept entries with a 
+.i select
+statement.
+
+.pp
+Processes can be created dynamically.  They are given creation parameters, and
+begin execution immediately.
+
+.sh + cdb
+
+.pp
+.b cdb
+consists of three major parts: a 
+.i monitor ,
+a
+.i "communication process" ,
+and a
+.i "graphical front end" .
+The monitor resides with the Concurrent C processes and records events,
+sending them to the communication process.  The communication process
+compacts the information, does some translation, and sends the information
+over a socket to the front end.  The front end interprets the event, updates
+its representation of the state of the computation, and displays the new
+state.  The information consists essentially of transaction (and creation)
+events and parameters.
+
+.pp
+The front end can execute on a different host from the Concurrent C
+program.  It provides the ability to record trace files in binary and ascii,
+and to playback binary trace files.  Single stepping, slowed running, and trace
+and break point capabilities are available through buttons, cycles, and
+menus.  The only contol available over the Concurrent C program is starting
+and stopping via SIGTSTP and SIGCONT signals.
+
+.pp
+The interaction of processes is displayed as textual state representations,
+as well as lines drawn between interacting processes.  Arrows indicate the
+direction of communication.  Stdin, stdout, and stderr are all available.
+
+.sh + "Creation Observations"
+
+.pp
+During the process of creating
+.b cdb ,
+several things became clear about RIACS' Concurrent C, and about writing 
+debuggers.
+
+.pp
+Making the front end executable on a separate host was not difficult,
+but required a lot of programming effort.  Code was necessary to wait for
+a connection
+(that is, a daemon), and to have security.  (Fortunately, this was
+accomplished with a minimum of work by modifying
+.i rexec .)
+Encoding and decoding the packets for transfer over the sockets
+also added complexity.  If the front end
+were on the same host as the user program, it could have read the buffers
+put out by the monitor, rather than requiring that they be converted to
+packets. Also, having remote
+processes respond to commands was more difficult than if they were
+local, as signals cannot be sent directly over sockets.
+
+.pp
+The compiler, 
+.b ccc ,
+compiles Concurrent C programs into C programs with calls to the Concurrent
+C run time system.  As
+.b cdb ,
+and RIACS' Concurrent C, do not understand, and therefore cannot modify at
+run or compile time, machine language, some
+changes are necessary to the resulting C program to produce event traces.
+Fortunately, the run-time-system approach allows those changes to be made
+in the run time system, and few changes were necessary for the actual compiler.
+
+.pp
+Tracing of values associated with events was
+complicated somewhat because
+.b cdb
+has no knowledge about the machine's representation of data.  C does not
+allow run-time creation of types, so this conversion (particularly of
+structures) cannot be done by a general function at run time within
+.b cdb .  The solution was to provide these functions at compile time, by
+adding them to the resulting C program.  These functions could then be
+linked to by the
+.b cdb .
+
+.pp
+The determination of where to best insert these conversion routines in the
+resulting C code made clear an interesting analogy.  The conversion method of the
+data appearing in all of the concurrent constructs is completely specified
+in the process spec portion of the Concurrent C program.  This is perhaps
+obvious, but promotes the thought that process specs are simply concurrent
+forward declarations.  That is, they perform the same function in Concurrent
+C programs as forward function declarations do in ordinary C programs.  If
+there were a default process spec in Concurrent C, as there is in C, some
+specs could be left out!
+
+.sh + "Use Observations"
+
+.pp
+Some use has been made of 
+.b cdb ,
+and some programs have actually had errors detected, but this use has been
+limited by the small number of real programs written for RIACS' Concurrent
+C, especially those with errors in them.  Nonetheless, enough experience has
+been gained to make some statements about the use of this concurrency
+debugger.
+
+.pp
+The drawing of arrows and lines to show communication allows watching of
+the display with less precision to get a "feel" for how the program is
+running.  This display method also allows one to watch a particular process
+and see what it is doing with its time.
+
+.pp
+The displaying of the state of the processes
+makes deadlock (at least all instances encountered thus far) a realatively
+simple bug to correct;  just let the program run to deadlock, then replay the 
+trace and see what went wrong.
+
+.pp
+Trace and break points are extremely useful features.  It appears that
+break points are the more useful of the two, with the main advantage to
+trace points being that the time to update the display is saved if may trace
+points are turned off.  However, 
+.b cdb
+has not been exercised on very large programs, where the ability to turn off some
+of the visual noise could be a more important asset.
+
+.pp
+An already known problem with RIACS' Concurrent C was merely continued into
+.b cdb .
+The problem is that when processes terminate abnormally, no message is
+propogated to the user.  In fact, no direct indication is given to the user
+that the process has terminated at all.  This lack of notification is a
+serious deficiency, but especially so for the debugger.
+
+.pp
+The goal of low overhead is, to some extent, not reached.  It seems that
+writes to 
+sockets are unable to handle the traffic necessary for heavily-communicating
+processes.  Of course, this problem can also be caused by stopping
+.b cdb 's
+display as the packets fill up the sockets buffers, but even with the 
+trace only
+option, slowing of the program can occur if there is frequent communication.
+Fortunately, the process style of Concurrent C lends itself more to a few
+high-computation, low-communication processes than low-computation,
+high-communication processes.  This blocking is nonetheless a problem.
+
+.sh + "cdb Enhancements"
+
+.pp
+Perhaps the most important result of the experience gained in the use of 
+.b cdb
+is the realization of what should be added to the debugger.  Some of these
+additions should be quite easy to implement, given the current construction
+of
+.b cdb .
+
+.pp
+The control of the program should have the capablility to be linked to the
+display control.  If a
+.i step
+command is issued, then the Concurrent C processes should be unblocked until
+one event is generated.  When the display is running, the Concurrent C
+program is running, and the same for stopped.
+This enhancement is closely related to another
+possible enhancement, which is to allow user control of the number of
+buffers used by the moniter, which determines the distance the Concurrent C
+processes can run ahead of the display before blocking.
+
+.pp
+Conditional break and trace points would also be a useful feature.  However,
+the current implementation works reasonably well, even without conditional points.
+
+.pp
+The cdb daemon should be modified to not require a password for the host
+.i localhost ,
+if this can be done without affecting security of the system.
+
+.pp
+Dynamically variable windows would be useful, as various windows often become more
+or less important depending on the stage of the computation.
+
+.sh + Results
+
+.pp
+The use of 
+.b cdb
+has led to some conclusions about what a general concurrency debugger should
+contain in terms of features beyond those currently included in
+.b cdb .
+Most of these features deal with the display of process
+information.
+
+.pp
+Several features would enhance the ability to improve the performance of the
+program, even if it works correctly.  The ability to follow the trace
+at some multiple of real speed (probably less than one) would allow
+the obvservance of bursts of activity, and times of relative quiet.  This is
+really an improvement of
+.b cdb 's
+throttle, which merely turns down the speed of display;  instead, the
+speed of display should be directly related to the displayed clock. 
+
+.pp
+The fraction of time a process spends blocked at various places should be
+calculated and displayed.  This information is already available in
+.b cdb ,
+it just needs to be collated and displayed.  This enhancement would also aid
+in performance analysis of the Concurrent C program.
+The blocked fractions and times should be
+available in any number of forms: blocked anywhere, blocked at
+an event (e.g., accept), blocked at a specific event (e.g., accept foo),
+blocked at an event occurrence (e.g., accept foo, line 79), etc.
+
+.pp
+Greater control and observation powers over the program could be used.  It
+is beyond the scope of 
+.b cdb
+to have all of the features of say, dbx, but these features would be useful
+for debugging problems beyond those caused by concurrency problems.  Perhaps
+dbx could be run from within
+.b cdb .
+
+.sh + Conclusions
+
+.pp
+Trace files are an important useful feature given the frequency of
+non-deterministic bugs, as they allow repeated viewing of one example of the
+bug.
+
+.pp
+Process specs can be though of as Concurrent C's versions of C's forward
+function declarations.
+
+.pp
+.b cdb
+has turned out to be a useful tool for debugging Concurrent C programs.  
+Although a more detailed view is sometimes useful, the
+simple display of process interaction allows useful intuitive following of the
+progression of the computation.
+

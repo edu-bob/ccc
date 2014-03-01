@@ -1,0 +1,6 @@
+swap.cc, line 57: warning: old-fashioned assignment operator
+swap.cc, line 57: operands of *= have incompatible types
+swap.cc, line 58: warning: old-fashioned assignment operator
+swap.cc, line 58: operands of *= have incompatible types
+swap.cc, line 107: warning: statement not reached
+swap.cc, line 177: warning: statement not reached

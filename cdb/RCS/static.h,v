@@ -1,0 +1,66 @@
+head     3.0;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+3.0
+date     86.09.18.16.05.27;  author lynch;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.09.11.13.47.32;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@works.
+@
+
+
+3.0
+log
+@ working version, last day
+@
+text
+@typedef DD_ProcessTable  pointsInfo;		/* per process spec */
+
+typedef struct {
+	string name;
+	unsigned tagId;		/* used to assign <n> to each process */
+	pointsInfo points;	/* number of occurrences per process */
+} staticProcessInfo;
+
+staticProcessInfo *static_infoLookup();
+
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 15
+typedef struct {
+	occur *accept, *create, *transact;
+	selectOccur *select;
+	otherOccur *delay, *terminate;
+	treturnOccur *treturn;
+	int accepts, creates, transacts, selects, delays, terminates, treturns;
+} Table;
+
+typedef struct {
+	struct {
+		int *accept, *create, *transact, *select, *delay, *terminate, *treturn;
+	} localToGlobal;	/* to translate from local ids to global ids */
+	int accepts, creates, transacts, selects, delays, terminates, treturns;
+				/* number in preceeding arrays */
+} pointsInfo;			/* per process spec */
+@

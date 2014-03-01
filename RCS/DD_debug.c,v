@@ -1,0 +1,79 @@
+head     3.0;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+3.0
+date     86.09.18.16.08.52;  author lynch;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.09.11.14.01.43;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@working
+@
+
+
+3.0
+log
+@working final version
+@
+text
+@#include <stdio.h>
+#include <sys/file.h>
+#include "bool.h"
+#include "cdb/eventString.h"
+
+static bool init = FALSE;
+
+FILE *debugFile;
+
+#define DEBUGFILE 15
+
+
+DD_debug_init()
+{
+	char *name = "debug.out";
+	init = TRUE;
+	
+	debugFile = fopen(name, "w");
+}
+
+
+DD_debug_printf(s, p1, p2, p3, p4, p5, p6, p7, p8, p9)
+char *s;
+{
+	char debugString[160];
+	
+	if ( !init )
+		DD_debug_init();
+
+	sprintf(debugString, s, p1, p2, p3, p4, p5, p6, p7, p8, p9);
+	write(fileno(debugFile), debugString, strlen(debugString));
+}
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d2 1
+a7 1
+
+d10 3
+d15 1
+a15 1
+	debugFile = fopen("debug.out", "w");
+d17 2
+@

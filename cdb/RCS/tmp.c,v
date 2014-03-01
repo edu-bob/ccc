@@ -1,0 +1,372 @@
+head     3.0;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+3.0
+date     86.09.18.16.04.41;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+3.0
+log
+@ working version, last day
+@
+text
+@
+
+
+
+
+
+
+
+
+
+
+
+
+typedef char bool;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef char *DD_formal;		
+typedef DD_formal DD_formals[];
+
+typedef struct {
+	char	 *name;
+	unsigned line;			
+
+	unsigned numFormals;		
+	DD_formal *formals;
+} 
+DD_occur;			
+
+
+typedef struct {		
+	unsigned	line;
+} 
+DD_otherOccur;
+
+typedef struct {
+	unsigned	line;
+	unsigned	termLine;		
+	unsigned	immedLine;		
+} 
+DD_selectOccur;
+
+typedef struct {
+	unsigned	line;
+
+} 
+DD_treturnOccur;
+
+typedef DD_occur DD_occurs[];
+typedef DD_otherOccur DD_otherOccurs[];
+typedef DD_selectOccur DD_selectOccurs[];
+typedef DD_treturnOccur DD_treturnOccurs[];
+
+typedef struct {
+	char	*name;
+	unsigned short space;		
+	unsigned short num;		
+	unsigned chain;
+	unsigned short obj;		
+} 
+DD_symEntry;  
+
+
+typedef struct {
+	unsigned	numAccepts;
+	DD_occur	*accept;
+	unsigned	numCreates;
+	DD_occur	*create;
+	unsigned	numTransacts;
+	DD_occur	*transact;
+	unsigned	numSelects;
+	DD_selectOccur	*select;
+	unsigned	numDelays;
+	DD_otherOccur	*delay;
+	unsigned	numTerminates;
+	DD_otherOccur	*terminate;
+	unsigned	numTreturns;
+	DD_treturnOccur	*treturn;
+} 
+DD_ProcessTable;
+
+typedef struct {
+	char *name;
+	DD_ProcessTable *table;
+} 
+DD_globalOccurs;
+
+
+
+typedef char *string;
+
+typedef DD_formal formal;
+
+
+
+
+
+
+
+
+typedef DD_occur occur;
+
+
+
+
+
+typedef DD_otherOccur otherOccur;
+
+
+
+
+
+
+
+typedef DD_selectOccur selectOccur;
+
+
+
+
+
+
+typedef DD_treturnOccur treturnOccur;
+
+
+
+
+
+
+
+
+typedef DD_symEntry symbol;
+
+typedef int sock;
+
+
+
+
+
+
+typedef DD_ProcessTable  pointsInfo;		
+
+typedef struct {
+	string name;
+	unsigned tagId;		
+	pointsInfo points;	
+} 
+staticProcessInfo;
+
+staticProcessInfo *static_infoLookup();
+
+
+
+
+typedef struct {
+unsigned short traces:
+	1;
+unsigned short breaks:
+	1;
+} 
+pointType;
+
+
+typedef struct {
+	pointType *accept, *create, *transact, *delay, 
+	*terminate, *select, *treturn;
+} 
+pointsType;
+
+
+typedef int point;
+typedef point *idToPoint;
+
+
+
+
+
+
+
+bool points_accept(), points_create(), points_transact(), points_select(), 
+points_delay(), points_terminate(), points_treturn();
+
+typedef enum {
+	running,
+	accepting,
+	dead,
+	waitBorn,
+	waitAbort,
+	selectTerm,
+	waitChildDie,
+	eating,
+	waitTrans,
+	waitTime,
+	waitAccept,
+	waitSelect,
+	delay,
+	timeOut,
+	dying,
+	treturned
+} 
+state;
+
+typedef struct {
+	int row, col;		
+	int channel;
+	unsigned long show;	
+} 
+displayInfo;
+
+
+typedef struct processTag {
+	string name;
+	string tag;		
+	unsigned tagId;		
+	unsigned pid;		
+	unsigned taskp;		
+	state state;		
+	unsigned createId;	
+	unsigned id;		
+	char *transactName;	
+	struct processTag *with;
+	unsigned numParms;	
+	unsigned spaceParms;	
+	string *parms;		
+	unsigned long time;	
+	symbol *symbol;		
+	staticProcessInfo *info;
+	displayInfo  display;	
+	pointsType point;	
+} 
+process;
+
+
+typedef struct listTag {
+	process *process;
+	struct listTag *next;
+} 
+processList;
+
+
+extern symbol *symbolTable;
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool points_accept( pp, kind ) process *pp;
+unsigned short kind;
+{	
+	pointType p;	
+	p = pp->point.accept[pp->id]];	
+	return	kind == 1 ? p.traces == 1 : p.breaks == 1;
+}
+bool points_create( pp, kind ) process *pp;
+unsigned short kind;
+{	
+	pointType p;	
+	p = pp->point.create[pp->id]];	
+	return	kind == 1 ? p.traces == 1 : p.breaks == 1;
+}
+bool points_transact( pp, kind ) process *pp;
+unsigned short kind;
+{	
+	pointType p;	
+	p = pp->point.transact[pp->id]];	
+	return	kind == 1 ? p.traces == 1 : p.breaks == 1;
+}
+bool points_delay( pp, kind ) process *pp;
+unsigned short kind;
+{	
+	pointType p;	
+	p = pp->point.delay[pp->id]];	
+	return	kind == 1 ? p.traces == 1 : p.breaks == 1;
+}
+bool points_terminate( pp, kind ) process *pp;
+unsigned short kind;
+{	
+	pointType p;	
+	p = pp->point.terminate[pp->id]];	
+	return	kind == 1 ? p.traces == 1 : p.breaks == 1;
+}
+bool points_select( pp, kind ) process *pp;
+unsigned short kind;
+{	
+	pointType p;	
+	p = pp->point.select[pp->id]];	
+	return	kind == 1 ? p.traces == 1 : p.breaks == 1;
+}
+bool points_treturn( pp, kind ) process *pp;
+unsigned short kind;
+{	
+	pointType p;	
+	p = pp->point.treturn[pp->id]];	
+	return	kind == 1 ? p.traces == 1 : p.breaks == 1;
+}
+
+
+points_pointsInit( field, number )
+pointType *field;
+int number;
+{
+	int i;
+
+	field = 	( pointType *)calloc((number), sizeof ( pointType));
+	for ( i=0; i < number; i++ ) {
+		field[i].traces = 1;
+		field[i].breaks = 0;
+	}
+}
+
+points_processInit( pp )
+process *pp;
+{
+	staticProcessInfo *infop;
+
+	infop = static_infoLookup(pp->name);
+
+	points_pointsInit(pp->point.accept, infop->points.numAccepts);
+	points_pointsInit(pp->point.create, infop->points.numCreates);
+	points_pointsInit(pp->point.transact, infop->points.numTransacts);
+	points_pointsInit(pp->point.delay, infop->points.numDelays);
+	points_pointsInit(pp->point.terminate, infop->points.numTerminates);
+	points_pointsInit(pp->point.select, infop->points.numSelects);
+	points_pointsInit(pp->point.treturn, infop->points.numTreturns);
+
+}
+
+@

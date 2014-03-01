@@ -1,0 +1,1192 @@
+head     3.0;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+3.0
+date     86.09.18.16.13.07;  author lynch;  state Exp;
+branches ;
+next     2.3;
+
+2.3
+date     86.09.12.10.01.36;  author lynch;  state Exp;
+branches ;
+next     2.2;
+
+2.2
+date     86.08.28.14.50.18;  author lynch;  state Exp;
+branches ;
+next     2.1;
+
+2.1
+date     86.07.25.14.36.50;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Version which works up to printing out buffer messages in commun.
+
+@
+
+
+3.0
+log
+@working final version
+@
+text
+@/*---------------------------------------------------------------------------
+ * 
+ * Table manager for remembering everything about process specs.
+ * 
+ * The specs are kept in a btree sorted by id so that when they are
+   inserted in the object c code as arrays, they are indexable by id
+   number.  create, accept, and transaction specs contain pointers to the
+   symbol table, used to extract the names.
+ * 
+ * 
+ * The ordering of field entries is kept in a dynamically allocated array,
+   which contains lists of field entries (symbol table pointers).  The
+   array is indexed by namespace.
+ * 
+ * A "spec" (as in printSpec) is one of the things that has no name in the
+   symbol table and is kept separately like treturns, selects, etc.
+ * 
+ * The printing out is done in such a fashion that the arrays are indexed
+   by the id number of the occurrence.
+ * 
+ * William L. Lynch		Wed Jul  9 09:48:46 1986
+ * 				Tue Jul 15 09:47:17 1986
+ *---------------------------------------------------------------------------
+ */
+
+
+
+#include <stdio.h>
+#include "cctypes.h"
+#include "spec.h"
+#include "DD_kernel.h"
+
+
+#define newstr(s)	(char *)strcpy(malloc(strlen(s)+1),s)
+#define instances(n,t)	(t *)calloc((n), sizeof (t))
+#define instance(t)	instances(1,t)
+
+#define BASEsIZE 80		/* size of structure name */
+
+/*
+** FORWARDS
+*/
+
+int spec_printNode(), spec_cmp(), spec_processCmp(), spec_printTreturnNode();
+
+
+/*
+** EXTERNS
+*/
+
+char *itoa();
+
+extern spec_process *CurrentSpec;  /* used for later insertion of formals */
+
+extern struct btree *AcceptTable;
+extern struct btree *CreateTable;
+extern struct btree *TransactionTable;
+extern struct btree *SelectTable;
+extern struct btree *DelayTable;
+extern struct btree *TerminateTable;
+extern struct btree *TreturnTable;
+
+extern struct btree *ProcessTable;    /* stores create formals and typestrings */
+
+extern spec_structSpace *StructTable;
+extern int bound;			/* starting bound of preceeding,
+					 dynamically adjusted as necessary */
+
+extern struct table_tag *tables;	/* in cctypes.c */
+extern spec_process *process;
+/*
+** METHODS
+*/
+
+
+/*---------------------------------------------------------------------------
+ * The following deals with output, rather than input
+ *---------------------------------------------------------------------------
+ */
+
+
+spec_printOccur( pp )
+spec_process *pp;
+{
+	int spec_printNode();
+	int spec_printSelectNode();
+	int spec_printCreateFormals();
+	int spec_printAcceptFormals();
+	
+
+	printf("\n/* DEBUG BODY */\n");
+	spec_printCreateFormals(pp);
+	btprint(AcceptTable, spec_printAcceptFormals);
+
+	spec_printCreateOccurs(pp->name);
+	spec_printAcceptOccurs(pp->name);
+	spec_printTransactOccurs(pp->name);
+	spec_printSelectOccurs(pp->name);
+
+	spec_printSpecs("delays", DelayTable, spec_printNode, pp->name);
+	spec_printSpecs("terminates", TerminateTable, spec_printNode, pp->name);
+
+	spec_printTreturnOccurs(pp->name);
+
+	spec_printProcessTable(pp->name);
+}
+
+
+/* the use of the leading empty spec in printspecs serves three functions.
+ First, it simplifies commas in the printNodes routines; second, it
+ simplifies what to do if there are no occurrences of a spec; and third,
+ it offsets the arrays properly for indexing with id numbers. */
+
+spec_printSpecs( name, table, printFunction, procname )
+char *name;
+struct btree *table;
+int (*printFunction)();
+char *procname;
+{
+	printf("static DD_otherOccurs DD_%s_%s = {\n", name, procname);
+	printf("{0}");
+	btprint(table, printFunction);
+	printf("};\n");
+}
+
+spec_printNode( s )
+spec_other *s;
+{
+	printf(",\n{%d}", s->lineNumber );
+}
+
+
+spec_printFormalList( pp )
+spec_parameters *pp;
+{
+	while ( pp ) {
+		printf(" \"%s\"%c", pp->name, pp->next ? ',' : '}');
+		pp = pp->next;
+	}
+		printf(";\n");
+}
+
+			
+spec_printCreateFormals( pp )
+spec_process *pp;
+{
+	if ( pp->formal ) {
+		printf("static DD_formals DD_formals_%s = {\n", pp->name);
+		spec_printFormalList(pp->formal);
+	}
+}
+
+
+spec_printAcceptFormals( ap )
+spec_accept *ap;
+{
+	if ( ap->formal ) {
+		printf("static DD_formals DD_acceptFormals_%d%s_%d = {\n",
+				 ap->symbol->num, ap->symbol->name, ap->id);
+
+		spec_printFormalList(ap->formal);
+	}
+}
+
+
+spec_printCreateOccur( sp )
+spec_create *sp;
+{
+	printf(",\n{\"%s\", %d,", 
+				sp->params->name, sp->lineNumber ); 
+	if ( sp->params->formal )
+		printf(" sizeof DD_create_%s, DD_convert_%s, DD_numAnd(DD_formals_%s)}",
+			sp->params->name, sp->params->name, sp->params->name);
+	else
+		printf(" 0, DD_convert_%s, 0, 0}", sp->params->name);
+}
+
+spec_printCreateOccurs( procname )
+char *procname;
+{
+	printf("static DD_occurs DD_creates_%s = {\n", procname ); 
+	printf("{\"\", 0, 0, 0, 0, 0}");
+	btprint(CreateTable, spec_printCreateOccur);
+	printf("};\n");
+}
+
+
+spec_printAcceptOccur( ap )
+spec_accept *ap;
+{
+	printf(",\n{\"%s\", %d, sizeof(CC_%d%s), DD_convert_%s,", 
+			ap->symbol->name, ap->lineNumber,
+			ap->symbol->num, ap->symbol->name,
+			spec_lookupByNum(ap->symbol->num)->name);
+	if ( ap->formal )
+		printf(" DD_numAnd(DD_acceptFormals_%d%s_%d)}", 
+					 ap->symbol->num, ap->symbol->name, ap->id);
+	else 
+		printf(" 0, 0}\n");
+}
+
+
+spec_printAcceptOccurs( procname )
+char *procname;
+{
+	printf("static DD_occurs DD_accepts_%s = {\n", procname);
+	printf("{\"\", 0, 0, 0, 0, 0}");
+	btprint(AcceptTable, spec_printAcceptOccur);
+	printf("};\n");
+}
+
+
+spec_printTreturnOccur(s)
+spec_treturn *s;
+{
+	printf(",\n{%d, sizeof ((CC_%d%s *)DD_dummy)->value, DD_convert_%s}",
+			s->lineNumber, s->symbol->num, s->symbol->name, 
+			spec_lookupByNum(s->symbol->num)->name);
+}
+
+spec_printTreturnOccurs( procname )
+char *procname;
+{
+	printf("static DD_treturnOccurs DD_treturns_%s = {\n", procname);
+	printf("{0, 0, 0}");
+
+	btprint(TreturnTable, spec_printTreturnOccur);
+	printf("};\n");
+}
+
+spec_printTransactOccur( tp )
+spec_transact *tp;
+{
+	printf(",\n{\"%s\", %d, sizeof(CC_%d%s), DD_convert_%s, 0, 0}",
+				tp->symbol->name, tp->lineNumber,
+				tp->symbol->num, tp->symbol->name,
+				spec_lookupByNum(tp->symbol->num)->name);
+}
+
+spec_printTransactOccurs( procname )
+char *procname;
+{
+	printf("static DD_occurs DD_transacts_%s = {\n", procname);
+	printf("{\"\", 0, 0, 0, 0, 0}");
+	btprint(TransactionTable, spec_printTransactOccur);
+	printf("};\n");
+}
+
+
+spec_printSelectOccur(s)
+spec_select *s;
+{
+	printf(",{%d, %d, %d}",
+				s->lineNumber, s->termLine, s->immedLine);
+}
+
+spec_printSelectOccurs( procname )
+char *procname;
+{
+	printf("static DD_selectOccurs DD_selects_%s = {\n", procname);
+	printf("{0, 0, 0}");
+	btprint(SelectTable, spec_printSelectOccur);
+	printf("};\n");
+}
+
+
+spec_printProcessTable( pn ) 
+char *pn;	/* procname */
+{
+	printf("static DD_ProcessTable DD_processTable_%s = {\
+		DD_numAnd(DD_accepts_%s),\n\
+		DD_numAnd(DD_creates_%s),\n\
+		DD_numAnd(DD_transacts_%s),\n\
+		DD_numAnd(DD_selects_%s),\n\
+		DD_numAnd(DD_delays_%s),\n\
+		DD_numAnd(DD_terminates_%s),\n\
+		DD_numAnd(DD_treturns_%s)};\n",
+		pn, pn, pn, pn, pn, pn, pn, pn);
+}
+
+
+
+spec_printSymbolEntry(s)
+symbol *s;
+{
+	t_type t;
+	t_typespec tt;
+	static char *comma = "";
+
+	t=s->t;
+	tt=t.typespec;
+	printf( "%s\n{\"%s\", %d, %d, %x, %d}", comma,
+		s->name, s->num, tt.num, t.chain, tt.obj);
+	comma = ",";
+}
+
+
+spec_printOrdered( space )
+unsigned space;
+{
+	spec_field *fp;
+	
+	fp = StructTable[space].fields;
+	while ( fp ) {
+		spec_printSymbolEntry(fp->symbol);
+		fp = fp->next;
+	}
+}
+
+spec_printGlobalProcessTable()
+{
+	spec_process *pp;
+	int i=0;
+	char *comma;
+	
+	printf("DD_globalOccurs DD_globalOccurTable[] = {");
+	comma = "";
+	for ( pp=process; pp != NULL; pp = pp->next ) {
+		i++;
+		printf("%s{\"%s\", &DD_processTable_%s}\n", comma, pp->name, pp->name);
+		comma = ",";
+	}
+	printf("};");
+	printf("int DD_numberGlobals = %d;\n", i);
+}
+
+spec_printGlobals()
+{
+	spec_process p;
+	
+/* if main exists in this file, test for main in symbol table or for occurences
+*  in the external table */
+	p.name = "main";
+	p.num = -1;
+	p.formal = NULL; p.typeString = NULL; p.trans = NULL;
+	spec_printOccur(&p);
+	printf("DD_ProcessTable *DD_processTable = &DD_processTable_main;\n");
+	p.next = process;
+	process = &p;
+	
+	depend_Output(tables->table);
+	printf("int DD_symbolSize = sizeof DD_SymbolTable / sizeof DD_SymbolTable[0];\n");
+	spec_printGlobalProcessTable();
+	process = p.next;
+}
+
+/*---------------------------------------------------------------------------
+ * The following deal with printing out the conversion routines for
+ * tblocks.   formOutput implements unlimited length strings for the format
+ * string and  parameter list for the printf statement in the convert
+   routines appearing at the end of a -G compiled program.  formValue decides
+ * what to add to these strings based on the symbol table entry, and uses
+   a base entry for all of the preceding structure refrences, etc.
+ *---------------------------------------------------------------------------
+ */
+
+static unsigned form, parm;
+char *formString;
+char *parmString;
+	
+spec_formStart()
+{
+	form = 0;
+	*formString = '\0';
+	parm = 0;
+	*parmString = '\0';
+}
+
+
+static char *comma = "";
+
+spec_formOutput(formatString, parameterString)
+char *formatString;
+char *parameterString;
+{
+	static formBound = FORMsIZE;
+	static parmBound = PARMsIZE;
+	
+	if ( form + strlen(formatString) + 1 >= formBound ) 
+		formString = (char *)realloc(formString, formBound *= 2);
+	if ( parm + strlen(parameterString) + 2 >= parmBound ) 
+		parmString = (char *)realloc(parmString, parmBound *= 2);
+
+	sprintf(&formString[form], "%s%s", comma, formatString);
+	form += strlen(formatString)  + strlen(comma);
+	sprintf(&parmString[parm], "%s\n%s", comma, parameterString);
+	parm += strlen(parameterString) + 1 + strlen(comma);
+	comma = ",";
+}
+
+spec_formValue(base, sp) 
+char *base;
+symbol *sp;
+{
+	spec_field *field;
+	char *newBase;
+	
+
+	if ( sp->t.chain ) {  /* is a pointer */
+		spec_formOutput( "%x", base );
+		return;
+	}	
+	
+	switch ( sp->t.typespec.obj ) {
+	case e_struct: 
+		newBase = (char *)malloc(strlen(base) + BASEsIZE);
+		spec_formOutput("{","");
+		comma = "";
+		for (field = StructTable[sp->t.typespec.num].fields;
+					field != NULL; field = field->next) {
+			sprintf(newBase, "%s.%s", base, field->symbol->name);
+			spec_formValue(newBase, field->symbol);
+		}
+		free(newBase);
+		comma = "";
+		spec_formOutput("}","");
+	        break;
+	case e_union:
+		comma = "";
+		spec_formOutput(",[union]", "");
+	        break;
+	case e_process:
+	case e_int:
+	case e_short:
+		spec_formOutput( "%d", base );
+	        break;
+	case e_unsigned:
+	case e_unsignedint:
+	case e_unsignedchar:
+	case e_unsignedshort:
+		spec_formOutput( "%u", base);
+	        break;
+	case e_unsignedlong:
+		spec_formOutput( "%lu", base );
+	        break;
+	case e_longint:
+		spec_formOutput( "%ld", base );
+	        break;
+	case e_double:
+	case e_float:
+		spec_formOutput( "%g", base );
+	        break;
+	case e_char:
+		newBase = (char *)malloc(2*strlen(base) + 8);
+		sprintf(newBase, "DD_unctrl(%s)", base);
+		spec_formOutput( "\\\'%s\\\'", newBase );
+	        break;
+	}
+}
+
+
+spec_printConvertCreate( pp )
+spec_process *pp;
+{
+	int tblockContext;
+	int paramNumber;
+	symbol *param;
+	char *base[BASEsIZE];
+	
+	spec_formStart();
+	tblockContext = slookup(pp->name, e_complex)->t.typespec.num;
+	paramNumber = 0;
+	comma = "";
+	while ( param = slookup(itoa(++paramNumber), tblockContext) ) {
+		sprintf(base, "((DD_cr_%s *)tblock)->arg%d", pp->name, paramNumber);
+		spec_formValue(base, param);
+	}
+	if ( strcmp(parmString, "") != 0 )
+		printf("sprintf(answer, \"%s\", %s);\nreturn;\n", formString, parmString );
+	else 
+		printf("*answer = \'\\0\';\nreturn;\n");
+}
+
+
+spec_printConvertTrans( pp )
+spec_process *pp;
+{
+	spec_field *tp;		/* transaction pointer */
+	int paramNumber;
+	symbol *param;
+	char *base[BASEsIZE];	
+	int tblockContext;
+
+	printf("switch ( id ) {\n");
+	for ( tp = pp->trans; tp != NULL; tp = tp->next ) {
+		spec_formStart();
+		printf("case CC_%d%s_id:\n", tp->symbol->num, tp->symbol->name);
+		tblockContext = tp->symbol->t.typespec.num;
+		comma = "";
+		paramNumber = 0;
+		while (param = slookup(itoa(++paramNumber), tblockContext)){
+			sprintf(base, "((CC_%d%s *)tblock)->arg%d",
+					tp->symbol->num, tp->symbol->name,
+					paramNumber);
+			spec_formValue(base, param);
+		}
+		if ( strcmp(parmString, "") != 0 )
+		printf("sprintf(answer, \"%s\", %s);\nreturn;\n",
+						formString, parmString );
+		else 
+			printf("*answer =  \'\\0\';\n");
+	}
+	printf("}\n");		/* end of switch */
+}
+
+spec_printConvertTreturn( pp )
+spec_process *pp;
+{
+	spec_field *tp;		/* transaction pointer */
+	char base[BASEsIZE];	
+	int tblockContext;
+
+	printf("switch ( id ) {\n");
+	for ( tp = pp->trans; tp != NULL; tp = tp->next ) {
+		spec_formStart();
+		printf("case CC_%d%s_id:\n", tp->symbol->num, tp->symbol->name);
+		tblockContext = tp->symbol->t.typespec.num;
+		comma = "";
+		sprintf(base, "((CC_%d%s *)tblock)->value", 
+						tp->symbol->num, tp->symbol->name);
+		spec_formValue(base, slookup("=", tblockContext));
+		printf("sprintf(answer, \"%s\", %s);\nreturn;\n",
+						formString, parmString );
+	}
+	printf("}\n");		/* end of switch */
+}
+
+
+spec_printConvert( pp ) 
+spec_process *pp;
+{
+	printf("\n/* DEBUG SPEC */\n");
+	spec_printCreateStructure(pp);
+	printf("\nstatic void \nDD_convert_%s(request, id, tblock, answer)\n",
+								pp->name);
+	printf("DD_question request;\nint id;\n char *tblock;\nchar *answer;\n{\n");
+	printf("switch ( request ) {\n");
+/*	printf("case DD_askTable: *(DD_ProcessTable **)answer = &DD_SpecTable;\nreturn;");*/
+	printf("case DD_askCreate:\n");
+	spec_printConvertCreate(pp);
+	printf("case DD_askTrans: \n");
+	spec_printConvertTrans(pp);
+	printf("\ncase DD_askTreturn: \n");	
+	spec_printConvertTreturn(pp);
+	printf("}\n}\n");
+	printf("DD_ProcessTable DD_processTable_%s;\n", pp->name);
+}
+	
+
+spec_printCreateStructure( pp )
+spec_process *pp;
+{
+	int i, argnum;
+	char *spec_get_param_type();
+	
+	argnum = contextof(internal_lookup("0", pp->num));
+	
+	if ( argnum == 0 )
+		return;		
+
+	printf("typedef struct  {\n", pp->name);
+	for ( i=0; i < argnum; i++ )
+		printf("%s arg%d;\n", spec_get_param_type(pp->name,i), i+1 );
+	printf("} DD_cr_%s;\n", pp->name);
+	printf("DD_cr_%s DD_create_%s;\n", pp->name, pp->name);
+}
+
+
+/*
+** Retrieval routines
+**
+** These are relatively inefficient because they are strictly random access,
+** they do not first say which process, then ask for the next-parameter.
+*/
+
+char *
+spec_get_param_type( proc, pnum )
+char *proc;
+int pnum;
+{
+	spec_process prp;
+	spec_parameters *pp;
+	int i;
+
+	prp.name = proc;
+	pp = ((spec_process *)btsearch(ProcessTable, &prp))->typeString;
+	
+	for ( i=0; i<pnum ; i++ )
+		if (pp)
+			pp = pp->next;
+		else {
+			fprintf(stderr, "More formals than types: %s.\n", proc);
+			return "int ";
+		}
+	return pp->name;
+}
+
+
+
+@
+
+
+2.3
+log
+@about to make sweeping changes to occurs.
+@
+text
+@a80 1
+static FILE *SpecFd;
+d82 2
+a83 2
+spec_printall( fd )
+FILE *fd;
+a89 1
+	SpecFd = fd;
+d91 2
+a92 1
+	btprint(ProcessTable, spec_printCreateFormals);
+d95 4
+a98 3
+	spec_printCreateOccurs();
+	spec_printAcceptOccurs();
+	spec_printTransactOccurs();
+d100 2
+a101 4
+	spec_printSelectOccurs();
+	
+	spec_printSpecs("delays", DelayTable, spec_printNode);
+	spec_printSpecs("terminates", TerminateTable, spec_printNode);
+d103 1
+a103 1
+	spec_printTreturnOccurs();
+d105 1
+a105 5
+	depend_Output(tables->table);	/* print symbol table */
+
+	spec_printSpecTable();
+
+	spec_printConvert();
+d114 1
+a114 1
+spec_printSpecs( name, table, printFunction )
+d118 1
+d120 2
+a121 2
+	fprintf(SpecFd, "static DD_otherOccurs DD_%s = {\n", name);
+	fprintf(SpecFd, "{0, 0}");
+d123 1
+a123 1
+	fprintf(SpecFd, "};\n");
+d129 1
+a129 1
+	fprintf(SpecFd, ",\n{%d}", s->lineNumber );
+d137 1
+a137 1
+		fprintf(SpecFd, " \"%s\"%c", pp->name, pp->next ? ',' : '}');
+d140 1
+a140 1
+		fprintf(SpecFd, ";\n");
+d144 1
+a144 1
+spec_printCreateFormals(pp)
+d148 1
+a148 1
+		fprintf(SpecFd, "static DD_formals DD_formals_%s = {\n", pp->name);
+d154 1
+a154 1
+spec_printAcceptFormals(ap)
+d158 1
+a158 1
+		fprintf(SpecFd, "static DD_formals DD_acceptFormals_%d%s_%d = {\n",
+d165 2
+a166 1
+spec_printCreateOccur(sp)
+d169 2
+a170 2
+	fprintf(SpecFd, ",\n{\"%s\", %d, %d,", 
+				sp->params->name, sp->lineNumber, sp->space ); 
+d172 2
+a173 2
+		fprintf(SpecFd, " sizeof DD_create_%s, DD_numAnd(DD_formals_%s)}",
+			sp->params->name, sp->params->name);
+d175 1
+a175 1
+		fprintf(SpecFd, " 0, 0, 0}");
+d178 2
+a179 1
+spec_printCreateOccurs()
+d181 2
+a182 2
+	fprintf(SpecFd, "static DD_occurs DD_creates = {\n"); 
+	fprintf(SpecFd, "{\"\", 0, 0, 0, 0, 0}");
+d184 1
+a184 1
+	fprintf(SpecFd, "};\n");
+d191 4
+a194 3
+	fprintf(SpecFd,	",\n{\"%s\", %d, %d, sizeof(CC_%d%s),", 
+				ap->symbol->name, ap->lineNumber,
+				ap->space, ap->symbol->num, ap->symbol->name);
+d196 1
+a196 1
+		fprintf(SpecFd, " DD_numAnd(DD_acceptFormals_%d%s_%d)}", 
+d199 1
+a199 1
+		fprintf(SpecFd, " 0, 0}\n");
+d203 2
+a204 1
+spec_printAcceptOccurs()
+d206 2
+a207 2
+	fprintf(SpecFd, "static DD_occurs DD_accepts = {\n");
+	fprintf(SpecFd, "{\"\", 0, 0, 0, 0, 0}");
+d209 1
+a209 1
+	fprintf(SpecFd, "};\n");
+d212 1
+d216 3
+a218 2
+	fprintf(SpecFd, ",\n{%d, %d, sizeof ((CC_%d%s *)DD_dummy)->value}",
+			s->lineNumber, s->space, s->symbol->num, s->symbol->name);
+d221 2
+a222 1
+spec_printTreturnOccurs()
+d224 3
+a226 2
+	fprintf(SpecFd, "static DD_treturnOccurs DD_treturns = {\n");
+	fprintf(SpecFd, "{0, 0, 0}");
+d228 1
+a228 1
+	fprintf(SpecFd, "};\n");
+d231 1
+a231 1
+spec_printTransactOccur(tp)
+d234 4
+a237 3
+	fprintf(SpecFd, ",\n{\"%s\", %d, %d, sizeof(CC_%d%s), 0, 0}",
+				tp->symbol->name, tp->lineNumber, tp->space,
+				tp->symbol->num, tp->symbol->name);
+d240 2
+a241 1
+spec_printTransactOccurs()
+d243 2
+a244 2
+	fprintf(SpecFd, "static DD_occurs DD_transacts = {\n");
+	fprintf(SpecFd, "{\"\", 0, 0, 0, 0, 0}");
+d246 1
+a246 1
+	fprintf(SpecFd, "};\n");
+d253 2
+a254 2
+	fprintf(SpecFd, ",{%d, %d, %d, %d}",
+				s->lineNumber, s->space, s->termLine, s->immedLine);
+d257 2
+a258 1
+spec_printSelectOccurs()
+d260 2
+a261 2
+	fprintf(SpecFd, "static DD_selectOccurs DD_selects = {\n");
+	fprintf(SpecFd, "{0, 0, 0, 0}");
+d263 1
+a263 1
+	fprintf(SpecFd, "};\n");
+d267 2
+a268 2
+
+spec_dump()
+d270 9
+a278 1
+		spec_printall(stdout);
+a282 17
+
+spec_printSpecTable()
+{
+	fprintf(SpecFd, "static DD_specTable DD_SpecTable = {\
+		DD_numAnd(DD_SymbolTable),\n\
+		DD_numAnd(DD_accepts),\n\
+		DD_numAnd(DD_creates),\n\
+		DD_numAnd(DD_transacts),\n\
+		DD_numAnd(DD_selects),\n\
+		DD_numAnd(DD_delays),\n\
+		DD_numAnd(DD_terminates),\n\
+		DD_numAnd(DD_treturns)};\n");
+}
+
+
+static char *comma = "";
+
+d288 1
+d298 1
+a298 1
+spec_printOrdered(space)
+d310 16
+d327 20
+d369 3
+d452 2
+a453 4
+static spec_process *createCaseContext;
+
+spec_printCreateCase( s )
+spec_create *s;
+a454 8
+	if ( s->params == createCaseContext )
+		printf("case %d:\n", s->id);
+}
+
+
+spec_printConvertCreate()
+{
+	spec_process *pp;
+d460 7
+a466 16
+	printf("switch (id) {\n");
+	for ( pp = process; pp != NULL; pp = pp->next ) {
+		spec_formStart();
+		createCaseContext = pp;
+		btprint(CreateTable, spec_printCreateCase);
+		tblockContext = slookup(pp->name, e_complex)->t.typespec.num;
+		paramNumber = 0;
+		comma = "";
+		while ( param = slookup(itoa(++paramNumber), tblockContext) ) {
+			sprintf(base, "((DD_cr_%s *)tblock)->arg%d", pp->name, paramNumber);
+			spec_formValue(base, param);
+		}
+		if ( strcmp(parmString, "") != 0 )
+			printf("sprintf(answer, \"%s\", %s);\nreturn;\n", formString, parmString );
+		else 
+			printf("*answer = \'\\0\';\nreturn;\n");
+d468 4
+a471 1
+	printf("}\n");		/* end of switch */
+d475 2
+a476 5
+static symbol *transCaseSymbol;
+
+
+spec_printTransCase(s)
+spec_transact *s;
+a477 15
+	if ( s->symbol == transCaseSymbol )
+		printf("case %d:\n", s->id);
+}
+
+
+spec_printAcceptCase(s)
+spec_accept *s;
+{
+	if ( s->symbol == transCaseSymbol )
+		printf("case DD_Acc(%d):\n", s->id);
+}
+
+spec_printConvertTrans()
+{
+	spec_process *pp;
+d484 12
+a495 21
+	printf("switch (id) {\n");
+	for ( pp = process; pp != NULL; pp = pp->next ) {
+		for ( tp = pp->trans; tp != NULL; tp = tp->next ) {
+			spec_formStart();
+			transCaseSymbol = tp->symbol;
+			btprint(TransactionTable, spec_printTransCase);
+			btprint(AcceptTable, spec_printAcceptCase);
+			tblockContext = tp->symbol->t.typespec.num;
+			comma = "";
+			paramNumber = 0;
+			while (param = slookup(itoa(++paramNumber), tblockContext)){
+				sprintf(base, "((CC_%d%s *)tblock)->arg%d",
+						tp->symbol->num, tp->symbol->name,
+						paramNumber);
+				spec_formValue(base, param);
+			}
+			if ( strcmp(parmString, "") != 0 )
+			printf("sprintf(answer, \"%s\", %s);\nreturn;\n",
+							formString, parmString );
+			else 
+				printf("*answer =  \'\\0\';\n");
+d497 5
+d506 2
+a507 3
+
+spec_printTreturnCase(s)
+spec_treturn *s;
+a508 8
+	if ( s->symbol == transCaseSymbol )
+		printf("case %d:\n", s->id);
+	
+}
+
+spec_printConvertTreturn()
+{
+	spec_process *pp;
+d513 7
+a519 10
+	printf("switch (id) {\n");
+	for ( pp = process; pp != NULL; pp = pp->next ) {
+		for ( tp = pp->trans; tp != NULL; tp = tp->next ) {
+			spec_formStart();
+			transCaseSymbol = tp->symbol;
+/*			btprint(TreturnTable, spec_printTreturnCase);*/
+			btprint(TransactionTable, spec_printTransCase);
+			tblockContext = tp->symbol->t.typespec.num;
+			comma = "";
+			sprintf(base, "((CC_%d%s *)tblock)->value", 
+d521 3
+a523 4
+			spec_formValue(base, slookup("=", tblockContext));
+			printf("sprintf(answer, \"%s\", %s);\nreturn;\n", formString, parmString );
+			
+		}
+a525 1
+
+d529 2
+a530 1
+spec_printConvert() 
+d532 4
+a535 1
+	printf("static DD_convert(request, id, tblock, answer)\n");
+d537 2
+a538 2
+	printf("switch (request) {\n");
+	printf("case DD_askSpec: *(DD_specTable **)answer = &DD_SpecTable;\nreturn;");
+d540 3
+a542 3
+	spec_printConvertCreate();
+	printf("\ncase DD_askAccept:\nid = DD_Acc(id);\ncase DD_askTrans: \n");
+	spec_printConvertTrans();
+d544 1
+a544 1
+	spec_printConvertTreturn();
+d546 1
+d549 18
+@
+
+
+2.2
+log
+@about to add namespace for occurrences.
+@
+text
+@d126 1
+a126 1
+	fprintf(SpecFd, "{0}");
+d173 2
+a174 1
+	fprintf(SpecFd, ",\n{\"%s\", %d,", sp->params->name, sp->lineNumber ); 
+d179 1
+a179 1
+		fprintf(SpecFd, "0, 0}");
+d185 1
+a185 1
+	fprintf(SpecFd, "{\"\", 0, 0, 0, 0}");
+d194 3
+a196 2
+	fprintf(SpecFd,	",\n{\"%s\", %d, sizeof(CC_%d%s),", 
+	       ap->symbol->name, ap->lineNumber, ap->symbol->num, ap->symbol->name);
+d208 1
+a208 1
+	fprintf(SpecFd, "{\"\", 0, 0, 0, 0}");
+d216 2
+a217 2
+	fprintf(SpecFd, ",\n{%d, sizeof ((CC_%d%s *)DD_dummy)->value}",
+				s->lineNumber, s->symbol->num, s->symbol->name);
+d223 1
+a223 1
+	fprintf(SpecFd, "{0, 0}");
+d231 3
+a233 2
+	fprintf(SpecFd, ",\n{\"%s\", %d, sizeof(CC_%d%s), 0, 0}", tp->symbol->name,
+				tp->lineNumber, tp->symbol->num, tp->symbol->name);
+d239 1
+a239 1
+	fprintf(SpecFd, "{\"\", 0, 0, 0, 0}");
+d248 2
+a249 1
+	fprintf(SpecFd, ",{%d, %d, %d}", s->lineNumber, s->termLine, s->immedLine);
+d255 1
+a255 1
+	fprintf(SpecFd, "{0, 0, 0}");
+d315 5
+a319 1
+ * tblocks.
+d438 1
+a438 1
+		tblockContext = slookup(pp->name, pp->num)->t.typespec.num;
+d547 1
+a547 1
+	printf("question request;\nint id;\n char *tblock;\nchar *answer;\n{\n");
+@
+
+
+2.1
+log
+@Version which works up to printing out buffer messages in commun.
+@
+text
+@d51 1
+d83 1
+a83 1
+spec_printall(fd)
+d122 1
+a122 1
+struct spec *table;
+d131 1
+a131 1
+spec_printNode(s)
+d138 1
+a138 1
+spec_printFormalList(pp)
+d141 1
+a141 1
+	while (pp) {
+d152 1
+a152 1
+	if (pp->formal) {
+d162 1
+a162 1
+	if (ap->formal) {
+d173 6
+a178 2
+	fprintf(SpecFd, ",\n{\"%s\", %d, sizeof DD_create_%s, DD_formals_%s}",
+	      sp->params->name, sp->lineNumber, sp->params->name, sp->params->name);
+d184 1
+a184 1
+	fprintf(SpecFd, "{\"\", 0, 0, 0}");
+d190 1
+a190 1
+spec_printAcceptOccur(ap)
+d193 7
+a199 3
+	fprintf(SpecFd,",\n{\"%s\", %d, sizeof(CC_%d%s), DD_acceptFormals_%d%s_%d}",
+	       ap->symbol->name, ap->lineNumber, ap->symbol->num, ap->symbol->name,
+				ap->symbol->num, ap->symbol->name, ap->id);
+d206 1
+a206 1
+	fprintf(SpecFd, "{\"\", 0, 0, 0}");
+d229 1
+a229 1
+	fprintf(SpecFd, ",\n{\"%s\", %d, sizeof(CC_%d%s), 0}", tp->symbol->name,
+d236 1
+a236 1
+	fprintf(SpecFd, "{\"\", 0, 0, 0}");
+d269 8
+a276 9
+		sizeof DD_SymbolTable / sizeof(DD_symEntry),\n\
+		DD_SymbolTable,\n\
+		DD_accepts,\n\
+		DD_creates,\n\
+		DD_transacts,\n\
+		DD_selects,\n\
+		DD_delays,\n\
+		DD_terminates,\n\
+		DD_treturns};\n");
+d280 1
+a280 1
+static char comma = ' ';
+d290 1
+a290 1
+	printf( "%c\n{\"%s\", %d, %d, %x, %d}", comma,
+d292 1
+a292 1
+	comma = ',';
+d302 1
+a302 1
+	while (fp) {
+d322 1
+d324 1
+d334 1
+a334 1
+	if (form + strlen(formatString) + 1 >= formBound) 
+d336 1
+a336 1
+	if (parm + strlen(parameterString) + 2 >= parmBound) 
+d339 5
+a343 5
+	sprintf(&formString[form], "%c%s", comma, formatString);
+	form += strlen(formatString)  + 1;
+	sprintf(&parmString[parm], "%c\n%s", comma, parameterString);
+	parm += strlen(parameterString) + 2;
+	comma = ',';
+d354 1
+a354 1
+	if (sp->t.chain) {  /* is a pointer */
+d359 1
+a359 1
+	switch (sp->t.typespec.obj) {
+d363 1
+a363 1
+		comma = ' ';
+d370 1
+a370 1
+		comma = ' ';
+d374 1
+a374 1
+		comma = ' ';
+d399 3
+a401 1
+		spec_formOutput( "%c", base );
+d409 1
+a409 1
+spec_printCreateCase(s)
+d412 1
+a412 1
+	if (s->params == createCaseContext)
+d426 1
+a426 1
+	for (pp = process; pp != NULL; pp = pp->next) {
+d432 2
+a433 2
+		comma = ' ';
+		while (param = slookup(itoa(++paramNumber), tblockContext)) {
+d437 4
+a440 1
+		printf("sprintf(answer, \"%s\", %s);\nreturn;\n", formString, parmString );
+d448 1
+d452 1
+a452 1
+	if (s->symbol == transCaseSymbol)
+d460 1
+a460 1
+	if (s->symbol == transCaseSymbol)
+d474 2
+a475 2
+	for (pp = process; pp != NULL; pp = pp->next) {
+		for (tp = pp->trans; tp != NULL; tp = tp->next) {
+d481 1
+a481 1
+			comma = ' ';
+d489 1
+d492 2
+d503 1
+a503 1
+	if (s->symbol == transCaseSymbol)
+d512 1
+a512 3
+	int paramNumber;
+	symbol *param;
+	char *base[BASEsIZE];	
+d516 2
+a517 2
+	for (pp = process; pp != NULL; pp = pp->next) {
+		for (tp = pp->trans; tp != NULL; tp = tp->next) {
+d520 2
+a521 1
+			btprint(TreturnTable, spec_printTreturnCase);
+d523 1
+a523 1
+			comma = ' ';
+d561 1
+a561 1
+spec_get_param_type(proc, pnum)
+@

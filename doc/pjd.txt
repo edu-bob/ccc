@@ -1,0 +1,32 @@
+I had two major goals over the summer.  The first was to get a working
+debugger, and have a viable tool.  This tool was to be remote-executable,
+have low overhead on the Concurrent C program, and have a graphical display
+of the concurrency.  The second goal was to gain some experience from use of the
+tool, and draw some conclusions about concurrent debugging.
+
+
+Mostly, these goals were met. cdb is a working tool, and is
+remotely-executable.  Unfortunately, the speed of writes to sockets (used to
+allow remote-executability) limits the ability to not affect the user
+program.  On the other hand, the graphical display of concurrency works
+wonderfully.  It is possible to really get a feel for what is happening with
+the concurrent aspects of the program from watching the arrows and states of
+the processes as displayed by cdb.
+
+Experience with cdb was somewhat limited because of the low number of
+existing Concurrent C programs, and particularly those programs requiring
+debugging.  Even so, some conclusions can be drawn.  First, the graphical
+display of the inter-process communication is very easy to understand and
+follow.  Second, trace files are a very important feature, allowing
+replaying of non-deterministic bugs.  Third, cdb can be very useful in
+determining the efficiency of the program by showing what processes are
+blocked where and for how long.
+
+Some major features would clearly be useful if added to cdb.  The first is a
+port to the sun workstation.  Not only would this feature be useful at
+RIACS, but would allow cdb to be used at many more locations.  More features
+for displaying process information are also needed, such as a real-time
+display, statistics about blocking, and some method other than line
+numbers for source code location.  In addition, the ability to use a full
+debugger (like dbx) with cdb would greatly enhance the debugging capability
+by allowing both the "big" and "little" pictures of execution.

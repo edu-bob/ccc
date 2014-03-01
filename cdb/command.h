@@ -1,0 +1,16 @@
+int command_quit();
+int command_print();
+int command_tracing();
+int command_breaking();
+int command_single();
+int command_slower();
+int command_faster();
+int command_stop();
+int command_prog();
+int command_cdb();
+int command_scrDump();
+int command_toggle();
+int sleep();
+int parse();
+int debug_dump();
+int commun_send();

@@ -1,0 +1,47 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    lynch:1.2; strict;
+comment  @ * @;
+
+
+1.2
+date     86.06.27.10.50.00;  author lynch;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.06.25.19.00.59;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@minimalist header file for semaphore usage.
+@
+
+
+1.2
+log
+@Now includes all interface declarations.
+@
+text
+@/* semaphores */
+
+typedef int semaphore;
+
+void sem_ask(), sem_tell(), sem_free();
+semaphore sem_create();
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d5 2
+a6 1
+
+@

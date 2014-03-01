@@ -1,0 +1,11 @@
+anytype             1       0       4       3                           
+print_another_way   1       0       8       3                           
+print_character     1       0       8       3                           
+print_one_way       1       0       8       3                           
+print_string        1       0       10      3                           
+printchar           8       0       9       14                          
+0                   9       0       1       0                           
+1                   9       0       6       12                          
+=                   9       0       6       14                          
+1                   10      0       8       3                           
+2                   10      5       6       12                          

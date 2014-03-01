@@ -1,0 +1,9 @@
+#
+foreach i (*.cc)
+    if (-r $i:r) then
+	echo $i:r \> $i:r.out
+	$i:r |& tee $i:r.out
+    else
+	echo $i:r does not have an executable.
+    endif
+end

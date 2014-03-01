@@ -1,0 +1,484 @@
+.po 1.25i
+.sz 12
+.nr sp 12
+.nr pp 12
+.fo ''-%-''
+.(b C
+A User's Manual for \fBcdb\fR, a Concurrent C Debugger
+William L. Lynch
+\*(td
+.)b
+
+.uh Introduction
+
+.pp
+This document introduces
+.b cdb ,
+the debugger for RIACS' implementation of Concurrent C.  It contains
+descriptions of all of the features of 
+.b cdb
+a user will need to operate the system.
+
+.pp
+.b cdb
+is a low-overhead sophisticated graphical monitor of executing
+Concurrent C programs.  It displays the interaction of the various
+processes in a simple fashion, but is not a general purpose debugger in the
+sense that the user can examine or modify much of the state of the program.  
+Rather, 
+.b cdb
+is a 
+.i concurrency
+debugger;  it allows the user to closely examine those parts
+of the programs which make it different from a sequential C program.  To
+debug problems in the program not related to its concurrent nature, 
+.b cdb
+is a poor choice.  At some time in the future, 
+.b dbx 
+may be
+incorporated directly into
+.b cdb
+with command buttons and menus.  For now, it is not even possible to run
+.b dbx
+from within 
+.b cdb
+because of descriptor problems.
+.ig
+For now, the closest thing is to run dbx from within 
+.b cdb
+(see the use section of this document).
+..
+
+.uh Implementation
+.pp
+There is a
+separate owner's guide which describes the implementations details of 
+.b cdb ,
+but here is a summary.  
+.b cdb
+has two major components; a graphical, interactive front-end, and a
+debugging run-time system which sends information to the front end.
+
+.pp
+The front end can be executed on a different host from the user process.
+In fact, even when on the same host, sockets and the cdb daemon are used,
+so the user must login even when already logged in on the executing host.
+Currently the front end requires a BitGraph terminal for execution;  it makes
+extensive use of the advanced features of that terminal through a
+user-interface package written by Robert L. Brown.  Plans exist for porting
+.b cdb
+to a Sun workstation.
+
+.pp
+The run time system consists of the Concurrent C run time system, a buffer
+package, and a communication package.  When an concurrency event occurs in the
+Concurrent C run time system, a trace buffer of that event is created and
+placed in a buffer queue.  The communication package runs in a separate
+process, and takes buffers off of the queue, processes them into packets, and
+sends them over a network connection to the front end.  The front end
+interprets the packets and
+maintains a simulation  of the current state of the user processes.
+Separate sockets are used for stdin/stdout, stderr, and the trace packets.
+Because 
+.b csh
+fools with file descriptors, all programs are executed with
+.b sh.
+
+.uh Invocation
+.pp
+.b cdb
+cannot use ordinary Concurrent C executable files, just as
+.b dbx
+cannot use ordinary C executable files.  Instead, the program must be compiled
+with the 
+.b -G
+option to 
+.b ccc ,
+similar to the 
+.b -g
+option to 
+.b cc .
+This option causes the program to be linked with the 
+.b cdb
+run time library libccd.a, rather than the 
+.b ccc
+run time library libccc.a, and appends symbol information to the program.
+
+.pp
+To execute the program, just give the command
+.(b F
+.b cdb 
+[
+.i options 
+]
+.b command
+.)b
+where 
+.b command
+is the filename of the 
+.b -G
+compiled Concurrent C program (default
+.i a.out ).
+
+.pp
+When
+.b cdb
+is invoked, a connection with the daemon on the Concurrent C (remote) host is
+established.  
+.b cdb
+then creates its windows on the local host (unless the trace only option is
+specified), and receives symbolic information from the remote host.  The
+Concurrent C program begins in a paused state on the remote host, and to
+begin receiving packets, the program cycle must be selected to
+.b run .
+.b cdb
+will then be on its way, monitoring the Concurrent C program.
+
+.pp
+The possible options are
+.(b F
+.b -h
+.i rhost
+.)b
+remote host, default
+.i localhost 
+(the host the
+.b cdb 
+command is given on);
+.(b F
+.b -d
+.i path
+.)b
+remote directory, default home directory if remote host, 
+.q .
+if 
+.i localhost;
+.(b F
+.b -i
+.i infile
+.)b
+do not execute the program, but replay the trace file
+.i infile;
+.(b F
+.b -o
+.i outfile
+.)b
+save a binary trace image for later playback (see 
+.b -i );
+.(b F
+.b -O
+.i outfile
+.)b
+save an ascii trace image for human reading (this image cannot be played
+back);
+.(b F
+.b -t
+.i outfile
+.)b
+save a binary trace image, but do not start up the graphical front end.
+
+.pp
+It is possible to read in a trace file with
+.b -i
+and save it as an ascii trace with
+.b -O .
+All trace files are saved on the local host.
+
+.pp
+Some invocation examples are:
+.(b F
+.b "cdb -d"
+.i /usr/lynch
+.b -h
+.i hydra
+.b -o
+.i mandel.tr
+.b mandel
+.)b
+which executes the Concurrent C program 
+.i /usr/lynch/mandel
+on the remote
+host
+.i hydra ,
+and saves a replayable trace in the local file
+.i mandel.tr ; and
+.(b F
+.b "cdb -i"
+.i mandel.tr
+.b -O
+.i mandel.at
+.)b
+which reads in the local file
+.i mandel.tr ,
+displays the computation, and saves a readable trace in the fil
+.i mandel.at .
+The remote host is not used in this second example.
+
+.uh Display
+.pp
+When the 
+.b cdb
+display appears, five windows of varying size appear.  From top to bottom,
+these are the stderr, stdout, control, status, and display windows.
+
+.pp
+The stderr and stdout windows display those outputs from the Concurrent C
+program.  Keyboard input is sent to the stdin of the program, except for
+those keystroke sequences which are commands to 
+.b cdb .
+
+
+.pp
+For information on the control window, see the
+.b control
+section, following.
+
+.pp
+The
+.b cdb
+status window contains information about the front end.  Apart from
+.b cdb
+error messages, only three types of messages can appear in the status
+window.  The first type
+is the message "Reading symbolic information...Done" which appears at the
+start of the session.  If the "Done" message does not appear in a
+reasonable amount of time, then it is likely that the program was not compiled
+with the 
+.b -G
+option.  The second type of status message is notification of
+display stopping due to break points. 
+The third type is the "Communication finished"
+message, which indicates that the program will not send any more packets.
+
+.pp
+The display window contains 
+.b cdb 's
+idea of the current state of the Concurrent C program.
+The processes are labelled with their Concurrent C process type name followed by an
+instance number enclosed in angle brackets, as in
+.i mandel<0> .
+The state is displayed immediately following the tag.
+
+.pp 
+Parameters are displayed for create, transact, and accept events.  The parameters
+appear in parentheses, and separated by commas, on the line following the
+state of the transacting or creating process.  During accepts, the formal
+parameters are displayed, in a similar format, for the accepting process.
+After the accept is completed, 
+the treturn value replaces the formal parameters, and is displayed for one
+event.
+
+.pp
+A line is drawn between transacting and accepting processes during the time
+that the accept is occurring (i.e., the accepting process is executing in its
+accept block, before a treturn).
+
+.pp
+If the display window becomes corrupted, most of the vital information can
+be refreshed by turning tracing on (of course, it might have to be turned
+off, first).
+
+.uh Controls
+.pp
+The control panel of cdb consists of menus, cycles, and buttons, all
+activated with the left mouse button.  A selected item complements its color
+on the down-click to indicate selection, but the action is not executed
+until the button is released.  Moving off of the item before
+releasing the button does not execute the action.
+
+.pp
+Because the terminal has a lot to do, the mouse cursor is sometimes invisible,
+making it impossible to select items.  Typing ^x^x (control-x, control-x)
+will pause
+.b cdb
+to allow input; another ^x^x will probably be required to see the
+cursor after the down-click.  Be patient (and/or use foresight) as the
+terminal has a large input buffer and it could be awhile before any control
+action takes effect.  Fast mouse clicks can hang the system, so allowing some
+time between down and up clicks is a good idea.  Not up-clicking until the
+selected item has changed color will always prevent fast-click problems.
+
+.pp
+The
+.i step
+button single steps 
+.b cdb ,
+that is, it displays the state after one more event has occurred.  Activating the 
+.i step
+button does not step the user program.
+.b cdb
+must be in stop mode (see the instructions for the
+.i cdb
+cycle, following) to use the
+.i step
+button.  If nothing happens when the
+.i step
+button is
+activated, then there may be no trace packets available for display.  A packet
+may not be available
+because the program has had no events to trace, because it has been stopped,
+or because it has crashed.
+If a packet becomes available after a 
+.i step
+action,  it is displayed at that time.
+Sometimes nothing will appear to happen when the 
+.i step 
+button is
+pressed, even though a packet has arrived and been interpreted, because some
+packets do not affect the process display, and if the event happened at the
+same time as the previous one, the screen will appear to be the same.  If
+you think this invisible packet has occurred, the press the 
+.i step
+button again.  The step button does not have a cumulative effect, so that if
+no packet actually arrived, still only one will be displayed when available.
+
+.pp
+The
+.i speed
+menu can be used to control the rate of display of events.  It does not control the
+user program.  The upper-case options (FASTER, SLOWER) 
+have the effect of 10 lower-case options (faster, slower).
+.b cdb begins displaying at its maximum rate.
+
+.pp
+The
+.i program
+cycle displays the name of your command or input file name.  If you are
+reading a trace file, then this cycle has no effect.  If you are executing a
+program, this cycle allows you to control its execution by sending TSTP and
+CONT signals.  This is the only control cdb allows you to have over
+program execution.  Use of this control can cause breakdowns in the stdout
+display because of stdio problems.
+
+.pp
+The
+.i cdb
+cycle displays the status of the front end, which is either in stop
+mode or run mode.  Stepping is only possible in run mode.
+
+.pp
+The
+.i trace
+and
+.i break
+cycles allow simple turning on and off of all tracing and breaking.
+Trace and break points are accessible individually through the menus in the
+display window (the boxes around the tag of each process), where they
+can be toggled to on (checked) or off (not checked).  A series of sub-menus
+select either trace or break points, then the type of point (accept, create,
+transact, treturn, select, delay, or terminate), then the individual point.
+For named items like transaction calls, accepts, and creates, the
+label and the line number of its occurrence are given in the menu entry.
+For those items without names like selects, and delays, only the line number
+is given.  Initially, all trace points are turned on, and all break points
+are turned off. 
+
+.pp
+Currently, no conditional break point or trace point specifications, such as
+.(b  
+break ticket<0> if accepting from mandel<1>, or
+break ticket<0> if accepting parameter == 3
+.)b
+are available.  However, the first example can usually be approximated by 
+breaking on the transaction call from mandel<1> to ticket.
+
+.pp
+The clock display is in the units of the minimum clock resolution available
+on the system.  On the Sequent, this is 10ms.
+
+.pp
+The
+.i print
+button does a screen dump of the screen to the QMS printer with
+.i newulbg .
+This is very, very slow, and you will probably not want to do it frequently.
+
+.pp
+The
+.i quit
+menu asks for confirmation to end the program.  If confirmed, all processes
+started up are automatically killed.  However, they are all killed by the
+communication process, and if something happened to it, then extra processes
+can be left hanging around.  This can happen a lot even in non-debugged
+Concurrent C programs.  Beware.
+
+.uh Limitations
+
+.pp
+There are limitations to
+.b cdb ,
+some of which have already been mentioned.
+
+.pp
+.b cdb
+only works with RIACS implementation of Concurrent C.  Concurrent C is a
+language designed at Bell Labs, but other implementations will not work with
+the current
+.b cdb .
+
+.pp
+.b cdb
+uses  UNIX
+.b select
+statements to read from several places, such that if you want to put a
+.b -t
+trace in the background, you must supply some input (< /dev/null works
+well), or close stdin with 
+.b ^D
+before placing the job in the background.  
+
+.pp
+.b cdb
+was designed to interfere little with the execution of the program.
+However, the limitation of socket speed for the packets can have a serious
+affect on program performance, as the processes can block after the socket's
+and
+.b cdb 's
+buffers are all full.  Because displaying things to the screen is slow, this 
+interference happens less when you use the
+.b -t
+option to make a trace file for later viewing, but can still happen.  If
+this is incredibly critical, you could recompile
+.b cdb
+with more buffers, hardly a great solution.
+
+.pp
+If you are doing a lot of debugging, and don't want to be typing in your
+password a lot, you can use the 
+.b pass
+program to give an encrypted password
+to use in an environment variable of the form
+.(b
+\fBMACH\fIhost\fR=\fIusername,encrpass\fR.
+.)b
+This is not particularly secure, as the decryption algorithm is readily
+available, so it is recommended that the encrypted password
+not be kept in a file (like a .login or .cshrc file).  The encryption
+depends on the host, so pass is invoked with
+.(b F
+.b pass
+.i rhost ,
+.)b
+and queries for the password.  The security system also allows execution
+only from a real terminal, so even
+.b cdb
+.b -t
+cannot be used from within an emacs window.  Of course, any other form of 
+.b cdb
+would be a bad idea from such a place anyway, as
+.b cdb
+expects to have the entire BitGraph screen available.
+
+.pp
+Another limitation arises from the size of the BitGraph's screen.  Only a
+limited number of processes can be displayed there, and extra processes just
+disappear off the bottom of the screen.  There is currently no method available in
+.b cdb
+to select which process will be displayed.  
+
+.pp
+The clock can occasionally go backwards as different processes
+compete to read the timer and do other things.  This time reversal is
+non-critical, it just means that things could probably have been shown in
+either order, as they happened almost simultaneously.  The display order is
+probably more reliable than the clock order.

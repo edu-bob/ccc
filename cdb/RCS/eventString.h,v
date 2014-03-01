@@ -1,0 +1,65 @@
+head     3.0;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+3.0
+date     86.09.18.16.05.13;  author lynch;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.09.11.13.47.16;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@works.
+@
+
+
+3.0
+log
+@ working version, last day
+@
+text
+@char *eventString[] = {
+	"waiting for childbirth",
+	"I am born",
+	"waiting for abortion",
+	"chose termination",
+	"last user finished",
+	"killing a child",
+	"waiting for children to die",
+	"last child dying",
+	"I\'m exiting",
+	"I\'m dying, you shouldn't be waiting",
+	"I\'m aborting you",
+	"eating a late timer signal",
+	"eating a late transaction signal",
+	"eating a late termination signal",
+	"serve me",
+	"waiting on a transaction",
+	"waiting for a possible timeout",
+	"tcall time out",
+	"accept waiting",
+	"select waiting",
+	"delaying",
+	"accepting a client",
+	"treturn",
+	"I got a return",
+	"debugger ending"
+};
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@@

@@ -1,0 +1,3 @@
+7/21	ordered symbol table structure entries.
+	passed info through fork because of naming problems with separate
+		 compilation.

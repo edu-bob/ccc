@@ -1,0 +1,50 @@
+head     3.0;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+3.0
+date     86.09.18.16.15.13;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@new
+@
+
+
+
+3.0
+log
+@working final version
+@
+text
+@#define e_var     0		/* unfielded var and typedef namespace	*/
+#define e_complex 1		/* namespace for struct, etc. tags	*/
+#define e_typedef 2		/* used only by ident() and declare()	*/
+#define e_halfdec 3		/* used only by dec1/2tag and declare()	*/
+#define e_anytype 4		/* can be assigned any process type	*/
+#define e_nullpid 5		/* can be assigned to any process	*/
+#define e_badtag  6		/* illegal namespace, for bad tag	*/
+
+#define e_basic	  0		/* values for obj field in typespec	*/
+#define e_struct  1
+#define e_union	  2
+#define e_process 3
+#define e_unsigned	4	/* New ones to do full typing of basic types */
+#define e_unsignedint	5
+#define e_unsignedchar	6
+#define e_unsignedshort	7
+#define e_unsignedlong	8
+#define e_longint	9
+#define e_double	10
+#define e_short		11
+#define e_char		12
+#define e_float		13
+#define e_int		14
+
+@

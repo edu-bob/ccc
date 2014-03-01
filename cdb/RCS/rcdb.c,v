@@ -1,0 +1,178 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    lynch:1.1; strict;
+comment  @ * @;
+
+
+1.1
+date     86.09.11.13.46.47;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@works.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/* $Header: /u2/lynch/rexec/rexec.c,v 1.1 84/02/15 11:11:46 root Exp Locker: lynch $ */
+/* $Log:	rexec.c,v $
+ * Revision 1.1  84/02/15  11:11:46  root
+ * Initial revision
+ *  */
+#ifndef lint
+static char sccsid[] = "@@(#)rexec.c	4.8 83/08/18";
+#endif
+
+#include <sys/types.h>
+#include <sys/socket.h>
+
+#include <netinet/in.h>
+
+#include <stdio.h>
+#include <netdb.h>
+#include <errno.h>
+ 
+#define LhSIZE	20					/* local host string size */
+#define LdSIZE	50				/* local directory string size */
+
+typedef int sock;
+
+extern	errno;
+char	*index(), *sprintf();
+char	*getpass(), *getlogin();
+
+rcdb(ahost, cmd, dir, stds, errs, cdbs)
+char **ahost;
+char *cmd;
+char *dir;
+sock *stds, *errs, *cdbs;     /* sockets for stdin/stdout,stderr, and cdb control */
+{
+	int timo = 1;
+	sock s3;
+	struct sockaddr_in sin, sin2, from;
+	char c;
+	short port;
+	struct hostent *hp;
+	char localHost[LhSIZE];
+
+	struct servent *remote;
+	char *name, *pass;
+
+
+	remote = getservbyname("cdb", "tcp");
+	if ( remote == 0 ) 		
+		fatal(1, "cdb/tcp: unknown service");
+	
+	hp = gethostbyname(*ahost);
+	if (hp == 0) {
+		fprintf(stderr, "%s: unknown host\n", *ahost);
+		return (-1);
+	}
+	*ahost = hp->h_name;
+	
+	gethostname(localHost, LhSIZE);
+	if ( (strcmp(*ahost, localHost) == 0 || strcmp(*ahost, "localhost") == 0)
+								&& dir == NULL ) {
+		dir = (char *)malloc(LdSIZE);
+		(void) getwd(dir);		
+	}
+		
+	ruserpass(hp->h_name, &name, &pass);
+retry:
+	*stds = socket(AF_INET, SOCK_STREAM, 0);
+	if (*stds < 0) {
+		perror("rcdb: socket");
+		return (-1);
+	}
+	sin.sin_family = hp->h_addrtype;
+	sin.sin_port = remote ->s_port;
+	bcopy(hp->h_addr, (caddr_t)&sin.sin_addr, hp->h_length);
+	if (connect(*stds, &sin, sizeof(sin)) < 0) {
+		if (errno == ECONNREFUSED && timo <= 16) {
+			(void) close(*stds);
+			sleep(timo);
+			timo *= 2;
+			goto retry;
+		}
+		perror(hp->h_name);
+		return (-1);
+	}
+	{
+		char num[8];
+		sock s2,  s3;
+		int sin2len, sin3len;
+
+		s2 = socket(AF_INET, SOCK_STREAM, 0);
+		if (s2 < 0) {
+			(void) close(*stds);
+			return (-1);
+		}
+		listen(s2, 2);
+		sin2len = sizeof (sin2);
+		if (getsockname(s2, (char *)&sin2, &sin2len) < 0 ||
+		  sin2len != sizeof (sin2)) {
+			perror("getsockname");
+			(void) close(s2);
+			goto bad;
+		}
+		port = ntohs((u_short)sin2.sin_port);
+		(void) sprintf(num, "%d", port);
+		(void) write(*stds, num, strlen(num)+1);
+		{ int len = sizeof (from);
+		  s3 = accept(s2, &from, &len, 0);
+		  if (s3 < 0) {
+			close(s2);
+			perror("accept");
+			port = 0;
+			goto bad;
+		  }
+		}
+		*errs = s3;
+
+		/* get the cdb command connection */
+		{ int len = sizeof (from);
+		  s3 = accept(s2, &from, &len, 0);
+		  close(s2);
+		  if (s3 < 0) {
+			perror("accept");
+			port = 0;
+			goto bad;
+		  }
+		}
+		*cdbs = s3;
+
+	}
+	(void) write(*stds, dir, strlen(dir) + 1);
+	(void) write(*stds, name, strlen(name) + 1);
+	/* should public key encypt the password here */
+	(void) write(*stds, pass, strlen(pass) + 1);
+	(void) write(*stds, cmd, strlen(cmd) + 1);
+	if (read(*stds, &c, 1) != 1) {
+		perror(*ahost);
+		goto bad;
+	}
+	if (c != 0) {
+		while (read(*stds, &c, 1) == 1) {
+			(void) write(2, &c, 1);
+			if (c == '\n')
+				break;
+		}
+		goto bad;
+	}
+	return;		/* successful completion */
+bad:
+	if (port)
+		(void) close(*errs);		
+	(void) close(*stds);
+	return (-1);
+}
+@

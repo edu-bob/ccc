@@ -1,0 +1,1433 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.1
+date     86.06.30.16.45.42;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@This is, I presume, unnecessary.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#!/bin/sh
+if test "X$1" = X-v
+then
+	verbose=true
+else
+	verbose=false
+fi
+if $verbose
+then echo x - CC_accept.c
+fi
+sed 's/^M//' << 'EOF' > CC_accept.c
+M/* CC_accept.c -- routines for accept and select statements */
+M
+M#include "CC_include.h"
+M
+M
+Mstatic int the_transaction;
+Mstatic int first;
+Mstatic char **tblock_ptr;
+Mstatic int client_on_queue;
+M
+Mint	CC_achoice;
+Mint	CC_dchoice;
+Mint	CC_ichoice;
+Mint	CC_ochoice;
+Mfloat	CC_bestdelay;
+Mfloat	CC_trydelay;
+Mbool	CC_accept_exists;
+Mbool	CC_terminate_exists;
+M
+M/*
+M**  This routine is called at the begining of the execution of a select statement.
+M**  It initializes the CC_?choice variables, checks the calling process out,
+M**  and freezes the transaction queues.
+M*/
+MCC_selectinit()
+M{
+M	CC_achoice = 0;
+M	CC_dchoice = 0;
+M	CC_ichoice = 0;
+M	CC_ochoice = 0;
+M	CC_bestdelay = 0.0;
+M	CC_accept_exists = FALSE;
+M	CC_terminate_exists = FALSE;
+M	CC_checkout(mypid);
+M	p_lock(me->queuelock);
+M	client_on_queue = 1;
+M}
+M
+M/*
+M**  This routine is called when something other than an accept is selected.
+M**  It undoes the unwanted effects of CC_selectinit and of the evaluation
+M**  pass, such as leaving garbage in selectcase, leaving queuelock locked, etc.
+M*/
+M
+MCC_select_cleanup()
+M{
+M	int j;
+M
+M	for (j=0;j<CC_numtrans;j++)
+M		me->selectcase[j] = 0;
+M	p_unlock(me->queuelock);
+M	CC_checkin(me);
+M}
+M
+M/*
+M**  CC_choose() does the actual selection if rules 1 to 4 apply. If rule
+M**  5 must be used, the result from CC_select() is used. Note that if
+M**  CC_terminateifokay() does not return if it is okay to terminate --
+M**  it takes care of calling CC_select_cleanup() by itself.
+M*/
+M
+Mint CC_choose()
+M{
+M	if (CC_achoice)
+M		return CC_achoice;
+M	if (CC_ichoice) {
+M		CC_select_cleanup();
+M		return CC_ichoice;
+M	}
+M	if (CC_terminate_exists)
+M		CC_terminateifokay();
+M	if (CC_ochoice) {
+M		CC_select_cleanup();
+M		return CC_ochoice;
+M	}
+M	if (!CC_achoice && !CC_terminate_exists && !CC_dchoice)
+M		CC_perror("no valid choices in select");
+M	return CC_select();
+M}
+M
+M/*
+M**  This routine is used during the alternative evaluation pass.
+M**  If there are clients waiting on this accept alternative,
+M**  it is chosen immediately, and selectcase is cleaned out
+M**  before jumping to the switch statement. If there are no clients
+M**  waiting on this accept, then the case label is stored in selectcase
+M**  and the next alternative is examined.
+M*/
+M
+Mint CC_tryaccept(n,casenum)
+Mint n;
+Mint casenum;
+M{
+M	int j,empty;
+M
+M	if (empty=!CC_queuecount(me,n))
+M		me->selectcase[n] = casenum;
+M	else {
+M		for (j=0;j<n;j++)
+M			me->selectcase[j] = 0;
+M		CC_achoice = casenum;
+M	}
+M	return !empty;
+M}
+M
+MCC_accept(n,local_tblock_ptr,by,accept_in_select)
+Mint n;
+Mchar **local_tblock_ptr;
+Mint by;
+Mint accept_in_select;
+M{
+M	the_transaction = n;
+M	tblock_ptr = local_tblock_ptr;
+M	if (!accept_in_select) {
+M		CC_checkout(mypid);
+M		p_lock(me->queuelock);
+M		client_on_queue = (CC_queuecount(me,n) > 0);
+M		if (!client_on_queue) {
+M			me->selectedtrans = NOTRANS;
+M			me->selectcase[n] = 1;
+M			p_unlock(me->queuelock);
+M			CC_block();
+M			me->selectcase[n] = 0;
+M		}
+M	}
+M	if (client_on_queue) {
+M		me->newclient = CC_topqueue(n);
+M		if (by) {
+M			*tblock_ptr = me->newclient->tblock;
+M			first = 1;
+M			return;
+M		}
+M		CC_dequeue(n,me->newclient);
+M		p_unlock(me->queuelock);
+M	}
+M	CC_accept_postlude();
+M}
+M
+M/*
+M**  As explained above, CC_acceptby() is used to implement non-fifo
+M**  acceptance policies. Note the use of static variables to achieve
+M**  a coroutine-like behavior.
+M*/
+M
+Mint CC_acceptby(ae)
+Mdouble ae;
+M{
+M	static task candidate,winner;
+M	static double lowest;
+M
+M	/*
+M	**  Return if there was only one client, who we have already accepted.
+M	*/
+M	if (!client_on_queue)
+M		return 0;
+M	/*
+M	**  Update lowest and winner.
+M	*/
+M	if (first) {
+M		first = 0;
+M		lowest = ae;
+M		winner = me->newclient;
+M		candidate = winner;
+M	} else if (ae<lowest) {
+M		lowest = ae;
+M		winner = candidate;
+M	}
+M	/*
+M	**  If there are any more tasks, do another evaluation;
+M	**  otherwise, pick a winner, unlock the queue lock, and
+M	**  stop evaluating.
+M	*/
+M	if ((candidate = CC_queuesucc(the_transaction,candidate)) != nulltask) {
+M		*tblock_ptr = candidate->tblock;
+M		return 1;
+M	} else {
+M		CC_dequeue(the_transaction,winner);
+M		me->newclient = winner;
+M		p_unlock(me->queuelock);
+M		CC_accept_postlude();
+M		return 0;
+M	}
+M}
+M
+M/*
+M**  This is the clean up routine called after a client has been accepted,
+M**  called either from CC_accept() or CC_acceptby(). It tells the client
+M**  that he has been accepted, if the client is executing a timed transaction
+M**  call. It then makes the newly accepted client the current client, and
+M**  pushes the client onto a client stack which is used by CC_treturn().
+M*/
+MCC_accept_postlude()
+M{
+M	if (me->newclient->waiting)
+M		CC_unblock(me->newclient);
+M	me->newclient->prevclient = me->client;
+M	me->client = me->newclient;
+M	*tblock_ptr = me->client->tblock;
+M	CC_checkin(me);
+M}
+M
+M/*
+M**  The treturn statement is used inside an accept statement to transfer
+M**  control out of the innermost accept statement and to release the client
+M**  from the rendezvous, supplying him with a return value in his tblock
+M**  if one is expected. It is translated into an assignment to the
+M**  the value field of the suitably casted tblock, followed by a goto
+M**  to a CC_treturn() call which is the last statement in the compound
+M**  statement generated for the accept statement. (This placement ensures
+M**  that a treturn is implicitly executed by "falling off" the accept
+M**  statement.) CC_treturn() thus deals with waking up the blocked client,
+M**  and popping the client stack so that the next CC_treturn will wake up
+M**  the proper client.
+M*/
+MCC_treturn()
+M{
+M	me->client->tsuccess = 1;
+M	CC_unblock(me->client);
+M	me->client = me->client->prevclient;
+M}
+M
+M/*
+M**  CC_select is called from within CC_choose() when no choices are immediately
+M**  availible. 
+M*/
+Mint CC_select()
+M{
+M	int j,choice;
+M	/*
+M	**  First prepare to handle signals in message mode.
+M	**  This allows us to determine the type of message that we are receiving.
+M	*/
+M	CC_message_mode();
+M	/*
+M	**  Invite messages of type TERMINATE...
+M	*/
+M	if (CC_terminate_exists)
+M		CC_preparedtoterm();
+M	/*
+M	**  and ACCEPT...
+M	*/
+M	me->selectedtrans = NOTRANS;
+M	p_unlock(me->queuelock);
+M	/*
+M	**  and DELAY.
+M	*/
+M	if (CC_dchoice)
+M		CC_settimer(CC_bestdelay);
+M	/*
+M	**  Sit and wait for a message.
+M	*/
+M	CC_block();
+M	/*
+M	**  Either by explicit protocol or by the nature of the
+M	**  message senders, we will recieve at most one message
+M	**  of any particular type.  However, different types of
+M	**  messages will not block each other and thus we must
+M	**  flush spurious messages. CC_flush_TERMINATE() and
+M	**  CC_flush_ACCEPT() will return a 0 if they actually
+M	**  found a message, which in some contexts means that
+M	**  they should still be acted upon. There is an implicit
+M	**  priority attached to messages, with TERMINATE as the
+M	**  highest priority message,
+M	**  
+M	**  There is an implicit priority attached to messages due
+M	**  to the order in which we are willing to flush them.
+M	**  TERMINATE messages have the highest priority, so that
+M	**  we can be sure that the ready-to-terminate conditions
+M	**  are not violated. (See Qdeath.c for details.) Thus if
+M	**  we received a TERMINATE message, or if we received
+M	**  some other message, but a TERMINATE message is sent
+M	**  before we can tell our siblings via
+M	**  CC_flush_TERMINATE() that we are no longer prepared to
+M	**  terminate, then we flush all other messages and act
+M	**  upon the TERMINATE message.
+M	*/
+M	if (message==TERMINATE || (CC_terminate_exists && !CC_flush_TERMINATE())) {
+M		CC_flush_DELAY();
+M		CC_flush_ACCEPT();
+M		CC_block_mode(); /* need to do this for selfabort to be called */
+M		CC_select_cleanup();
+M		c_abort(mypid);
+M	}
+M	/*
+M	**  Otherwise, the only messages that have been or will be sent are DELAY
+M	**  and ACCEPT. If we received an ACCEPT message, or an ACCEPT message is sent 
+M	**  before we can mark ourselves as timed out (via CC_flush_ACCEPT), then we
+M	**  flush any DELAY messages and prepare to accept the client.
+M	*/
+M	if (message==ACCEPT || (CC_achoice && !CC_flush_ACCEPT())) {
+M		CC_flush_DELAY();
+M		choice = me->selectcase[me->selectedtrans];
+M		for (j=0;j<CC_numtrans;j++)
+M			me->selectcase[j] = 0;
+M		client_on_queue = 0;
+M		/*
+M		**  Otherwise, we must have received a DELAY message...
+M		*/
+M	} else {
+M		CC_select_cleanup();
+M		choice = CC_dchoice;
+M	}
+M	/*
+M	**  Return to using signals for blocking and unblocking processes,
+M	**  ie as a simple form of semaphore mechanism (with queues one process big).
+M	*/
+M	CC_block_mode();
+M	/*
+M	**  Return our choice for the proper case label.
+M	*/
+M	return choice;
+M}
+EOF
+chmod u=rw,g=r,o=r CC_accept.c
+if $verbose
+then echo x - CC_death.c
+fi
+sed 's/^M//' << 'EOF' > CC_death.c
+M/*  Qdeath.c -- functions concerning aborts, termination, and completion. */
+M
+M#include "CC_include.h"
+M
+M
+M/*
+M *  should I use a variant of memory marking here?
+M *  we should probably do something like that because c_invalid() uses this
+M *  routine and would die on a pid value like ((pid)17), which a check
+M *  for validity should not do.
+M */
+M
+M/*
+M *  if checking out self and already aborted, then we wait here to die.
+M *  ((I hope [not checked out] => [in block mode]))!
+M *  otherwise nulltask on checking out already aborted pid.
+M */
+Mtask CC_checkout(p)
+Mpid p;
+M{
+M    task t;
+M
+M    if (p==nullpid)
+M	return nulltask;
+M    p_lock(p->life);
+M    t=p->task;
+M    if (!t) {
+M	p_unlock(p->life);
+M	if (p==mypid)
+M	    CC_block(); /* wait to be aborted */
+M	else
+M	    return nulltask;
+M    }
+M    p_lock(t->statelock);
+M    if (t->completed || t->aborted)
+M	t=nulltask;
+M    else
+M	t->numloans++;
+M    p_unlock(p->task->statelock);
+M    p_unlock(p->life);
+M    if (!t && p==mypid)
+M	CC_block(); /* wait to be aborted */
+M    else
+M	return t;
+M}
+M
+MCC_checkin(t)
+Mtask t;
+M{
+M    int shouldkill;
+M
+M    p_lock(t->statelock);
+M    shouldkill=(!--t->numloans && t->aborted);
+M    p_unlock(t->statelock);
+M    if (!shouldkill)
+M	return;
+M    else if (t==me)
+M	CC_selfabort();
+M    else
+M	CC_kill(t);
+M}
+M
+MCC_children_select_terminate(t)
+Mtask t;
+M{
+M    task ch;
+M
+M    if (t->numchildren)
+M	for (ch=t->firstchild;ch!=nulltask;ch=ch->nextsibling) {
+M	    ch->choseterm=1;
+M	    if (ch != me)
+M		CC_kill(ch);
+M	}
+M}
+M
+MCC_terminateifokay()
+M{
+M    int selected;
+M
+M    p_lock(pp->statelock);
+M    p_lock(me->statelock);
+M    if (selected=(pp->completed && pp->numchildren==pp->numprepared+1
+M    && !pp->numgrandchildren)) {
+M	me->prepared=1;
+M	pp->numprepared++;
+M	CC_children_select_terminate(pp);
+M    }
+M    p_unlock(me->statelock);
+M    p_unlock(pp->statelock);
+M    if (selected) {
+M	CC_select_cleanup();
+M	c_abort(mypid);
+M	CC_block();
+M    }
+M}
+M
+M/*
+M *  CC_preparedtoterm() is called only by CC_select(), while in message mode.
+M *  Thus the CC_kill() sends a message rather than actually forcing an abort.
+M */
+MCC_preparedtoterm()
+M{
+M    int selected;
+M
+M    p_lock(pp->statelock);
+M    p_lock(me->statelock);
+M    me->prepared=1;
+M    pp->numprepared++;
+M    if (selected=(pp->completed && pp->numchildren==pp->numprepared
+M    && !pp->numgrandchildren))
+M	CC_children_select_terminate(pp);
+M    p_unlock(me->statelock);
+M    p_unlock(pp->statelock);
+M    if (selected)
+M	CC_kill(me);
+M}
+M
+M/*
+M *  CC_selfabort() is called by a process when it receives an abort signal.
+M *  At this point I am all checked in.
+M *
+M *  things like the following indicate that there should be an anonymous
+M *  parent ... and grandparent!... for "main" (the initial process).
+M */
+M
+M
+MCC_selfabort()
+M{
+M    task ch;
+M
+M    if (me == main_task) {
+M	p_lock(me->statelock);
+M	if (me->numchildren) {	/* abort any children */
+M	    for (ch=me->firstchild;ch!=nulltask;ch=ch->nextsibling)
+M		CC_abort(ch);
+M	    CC_block();		/* wait for last child to die */
+M	}
+M	p_unlock(me->statelock);
+M	exit();
+M    }
+M    CC_flushqueues();
+M    CC_flushclients();
+M    p_lock(pp->statelock);
+M    p_lock(me->statelock);
+M    me->completed=1;		/* force completion */
+M    if (me != main_task)
+M	p_unlock(pp->statelock);
+M    if (me->numchildren) {	/* abort any children */
+M	for (ch=me->firstchild;ch!=nulltask;ch=ch->nextsibling)
+M	    CC_abort(ch);
+M	CC_block();		/* wait for last child to die */
+M    }
+M    p_unlock(me->statelock);
+M    p_lock(gp->statelock);	/* order is important to prevent deadlock */
+M    p_lock(pp->statelock);
+M    p_lock(me->statelock);
+M    
+M    /* remove ourselves from child list. */
+M    if (pp->firstchild==me)
+M	pp->firstchild=me->nextsibling;
+M    else
+M	me->prevsibling->nextsibling=me->nextsibling;
+M
+M    /* detach our task from our pid */
+M    mypid->task=nulltask;
+M
+M    /* update various counts */
+M    gp->numgrandchildren--;
+M    pp->numchildren--;
+M    if (me->choseterm)
+M	pp->numprepared--;
+M
+M    /* inform anyone who is interested of our death and release locks */
+M    if ((pp->completed || pp->sickofkids) && !pp->numchildren)
+M	CC_unblock(pp);
+M    else if (pp->completed && pp->numchildren==pp->numprepared
+M	&& !pp->numgrandchildren)
+M	CC_children_select_terminate(pp);
+M    p_unlock(me->statelock);
+M    p_unlock(pp->statelock);
+M    p_unlock(gp->statelock);
+M
+M    /* deallocate storage bound to our task and exit */
+M    CC_free(me);
+M    exit();
+M}
+M
+MCC_flushclients()
+M{
+M    task t;
+M
+M    for (t=me->client;t!=nulltask;t=t->prevclient) {
+M	t->tsuccess=0;
+M	CC_unblock(t);
+M    }
+M}
+M
+Mc_abort(p)
+Mpid p;
+M{
+M    task t;
+M    int shouldkill;
+M
+M    p_lock(p->life);
+M    t=p->task;
+M    if (!t) {
+M	p_unlock(p->life);
+M	return;
+M    }
+M    p_lock(t->statelock);
+M    shouldkill=(!t->aborted && !t->numloans);
+M    t->aborted=1;
+M    p_unlock(t->statelock);
+M    p_unlock(p->life);
+M    if (shouldkill)
+M	if (t==me)
+M	    CC_selfabort();
+M	else
+M	    CC_kill(t);
+M}
+M
+MCC_abort(t)
+Mtask t;
+M{
+M    int shouldkill;
+M
+M    p_lock(t->statelock);
+M    shouldkill=(!t->aborted && !t->numloans);
+M    t->aborted=1;
+M    p_unlock(t->statelock);
+M    if (shouldkill)
+M	if (t==me)
+M	    CC_selfabort();
+M	else
+M	    CC_kill(t);
+M}
+M
+MCC_complete()
+M{
+M    /* shouldn't we use checkout/checkin? */
+M
+M    p_lock(pp->statelock);
+M    p_lock(me->statelock);
+M    me->completed=1;
+M    if (me->numchildren) {	/* if there are any children, notify them */
+M	if (me->numchildren==me->numprepared && !me->numgrandchildren)
+M	    CC_children_select_terminate(me);
+M	p_unlock(me->statelock);
+M	p_unlock(pp->statelock);
+M	CC_block();		/* wait for last child to say all are dead */
+M    } else {
+M	p_unlock(me->statelock);
+M	p_unlock(pp->statelock);
+M    }
+M    c_abort(mypid);		/* selfabort() when all checked out */
+M    CC_block();			/* wait to be aborted */
+M}
+M
+Mc_wait()
+M{
+M    CC_checkout(mypid);
+M    p_lock(pp->statelock);
+M    p_lock(me->statelock);
+M    if (me->numchildren) {	/* if there are any children */
+M	me->sickofkids=1;
+M	p_unlock(me->statelock);
+M	p_unlock(pp->statelock);
+M	CC_block();		/* wait for last child to say all are dead */
+M	me->sickofkids=0;
+M    } else {
+M	p_unlock(me->statelock);
+M	p_unlock(pp->statelock);
+M    }
+M    CC_checkin(me);
+M}
+EOF
+chmod u=rw,g=r,o=r CC_death.c
+if $verbose
+then echo x - CC_signal.c
+fi
+sed 's/^M//' << 'EOF' > CC_signal.c
+M/* Qpause.c -- message and signal handling facilities */
+M
+M#include "CC_include.h"
+M#include <sys/time.h>
+M
+Mint timer_going=0;
+M
+M/*
+M *  (explain modes?)
+M *
+M *  handler bindings, in block_mode:
+M *
+M *	CC_null()         -> SIGUNBLOCK   (blocked)
+M *	CC_selfabort()    -> SIGTERMINATE (unblocked)
+M *	...               -> SIGALRM      (ignored)
+M *
+M *  handler bindings, in message_mode:
+M *
+M *	CC_SIGACCEPT()    -> SIGUNBLOCK   (blocked)
+M *	CC_SIGTERMINATE() -> SIGTERMINATE (blocked)
+M *	CC_SIGDELAY()     -> SIGALRM      (blocked)
+M *
+M *  handler routines:
+M *  (CC_selfabort() can be found in Qdeath.c)
+M */
+M
+MCC_message_handler(sig)
+Mint sig;
+M{
+M    if (signal_mode==MESSAGE_MODE)
+M	switch (sig) {
+M	    case SIGUNBLOCK:
+M		message=RENDEZVOUS;
+M		break;
+M	    case SIGTERMINATE:
+M		message=TERMINATE;
+M		break;
+M	    case SIGALRM:
+M		message=DELAY;
+M		timer_going=0;
+M		break;
+M	}
+M    else if (sig==SIGTERMINATE)
+M	CC_selfabort();
+M	/* do we have to fiddle with signal mask? probably... */
+M}
+M
+MCC_install_handler()
+M{
+M    struct sigvec sv;
+M
+M    sigblock(SIGBIT(SIGALRM) | SIGBIT(SIGUNBLOCK));
+M    signal_mode=BLOCK_MODE;
+M    sv.sv_handler=CC_message_handler;
+M    sv.sv_mask=SIGBIT(SIGALRM) | SIGBIT(SIGUNBLOCK) | SIGBIT(SIGTERMINATE);
+M    sv.sv_onstack=0;
+M    sigvec(SIGALRM,&sv,0);
+M    sigvec(SIGUNBLOCK,&sv,0);
+M    sigvec(SIGTERMINATE,&sv,0);
+M}
+M
+MCC_message_mode()
+M{
+M    int currentmask;
+M
+M    signal_mode=MESSAGE_MODE;
+M    currentmask=sigblock(0);
+M    sigsetmask(currentmask & ~SIGBIT(SIGTERMINATE));
+M}
+M
+MCC_block_mode()
+M{
+M    sigblock(SIGBIT(SIGTERMINATE));
+M    signal_mode=BLOCK_MODE;
+M}
+M
+M/*
+M *  Flushing routines.
+M *  These routines prevent any messages of a particular type from being sent.
+M *  If no such message has been sent yet, a 1 is returned; otherwise,
+M *  a 0 is returned. In some contexts this return value is used to determine
+M *  whether the flushing process may ignore the flushed message.
+M *  (A better word than flush should be used -- perhaps "close"?)
+M */
+M
+MCC_flush_DELAY()
+M{
+M    static struct itimerval zero={{0,0},{0,0}};
+M    struct itimerval timewas;
+M
+M    if (!timer_going)
+M	return;
+M    setitimer(ITIMER_REAL,&zero,&timewas);
+M    if (!timewas.it_value.tv_sec && !timewas.it_value.tv_usec)
+M	CC_block(); /* if it already went off */
+M    timer_going=0;
+M}
+M
+Mint CC_flush_ACCEPT()
+M{
+M    int j;
+M
+M    if (me->selectedtrans != NOTRANS) {
+M	CC_block();
+M	return 0;
+M    }
+M    me->selectedtrans=DUMMYTRANS;
+M    return 1;
+M}
+M
+Mint CC_flush_TCALL(t,n)
+Mtask t;
+Mint n;
+M{
+M    int success;
+M
+M    p_lock(t->queuelock);
+M    if (success=CC_remqueue(t,n))
+M	me->waiting=0;
+M    p_unlock(t->queuelock);
+M    return success;
+M}
+M
+MCC_flush_TERMINATE()
+M{
+M    int selected;
+M
+M    p_lock(pp->statelock);
+M    p_lock(me->statelock);
+M    if (!(selected = me->choseterm)) {
+M	pp->numprepared--;
+M	me->prepared=0;
+M    }
+M    p_unlock(me->statelock);
+M    p_unlock(pp->statelock);
+M    if (selected)
+M	CC_block();
+M    return !selected;
+M}
+M
+M/*
+M *  CC_block() and CC_unblock() are used to wait for an event and to
+M *  signal a process that the event has occured.
+M *
+M *  CC_kill() is used to force a process to terminate itself.
+M *  CC_kill() should be used in this way only when a process is completedly
+M *  checked out.
+M *
+M *  CC_unblock() and CC_kill() are also used to send messages when the
+M *  destination process is in message_mode:
+M *
+M *	CC_unblock()	sends a RENDEZVOUS message, and
+M *	CC_kill()	sends a TERMINATE message.
+M */
+M
+MCC_block()
+M{
+M    sigpause(0);
+M}
+M
+MCC_unblock(t)
+Mtask t;
+M{
+M    kill(t->unixpid,SIGUNBLOCK);
+M}
+M
+MCC_kill(t)
+Mtask t;
+M{
+M    kill(t->unixpid,SIGTERMINATE);
+M}
+M
+M/*
+M *  CC_settimer() sets a timer going which will send a DELAY message
+M *  when it goes off. We handle zero delays as a special case since
+M *  a call to setitimer with a time of 0 is treated as a request to
+M *  shut the timer off.
+M */
+M
+Mstruct itimerval *float_to_itvp(f)
+Mdouble f;
+M{
+M    static struct itimerval itv;
+M    double dsec,modf();
+M
+M    if (f<0.0)
+M	f=0.0;
+M    itv.it_interval.tv_usec = 0;
+M    itv.it_interval.tv_sec = 0;
+M    itv.it_value.tv_usec = (long)(1.0e6 * modf(f,&dsec));
+M    itv.it_value.tv_sec = (long)dsec;
+M    return &itv;
+M}
+M
+MCC_settimer(time)
+Mfloat time;
+M{
+M    timer_going=1;
+M    if (time==0.0) {
+M	kill(me->unixpid,SIGALRM);
+M	return;
+M    }
+M    setitimer(ITIMER_REAL,float_to_itvp(time),0);
+M}
+M
+M/*
+M *  A call to CC_delay() is generated by a delay statement outside of
+M *  a select statement. It sets a timer and waits for a DELAY message
+M *  from the clock. If it gets a TERMINATE message instead, it sends
+M *  itself a kill signal, AND this code is probably flakey!!!
+M */
+MCC_delay(time)
+Mfloat time;
+M{
+M    CC_message_mode();
+M    CC_settimer(time);
+M    CC_block();
+M    CC_block_mode();
+M    if (message==TERMINATE) {
+M	CC_flush_DELAY();
+M	CC_kill(me);
+M    }
+M}
+EOF
+chmod u=rw,g=r,o=r CC_signal.c
+if $verbose
+then echo x - CC_queue.c
+fi
+sed 's/^M//' << 'EOF' > CC_queue.c
+M/* Qqueue.c -- transaction queue handling facilities */
+M
+M#include "CC_include.h"
+M
+Mstatic queue_remove(qp,t)
+Mqueue *qp;
+Mtask t;
+M{
+M    if (--qp->count)
+M	if (qp->head == t)
+M	    qp->head=t->next;
+M	else if (qp->tail == t)
+M	    qp->tail=t->prev;
+M	else {
+M	    t->next->prev=t->prev;
+M	    t->prev->next=t->next;
+M	}
+M    t->next=t->prev;
+M}
+M
+Mtask CC_queuesucc(n,t)
+Mint n;
+Mtask t;
+M{
+M    if (t==me->tqueue[n].tail)
+M	return nulltask;
+M    else
+M	return t->next;
+M}
+M
+MCC_dequeue(n,t)
+Mint n;
+Mtask t;
+M{
+M    queue_remove(&me->tqueue[n],t);
+M}
+M
+Mint CC_remqueue(t,n)
+Mtask t;
+Mint n;
+M{
+M    int success;
+M
+M    if (success=(me->next!=me->prev))
+M	queue_remove(&t->tqueue[n],me);
+M    return success;
+M}
+M
+Mtask CC_topqueue(n)
+Mint n;
+M{
+M    return me->tqueue[n].head;
+M}	
+M
+MCC_enqueue(t,n)
+Mtask t;
+Mint n;
+M{
+M    queue *qp= &t->tqueue[n];
+M
+M    if (qp->count++) {
+M	qp->tail->next=me;
+M	me->prev = qp->tail;
+M    } else {
+M	qp->head=me;
+M	me->prev=0;
+M    }
+M    qp->tail=me;
+M    me->next=me;	/* we want me->next != me->prev */
+M}
+M
+MCC_flushqueues()
+M{
+M    task t,tail;
+M    int n;
+M    queue *qp;
+M
+M    p_lock(me->queuelock);
+M    for (n=CC_numtrans-1;n>=0;n--) {
+M	qp= &me->tqueue[n];
+M	if (!qp->count)
+M	    continue;
+M	qp->count=0;
+M	tail=qp->tail;
+M	for (t=qp->head;t!=nulltask;t=(t==tail ? nulltask : t->next)) {
+M	    t->tsuccess=0;
+M	    t->prev=t->next;
+M	    if (t->waiting)
+M		CC_unblock(t);
+M	    CC_unblock(t);
+M	}
+M    }
+M    p_unlock(me->queuelock);
+M}
+M
+Mint CC_queuecount(t,n)
+Mtask t;
+Mint n;
+M{
+M    return t->tqueue[n].count;
+M}	
+EOF
+chmod u=rw,g=r,o=r CC_queue.c
+if $verbose
+then echo x - CC_tcall.c
+fi
+sed 's/^M//' << 'EOF' > CC_tcall.c
+M/* Qtcall.c -- functions for making timed and untimed transaction calls. */
+M
+M#include "CC_include.h"
+M#include <errno.h>
+M
+Mstatic pid    the_pid;
+Mstatic task   t;
+Mstatic int    n;
+Mstatic float  the_time;
+Mstatic int    timed;
+M
+M/*
+M *  CC_remember_time() is used to store the time and to remember the fact that
+M *  this is a timed transaction call.
+M */
+M
+MCC_remember_time(time)
+Mfloat time;
+M{
+M    the_time = time;
+M    timed = 1;
+M}
+M
+M/*
+M *  CC_tcallinit() remembers the server pid and the transaction number
+M *  for later use by CC_timedtcall() (and thus CC_tcall).
+M */
+M
+MCC_tcallinit(p,transnum)
+Mpid p;
+Mint transnum;
+M{
+M    the_pid = p;
+M    n = transnum;
+M}
+M
+M/*
+M *  A normal transaction call is treated as a special case of a timed transaction
+M *  call, since so much logic is common to both (in particular, the case
+M *  where there is an accept, either by itself or in a select statement,
+M *  which is ready to accept the client process immediately). Thus
+M *  CC_tcall() is simply a call to CC_timedtcall() but with no specified time.
+M */
+M
+MCC_tcall()
+M{
+M    timed=0;
+M    CC_timedtcall();
+M}
+M
+M/*
+M *  CC_timedtcall() does the work for both timed and nontimed transaction calls.
+M *  If someone is waiting for us, we notify them. Otherwise, if we need to
+M *  know whether we have been accepted within a certain time, we wait
+M *  for notification that we have been accepted. If this doesn't arive soon
+M *  enough, we time out and the server looses the chance to serve us.
+M *  Except in case of timeout, we will block waiting for transaction completion
+M *  (even if we already slept waiting for acceptance notification).
+M *  The accept call will normally place return status in our tsuccess@@@@@@@@@@ field;
+M *  If we time out, CC_tcall_sleep() (see below) takes care of tsuccess.
+M */
+M
+Mint CC_timedtcall()
+M{
+M/*
+M *  First we need to check out both our task and the server task.
+M *  If we can't check out our own task, then block and wait for termination.
+M *  If we can't check out the server task, then return and report failure.
+M *  If all goes well, we grab queuelock so we can see if anyone is waiting for us.
+M */
+M    CC_checkout(mypid);
+M    if ((t=CC_checkout(the_pid))==nulltask) {
+M	CC_checkin(me);
+M	errno=ESRCH;
+M	CC_perror("failed transaction call");
+M	return 0;
+M    }
+M    p_lock(t->queuelock);
+M    me->waiting=0;
+M
+M/*
+M *  If an accept (or select) statement is blocked waiting for our
+M *  transaction call, we sieze the right to wake up the sleeping accept,
+M *  and block on completion of the transaction call. We do not allow
+M *  ourselves to time out in this case as we know we will be serviced
+M *  as soon as possible and it makes the code cleaner at the accept end
+M *  if we can guarantee the server that we will still be here when it wakes up.
+M */
+M    if (t->selectedtrans==NOTRANS && t->selectcase[n]) {
+M	t->selectedtrans=n;
+M	t->newclient=me;
+M	p_unlock(t->queuelock);
+M	CC_unblock(t);
+M	CC_block();
+M/*
+M *  otherwise, no one is blocked waiting for our transaction call; thus we
+M *  get to wait to be accepted. If this is a timed transaction call, then
+M *  we wait for acceptance with CC_tcall_sleep(), which takes care of
+M *  detecting timeouts. Otherwise, we simply block on transaction completion.
+M */
+M    } else {
+M	CC_enqueue(t,n);
+M	p_unlock(t->queuelock);
+M	if (timed)
+M	    CC_tcall_sleep(the_time);
+M	else
+M	    CC_block();
+M    }
+M/*
+M *  @@@@@@@@@@@@@@@@@@@@@@
+M */
+M    CC_checkin(t);
+M    CC_checkin(me);
+M    if (!me->tsuccess)
+M	errno=ESRCH;
+M    return me->tsuccess;
+M}
+M
+M/*
+M *  CC_tcall_sleep() is used to wait for a specified time for word from
+M *  an accept statement that we have been accepted. If time runs out,
+M *  we retract our request if we can and report a timeout...
+M */
+M
+MCC_tcall_sleep(time)
+Mfloat time;
+M{
+M/*
+M *  First prepare to handle signals in message mode.
+M */
+M    CC_message_mode();
+M/*
+M *  Invite messages of type TCALL...
+M */
+M    me->waiting=1;
+M    p_unlock(t->queuelock);
+M/*
+M *  ...and of type DELAY.
+M */
+M    CC_settimer(time);
+M/*
+M *  Sit and wait for a message.
+M */
+M    CC_block();
+M/*
+M *  If we receive a TCALL message, or if a TCALL message is sent before we
+M *  can mark ourselves as timed out (via CC_flush_TCALL), then we flush any
+M *  DELAY messages and wait for the server to execute a treturn.
+M *  Otherwise, we report transaction failure and return.
+M */
+M    if (CC_message==TCALL || !CC_flush_TCALL(t,n)) {
+M	CC_flush_DELAY();
+M	CC_block();
+M    } else
+M	me->tsuccess=0;
+M/*
+M *  Return to using signals for blocking and unblocking processes.
+M */
+M    CC_block_mode();
+M}
+EOF
+chmod u=rw,g=r,o=r CC_tcall.c
+if $verbose
+then echo x - CC_fork.c
+fi
+sed 's/^M//' << 'EOF' > CC_fork.c
+M/* CC_fork.c -- concurrent c intrinsic functions, plus CC_fork() and main() */
+M
+M#include "CC_include.h"
+M#include <stdio.h>
+M
+M#define shfree()
+M#define p_destroylock(l)
+M
+M/*
+M *  Priorities are currently ignored. Problems to be addressed:
+M *	(1) What should the default priority be?
+M *	(2) How do we allow users to better their priorities?
+M *  A straightforward implementation would make starting priority zero,
+M *  and users could only worsen their priorities. Maybe some smarter person
+M *  can think of something better. Or maybe the same sort of person can
+M *  add something so that we can bump our priorities up (to 0).
+M */
+M
+Mint CC_core_dump_on_error=0;
+M
+Mc_core_dump_on_error(whether)
+Mint whether;
+M{
+M	CC_core_dump_on_error=whether;
+M}
+M
+M/*
+M** Common shared memory allocator
+M*/
+Mchar *
+MCC_shmalloc(bytes)
+Mint bytes;
+M{
+M	char *result;
+M	result = (char *)p_shmalloc(bytes);
+M	if ( result==(char *)0 ) {
+M		CC_perror("Shared memory allocation of %d bytes failed, aborting",bytes);
+M		perror("p_shmalloc");
+M		exit(1);
+M	}
+M	return result;
+M}
+MCC_perror(s,p0,p1,p2,p3,p4)
+Mchar *s;
+M{
+M	fprintf(stderr,"\n###CC runtime error, PID %d: ",getpid());
+M	fprintf(stderr,s,p0,p1,p2,p3,p4);
+M	fprintf(stderr,"\n");
+M	if (CC_core_dump_on_error) {
+M		printf("*** core dump follows ***\n");
+M		kill(getpid(),3);
+M	}
+M}
+M
+Mlock makelock()
+M{
+M	lock templock;
+M
+M	templock=(lock)CC_shmalloc(sizeof(*templock));
+M	p_init_lock(templock);
+M	return templock;
+M}
+M
+MCC_fork(name,number_of_transactions,prio)
+Mchar *name;
+Mint number_of_transactions;
+Mint prio;
+M{
+M	pid newborn;
+M	int j,unixpid;
+M
+M	newborn = (pid)CC_shmalloc(sizeof(*newborn));
+M	newborn->life=makelock();
+M	p_lock(pp->statelock);
+M	p_lock(me->statelock);
+M	if ((unixpid=fork())== -1) {
+M		CC_perror("failed fork");
+M		p_unlock(pp->statelock);
+M		p_unlock(me->statelock);
+M		CC_childpid=nullpid;
+M		p_destroylock(newborn->life);
+M		shfree(newborn);
+M		return 1;
+M	} else if (unixpid) {
+M		CC_childpid=newborn;
+M		CC_block();
+M		return 1;
+M	} else {
+M		mypid=newborn;
+M		gp=pp;
+M		pp=me;
+M		me=(task)CC_shmalloc(sizeof(*me));
+M		mypid->task=me;
+M		numtrans=number_of_transactions;
+M
+M		me->name = name;
+M		me->queuelock=makelock();
+M		me->client=nulltask;
+M		me->tblock=(char *)CC_shmalloc(CC_maxtblocksize);
+M		me->selectcase=(int *)CC_shmalloc(numtrans * sizeof(int));
+M
+M		me->unixpid=getpid();
+M		me->statelock=makelock();
+M		me->firstchild=nulltask;
+M		me->completed=0;
+M		me->aborted=0;
+M		me->choseterm=0;
+M		me->prepared=0;
+M		me->numloans=0;
+M		me->numchildren=0;
+M		me->numprepared=0;
+M		me->numgrandchildren=0;
+M
+M		me->tqueue=(queue *)CC_shmalloc(numtrans * sizeof(queue));
+M
+M		for (j=0;j<numtrans;j++) {
+M			me->tqueue[j].count=0;
+M			me->selectcase[j]=0;
+M		}
+M
+M		gp->numgrandchildren++;
+M		if (pp->numchildren++) {
+M			pp->firstchild->prevsibling=me;
+M			me->nextsibling=pp->firstchild;
+M		} else
+M			me->nextsibling=nulltask;
+M		pp->firstchild=me;
+M
+M		mytblock=me->tblock;
+M		p_unlock(gp->statelock);
+M		p_unlock(pp->statelock);
+M		CC_unblock(pp);
+M		return 0;
+M	}
+M}
+M
+MCC_make_elder_tasks()
+M{
+M
+M	me=(task)CC_shmalloc(sizeof(*me));
+M	me->statelock=makelock();
+M	me->firstchild=nulltask;
+M	me->nextsibling=nulltask;
+M	me->completed=0;
+M	me->numloans=0;
+M	me->numchildren=0;
+M	me->numprepared=0;
+M	me->numgrandchildren=0;
+M	me->unixpid=getpid();
+M	me->tblock=(char *)CC_shmalloc(CC_maxtblocksize);
+M	mytblock=me->tblock;
+M
+M	pp=(task)CC_shmalloc(sizeof(*pp));
+M	pp->statelock=makelock();
+M	pp->firstchild=me;
+M	pp->nextsibling=nulltask;
+M	pp->completed=0;
+M	pp->numloans=0;
+M	pp->numchildren=1;
+M	pp->numprepared=0;
+M	pp->numgrandchildren=0;
+M
+M	mypid=(pid)CC_shmalloc(sizeof(*main_pid));
+M	main_task=me;
+M	main_pid=mypid;
+M	main_pid->task=main_task;
+M	main_pid->life=makelock();
+M}
+M
+MCC_free(t)
+Mtask t;
+M{
+M	p_destroylock(t->statelock);
+M	p_destroylock(t->queuelock);
+M	shfree(t->tblock);
+M	shfree(t->selectcase);
+M	shfree(t->tqueue);
+M	shfree(t);
+M}
+M
+Mint c_unixpid(p)
+Mpid p;
+M{
+M	return p->task->unixpid; /* NOT very safe! */
+M}
+M
+Mint c_getpriority(p,prio)
+Mpid p;
+Mint prio;
+M{
+M	/* not implemented */
+M	return 0;
+M}
+M
+Mc_changepriority(p,prio)
+Mpid p;
+Mint prio;
+M{
+M	/* not implemented */
+M}
+M
+Mc_associate()
+M{
+M	/* not implemented */
+M}
+M
+M/*
+Mint c_count(p,n)
+Mpid p;
+Mint n;
+M{
+M    task t;
+M    int count;
+M
+M    if ((t=CC_checkout(p)) == nulltask)
+M	return 0;
+M    p_lock(t->queuelock);
+M    count=CC_queuecount(t,n);
+M    p_unlock(t->queuelock);
+M    CC_checkin(t);
+M    return count;
+M}
+M
+Mint c_active(p)
+Mpid p;
+M{
+M    task t;
+M    int active;
+M
+M    if ((t=CC_checkout(p)) == nulltask)
+M	return 0;
+M    p_lock(t->statelock);
+M    active= !t->aborted && !t->completed;
+M    p_unlock(t->statelock);
+M    CC_checkin(t);
+M    return active;
+M}
+M
+Mint c_completed(p)
+Mpid p;
+M{
+M    task t;
+M    int completed;
+M
+M    if ((t=CC_checkout(p)) == nulltask)
+M	return 0;
+M    p_lock(t->statelock);
+M    completed= !t->aborted && t->completed;
+M    p_unlock(t->statelock);
+M    CC_checkin(t);
+M    return completed;
+M}
+M
+Mint c_invalid(p)
+Mpid p;
+M{
+M    task t;
+M    int terminated;
+M
+M    if ((t=CC_checkout(p)) == nulltask)
+M	return 1;
+M    p_lock(t->statelock);
+M    terminated= t->aborted;
+M    p_unlock(t->statelock);
+M    CC_checkin(t);
+M    return terminated;
+M}
+M*/
+M
+Mpid c_mypid()
+M{
+M	return mypid;
+M}
+M
+Mmain(argc, argv, envp)
+Mint argc;
+Mchar **argv, **envp;
+M{
+M
+M	/*
+M	 *  CC_maxtblocksize should really be calculated from sizeof()s of trans structs.
+M	 */
+M	CC_maxtblocksize=512;
+M	CC_install_handler();
+M	if (p_init(0,0x80000)!=0) {
+M		perror("CC_fork: p_init");
+M		exit(1);
+M	}
+M	CC_make_elder_tasks();
+M	CC_shinit();
+M	CC_main(argc, argv, envp);
+M	CC_complete();
+M}
+EOF
+chmod u=rw,g=r,o=r CC_fork.c
+@

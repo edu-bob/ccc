@@ -1,0 +1,31 @@
+head     3.0;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+3.0
+date     86.09.18.16.13.41;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@new
+@
+
+
+
+3.0
+log
+@working final version
+@
+text
+@typedef char bool;
+#ifndef TRUE
+#define TRUE 1
+#define FALSE 0
+#endif
+@

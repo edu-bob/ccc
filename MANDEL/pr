@@ -1,0 +1,3 @@
+sort -n < $1 |
+awk '{t1[NR-1]=$2;t2[NR-1]=$3;sum += $3}
+    END{print "AVE = ",sum/8;for(i=0 ; i<8 ; i++) print i,t1[i],t2[i],t2[i]-sum/8}'

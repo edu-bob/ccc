@@ -1,0 +1,426 @@
+0 main is running from main pid=19459
+0 main is creating C (10,10)
+42 C<0> is running from main pid=19460
+43 C<0> is wait accept
+44 main is creating DotProd (10,7,9,10,C<0>)
+48 DotProd<0> is running from main pid=19461
+50 DotProd<0> is waiting on C<0>.answer line 105 (7,0,120)
+52 C<0> is accepting answer from DotProd<0> line 70 (row,col,num)
+53 C<0> is running, treturned  (0)
+53 C<0> is wait accept
+54 DotProd<0> is running
+54 DotProd<0> is waiting on C<0>.answer line 105 (8,0,128)
+55 main is creating DotProd (7,4,9,10,C<0>)
+55 C<0> is accepting answer from DotProd<0> line 70 (row,col,num)
+55 C<0> is running, treturned  (0)
+55 C<0> is wait accept
+56 DotProd<1> is running from main pid=19462
+56 DotProd<0> is running
+56 DotProd<0> is waiting on C<0>.answer line 105 (9,0,136)
+57 C<0> is accepting answer from DotProd<0> line 70 (row,col,num)
+57 DotProd<1> is waiting on C<0>.answer line 105 (4,0,96)
+58 C<0> is running, treturned  (0)
+57 DotProd<0> is running
+58 C<0> is accepting answer from DotProd<1> line 70 (row,col,num)
+59 DotProd<0> is waiting on C<0>.answer line 105 (7,1,105)
+59 C<0> is running, treturned  (0)
+59 C<0> is accepting answer from DotProd<0> line 70 (row,col,num)
+60 C<0> is running, treturned  (0)
+60 DotProd<1> is running
+60 C<0> is wait accept
+60 DotProd<1> is waiting on C<0>.answer line 105 (5,0,104)
+60 DotProd<0> is running
+61 DotProd<0> is waiting on C<0>.answer line 105 (8,1,112)
+61 C<0> is accepting answer from DotProd<1> line 70 (row,col,num)
+62 main is creating DotProd (4,1,9,10,C<0>)
+62 C<0> is running, treturned  (0)
+62 C<0> is accepting answer from DotProd<0> line 70 (row,col,num)
+63 DotProd<1> is running
+63 C<0> is running, treturned  (0)
+63 DotProd<1> is waiting on C<0>.answer line 105 (6,0,112)
+63 C<0> is accepting answer from DotProd<1> line 70 (row,col,num)
+63 DotProd<0> is running
+63 C<0> is running, treturned  (0)
+63 DotProd<2> is running from main pid=19463
+64 DotProd<0> is waiting on C<0>.answer line 105 (9,1,119)
+64 C<0> is accepting answer from DotProd<0> line 70 (row,col,num)
+64 DotProd<1> is running
+64 C<0> is running, treturned  (0)
+73 DotProd<1> is waiting on C<0>.answer line 105 (4,1,84)
+74 main is creating DotProd (1,0,9,10,C<0>)
+76 DotProd<3> is running from main pid=19464
+78 DotProd<0> is running
+79 C<0> is accepting answer from DotProd<1> line 70 (row,col,num)
+81 DotProd<2> is waiting on C<0>.answer line 105 (1,0,72)
+82 main is dying
+84 C<0> is running, treturned  (0)
+85 DotProd<0> is waiting on C<0>.answer line 105 (7,2,90)
+87 DotProd<1> is running
+88 DotProd<3> is waiting on C<0>.answer line 105 (0,0,64)
+89 C<0> is accepting answer from DotProd<2> line 70 (row,col,num)
+91 DotProd<1> is waiting on C<0>.answer line 105 (5,1,91)
+92 C<0> is running, treturned  (0)
+94 C<0> is accepting answer from DotProd<0> line 70 (row,col,num)
+95 DotProd<2> is running
+97 C<0> is running, treturned  (0)
+98 DotProd<2> is waiting on C<0>.answer line 105 (2,0,80)
+100 DotProd<0> is running
+101 C<0> is accepting answer from DotProd<3> line 70 (row,col,num)
+103 DotProd<0> is waiting on C<0>.answer line 105 (8,2,96)
+104 C<0> is running, treturned  (0)
+106 C<0> is accepting answer from DotProd<1> line 70 (row,col,num)
+108 DotProd<3> is running
+110 C<0> is running, treturned  (0)
+111 DotProd<3> is waiting on C<0>.answer line 105 (0,1,56)
+113 DotProd<1> is running
+114 C<0> is accepting answer from DotProd<2> line 70 (row,col,num)
+116 DotProd<1> is waiting on C<0>.answer line 105 (6,1,98)
+117 C<0> is running, treturned  (0)
+119 C<0> is accepting answer from DotProd<0> line 70 (row,col,num)
+120 DotProd<2> is running
+122 C<0> is running, treturned  (0)
+123 DotProd<2> is waiting on C<0>.answer line 105 (3,0,88)
+125 DotProd<0> is running
+126 C<0> is accepting answer from DotProd<3> line 70 (row,col,num)
+128 DotProd<0> is waiting on C<0>.answer line 105 (9,2,102)
+130 C<0> is running, treturned  (0)
+131 C<0> is accepting answer from DotProd<1> line 70 (row,col,num)
+133 DotProd<3> is running
+134 C<0> is running, treturned  (0)
+136 DotProd<3> is waiting on C<0>.answer line 105 (0,2,48)
+138 DotProd<1> is running
+139 C<0> is accepting answer from DotProd<2> line 70 (row,col,num)
+140 DotProd<1> is waiting on C<0>.answer line 105 (4,2,72)
+142 C<0> is running, treturned  (0)
+143 C<0> is accepting answer from DotProd<0> line 70 (row,col,num)
+145 DotProd<2> is running
+147 C<0> is running, treturned  (0)
+148 DotProd<2> is waiting on C<0>.answer line 105 (1,1,63)
+149 DotProd<0> is running
+151 C<0> is accepting answer from DotProd<3> line 70 (row,col,num)
+153 DotProd<0> is waiting on C<0>.answer line 105 (7,3,75)
+154 C<0> is running, treturned  (0)
+156 C<0> is accepting answer from DotProd<1> line 70 (row,col,num)
+157 DotProd<3> is running
+159 C<0> is running, treturned  (0)
+160 DotProd<3> is waiting on C<0>.answer line 105 (0,3,40)
+161 DotProd<1> is running
+163 C<0> is accepting answer from DotProd<2> line 70 (row,col,num)
+165 DotProd<1> is waiting on C<0>.answer line 105 (5,2,78)
+166 C<0> is running, treturned  (0)
+168 C<0> is accepting answer from DotProd<0> line 70 (row,col,num)
+170 DotProd<2> is running
+171 C<0> is running, treturned  (0)
+172 DotProd<2> is waiting on C<0>.answer line 105 (2,1,70)
+174 DotProd<0> is running
+175 C<0> is accepting answer from DotProd<3> line 70 (row,col,num)
+177 DotProd<0> is waiting on C<0>.answer line 105 (8,3,80)
+179 C<0> is running, treturned  (0)
+180 C<0> is accepting answer from DotProd<1> line 70 (row,col,num)
+182 DotProd<3> is running
+183 C<0> is running, treturned  (0)
+185 DotProd<3> is waiting on C<0>.answer line 105 (0,4,32)
+186 DotProd<1> is running
+188 C<0> is accepting answer from DotProd<2> line 70 (row,col,num)
+190 DotProd<1> is waiting on C<0>.answer line 105 (6,2,84)
+191 C<0> is running, treturned  (0)
+193 C<0> is accepting answer from DotProd<0> line 70 (row,col,num)
+194 DotProd<2> is running
+196 C<0> is running, treturned  (0)
+197 DotProd<2> is waiting on C<0>.answer line 105 (3,1,77)
+199 DotProd<0> is running
+200 C<0> is accepting answer from DotProd<3> line 70 (row,col,num)
+202 DotProd<0> is waiting on C<0>.answer line 105 (9,3,85)
+203 C<0> is running, treturned  (0)
+206 C<0> is accepting answer from DotProd<1> line 70 (row,col,num)
+208 DotProd<3> is running
+210 C<0> is running, treturned  (0)
+211 DotProd<3> is waiting on C<0>.answer line 105 (0,5,24)
+212 DotProd<1> is running
+214 C<0> is accepting answer from DotProd<2> line 70 (row,col,num)
+216 DotProd<1> is waiting on C<0>.answer line 105 (4,3,60)
+217 C<0> is running, treturned  (0)
+219 C<0> is accepting answer from DotProd<0> line 70 (row,col,num)
+220 DotProd<2> is running
+222 C<0> is running, treturned  (0)
+223 DotProd<2> is waiting on C<0>.answer line 105 (1,2,54)
+225 DotProd<0> is running
+226 C<0> is accepting answer from DotProd<3> line 70 (row,col,num)
+228 DotProd<0> is waiting on C<0>.answer line 105 (7,4,60)
+229 C<0> is running, treturned  (0)
+231 C<0> is accepting answer from DotProd<1> line 70 (row,col,num)
+232 DotProd<3> is running
+234 C<0> is running, treturned  (0)
+236 DotProd<3> is waiting on C<0>.answer line 105 (0,6,16)
+237 DotProd<1> is running
+238 C<0> is accepting answer from DotProd<2> line 70 (row,col,num)
+240 DotProd<1> is waiting on C<0>.answer line 105 (5,3,65)
+241 C<0> is running, treturned  (0)
+243 C<0> is accepting answer from DotProd<0> line 70 (row,col,num)
+244 DotProd<2> is running
+246 C<0> is running, treturned  (0)
+247 DotProd<2> is waiting on C<0>.answer line 105 (2,2,60)
+248 DotProd<0> is running
+250 C<0> is accepting answer from DotProd<3> line 70 (row,col,num)
+252 DotProd<0> is waiting on C<0>.answer line 105 (8,4,64)
+253 C<0> is running, treturned  (0)
+254 C<0> is accepting answer from DotProd<1> line 70 (row,col,num)
+256 DotProd<3> is running
+257 C<0> is running, treturned  (0)
+259 DotProd<3> is waiting on C<0>.answer line 105 (0,7,8)
+260 DotProd<1> is running
+262 C<0> is accepting answer from DotProd<2> line 70 (row,col,num)
+263 DotProd<1> is waiting on C<0>.answer line 105 (6,3,70)
+265 C<0> is running, treturned  (0)
+266 C<0> is accepting answer from DotProd<0> line 70 (row,col,num)
+268 DotProd<2> is running
+269 C<0> is running, treturned  (0)
+271 DotProd<2> is waiting on C<0>.answer line 105 (3,2,66)
+272 DotProd<0> is running
+274 C<0> is accepting answer from DotProd<3> line 70 (row,col,num)
+275 DotProd<0> is waiting on C<0>.answer line 105 (9,4,68)
+277 C<0> is running, treturned  (0)
+278 C<0> is accepting answer from DotProd<1> line 70 (row,col,num)
+280 DotProd<3> is running
+281 C<0> is running, treturned  (0)
+283 DotProd<3> is waiting on C<0>.answer line 105 (0,8,0)
+284 DotProd<1> is running
+285 C<0> is accepting answer from DotProd<2> line 70 (row,col,num)
+287 DotProd<1> is waiting on C<0>.answer line 105 (4,4,48)
+289 C<0> is running, treturned  (0)
+290 C<0> is accepting answer from DotProd<0> line 70 (row,col,num)
+291 DotProd<2> is running
+293 C<0> is running, treturned  (0)
+294 DotProd<2> is waiting on C<0>.answer line 105 (1,3,45)
+296 DotProd<0> is running
+297 C<0> is accepting answer from DotProd<3> line 70 (row,col,num)
+299 DotProd<0> is waiting on C<0>.answer line 105 (7,5,45)
+300 C<0> is running, treturned  (0)
+301 C<0> is accepting answer from DotProd<1> line 70 (row,col,num)
+303 DotProd<3> is running
+305 C<0> is running, treturned  (0)
+306 DotProd<3> is waiting on C<0>.answer line 105 (0,9,-8)
+307 DotProd<1> is running
+309 C<0> is accepting answer from DotProd<2> line 70 (row,col,num)
+311 DotProd<1> is waiting on C<0>.answer line 105 (5,4,52)
+312 C<0> is running, treturned  (0)
+313 C<0> is accepting answer from DotProd<0> line 70 (row,col,num)
+315 DotProd<2> is running
+316 C<0> is running, treturned  (0)
+318 DotProd<2> is waiting on C<0>.answer line 105 (2,3,50)
+319 DotProd<0> is running
+321 C<0> is accepting answer from DotProd<3> line 70 (row,col,num)
+323 DotProd<0> is waiting on C<0>.answer line 105 (8,5,48)
+324 C<0> is running, treturned  (0)
+326 C<0> is accepting answer from DotProd<1> line 70 (row,col,num)
+328 DotProd<3> is running
+329 C<0> is running, treturned  (0)
+330 DotProd<3> is dead
+331 C<0> is accepting answer from DotProd<2> line 70 (row,col,num)
+333 DotProd<1> is running
+335 C<0> is running, treturned  (0)
+336 DotProd<1> is waiting on C<0>.answer line 105 (6,4,56)
+337 DotProd<2> is running
+339 C<0> is accepting answer from DotProd<0> line 70 (row,col,num)
+341 DotProd<2> is waiting on C<0>.answer line 105 (3,3,55)
+343 C<0> is running, treturned  (0)
+344 C<0> is accepting answer from DotProd<1> line 70 (row,col,num)
+346 DotProd<0> is running
+348 C<0> is running, treturned  (0)
+349 DotProd<0> is waiting on C<0>.answer line 105 (9,5,51)
+351 DotProd<1> is running
+352 C<0> is accepting answer from DotProd<2> line 70 (row,col,num)
+354 DotProd<1> is waiting on C<0>.answer line 105 (4,5,36)
+355 C<0> is running, treturned  (0)
+356 C<0> is accepting answer from DotProd<0> line 70 (row,col,num)
+358 DotProd<2> is running
+359 C<0> is running, treturned  (0)
+360 DotProd<2> is waiting on C<0>.answer line 105 (1,4,36)
+361 DotProd<0> is running
+363 C<0> is accepting answer from DotProd<1> line 70 (row,col,num)
+365 DotProd<0> is waiting on C<0>.answer line 105 (7,6,30)
+366 C<0> is running, treturned  (0)
+368 C<0> is accepting answer from DotProd<2> line 70 (row,col,num)
+369 DotProd<1> is running
+371 C<0> is running, treturned  (0)
+372 DotProd<1> is waiting on C<0>.answer line 105 (5,5,39)
+374 DotProd<2> is running
+375 C<0> is accepting answer from DotProd<0> line 70 (row,col,num)
+377 DotProd<2> is waiting on C<0>.answer line 105 (2,4,40)
+379 C<0> is running, treturned  (0)
+380 C<0> is accepting answer from DotProd<1> line 70 (row,col,num)
+382 DotProd<0> is running
+383 C<0> is running, treturned  (0)
+385 DotProd<0> is waiting on C<0>.answer line 105 (8,6,32)
+386 DotProd<1> is running
+388 C<0> is accepting answer from DotProd<2> line 70 (row,col,num)
+390 DotProd<1> is waiting on C<0>.answer line 105 (6,5,42)
+391 C<0> is running, treturned  (0)
+392 C<0> is accepting answer from DotProd<0> line 70 (row,col,num)
+394 DotProd<2> is running
+395 C<0> is running, treturned  (0)
+397 DotProd<2> is waiting on C<0>.answer line 105 (3,4,44)
+398 DotProd<0> is running
+400 C<0> is accepting answer from DotProd<1> line 70 (row,col,num)
+401 DotProd<0> is waiting on C<0>.answer line 105 (9,6,34)
+403 C<0> is running, treturned  (0)
+404 C<0> is accepting answer from DotProd<2> line 70 (row,col,num)
+406 DotProd<1> is running
+407 C<0> is running, treturned  (0)
+409 DotProd<1> is waiting on C<0>.answer line 105 (4,6,24)
+410 DotProd<2> is running
+412 C<0> is accepting answer from DotProd<0> line 70 (row,col,num)
+413 DotProd<2> is waiting on C<0>.answer line 105 (1,5,27)
+415 C<0> is running, treturned  (0)
+416 C<0> is accepting answer from DotProd<1> line 70 (row,col,num)
+418 DotProd<0> is running
+420 C<0> is running, treturned  (0)
+421 DotProd<0> is waiting on C<0>.answer line 105 (7,7,15)
+422 DotProd<1> is running
+424 C<0> is accepting answer from DotProd<2> line 70 (row,col,num)
+425 DotProd<1> is waiting on C<0>.answer line 105 (5,6,26)
+427 C<0> is running, treturned  (0)
+428 C<0> is accepting answer from DotProd<0> line 70 (row,col,num)
+430 DotProd<2> is running
+431 C<0> is running, treturned  (0)
+433 DotProd<2> is waiting on C<0>.answer line 105 (2,5,30)
+435 DotProd<0> is running
+437 C<0> is accepting answer from DotProd<1> line 70 (row,col,num)
+438 DotProd<0> is waiting on C<0>.answer line 105 (8,7,16)
+440 C<0> is running, treturned  (0)
+441 C<0> is accepting answer from DotProd<2> line 70 (row,col,num)
+443 DotProd<1> is running
+444 C<0> is running, treturned  (0)
+446 DotProd<1> is waiting on C<0>.answer line 105 (6,6,28)
+447 DotProd<2> is running
+449 C<0> is accepting answer from DotProd<0> line 70 (row,col,num)
+451 DotProd<2> is waiting on C<0>.answer line 105 (3,5,33)
+452 C<0> is running, treturned  (0)
+454 C<0> is accepting answer from DotProd<1> line 70 (row,col,num)
+456 DotProd<0> is running
+457 C<0> is running, treturned  (0)
+459 DotProd<0> is waiting on C<0>.answer line 105 (9,7,17)
+460 DotProd<1> is running
+462 C<0> is accepting answer from DotProd<2> line 70 (row,col,num)
+464 DotProd<1> is waiting on C<0>.answer line 105 (4,7,12)
+465 C<0> is running, treturned  (0)
+466 C<0> is accepting answer from DotProd<0> line 70 (row,col,num)
+468 DotProd<2> is running
+470 C<0> is running, treturned  (0)
+471 DotProd<2> is waiting on C<0>.answer line 105 (1,6,18)
+473 DotProd<0> is running
+474 C<0> is accepting answer from DotProd<1> line 70 (row,col,num)
+476 DotProd<0> is waiting on C<0>.answer line 105 (7,8,0)
+477 C<0> is running, treturned  (0)
+478 C<0> is accepting answer from DotProd<2> line 70 (row,col,num)
+480 DotProd<1> is running
+482 C<0> is running, treturned  (0)
+483 DotProd<1> is waiting on C<0>.answer line 105 (5,7,13)
+484 DotProd<2> is running
+486 C<0> is accepting answer from DotProd<0> line 70 (row,col,num)
+488 DotProd<2> is waiting on C<0>.answer line 105 (2,6,20)
+489 C<0> is running, treturned  (0)
+491 C<0> is accepting answer from DotProd<1> line 70 (row,col,num)
+493 DotProd<0> is running
+494 C<0> is running, treturned  (0)
+495 DotProd<0> is waiting on C<0>.answer line 105 (8,8,0)
+497 DotProd<1> is running
+498 C<0> is accepting answer from DotProd<2> line 70 (row,col,num)
+500 DotProd<1> is waiting on C<0>.answer line 105 (6,7,14)
+501 C<0> is running, treturned  (0)
+503 C<0> is accepting answer from DotProd<0> line 70 (row,col,num)
+504 DotProd<2> is running
+506 C<0> is running, treturned  (0)
+507 DotProd<2> is waiting on C<0>.answer line 105 (3,6,22)
+509 DotProd<0> is running
+510 C<0> is accepting answer from DotProd<1> line 70 (row,col,num)
+512 DotProd<0> is waiting on C<0>.answer line 105 (9,8,0)
+514 C<0> is running, treturned  (0)
+516 C<0> is accepting answer from DotProd<2> line 70 (row,col,num)
+517 DotProd<1> is running
+519 C<0> is running, treturned  (0)
+520 DotProd<1> is waiting on C<0>.answer line 105 (4,8,0)
+522 DotProd<2> is running
+523 C<0> is accepting answer from DotProd<0> line 70 (row,col,num)
+525 DotProd<2> is waiting on C<0>.answer line 105 (1,7,9)
+526 C<0> is running, treturned  (0)
+528 C<0> is accepting answer from DotProd<1> line 70 (row,col,num)
+530 DotProd<0> is running
+531 C<0> is running, treturned  (0)
+533 DotProd<0> is waiting on C<0>.answer line 105 (7,9,-15)
+534 DotProd<1> is running
+536 C<0> is accepting answer from DotProd<2> line 70 (row,col,num)
+539 DotProd<1> is waiting on C<0>.answer line 105 (5,8,0)
+540 C<0> is running, treturned  (0)
+542 C<0> is accepting answer from DotProd<0> line 70 (row,col,num)
+544 DotProd<2> is running
+545 C<0> is running, treturned  (0)
+547 DotProd<2> is waiting on C<0>.answer line 105 (2,7,10)
+548 DotProd<0> is running
+550 C<0> is accepting answer from DotProd<1> line 70 (row,col,num)
+551 DotProd<0> is waiting on C<0>.answer line 105 (8,9,-16)
+553 C<0> is running, treturned  (0)
+554 C<0> is accepting answer from DotProd<2> line 70 (row,col,num)
+556 DotProd<1> is running
+559 C<0> is running, treturned  (0)
+560 DotProd<1> is waiting on C<0>.answer line 105 (6,8,0)
+562 DotProd<2> is running
+563 C<0> is accepting answer from DotProd<0> line 70 (row,col,num)
+565 DotProd<2> is waiting on C<0>.answer line 105 (3,7,11)
+566 C<0> is running, treturned  (0)
+568 C<0> is accepting answer from DotProd<1> line 70 (row,col,num)
+569 DotProd<0> is running
+571 C<0> is running, treturned  (0)
+572 DotProd<0> is waiting on C<0>.answer line 105 (9,9,-17)
+574 DotProd<1> is running
+576 C<0> is accepting answer from DotProd<2> line 70 (row,col,num)
+578 DotProd<1> is waiting on C<0>.answer line 105 (4,9,-12)
+579 C<0> is running, treturned  (0)
+581 C<0> is accepting answer from DotProd<0> line 70 (row,col,num)
+582 DotProd<2> is running
+584 C<0> is running, treturned  (0)
+585 DotProd<2> is waiting on C<0>.answer line 105 (1,8,0)
+587 DotProd<0> is running
+588 C<0> is accepting answer from DotProd<1> line 70 (row,col,num)
+590 DotProd<0> is dead
+592 C<0> is running, treturned  (0)
+593 C<0> is accepting answer from DotProd<2> line 70 (row,col,num)
+595 DotProd<1> is running
+596 C<0> is running, treturned  (0)
+597 DotProd<1> is waiting on C<0>.answer line 105 (5,9,-13)
+599 DotProd<2> is running
+600 C<0> is accepting answer from DotProd<1> line 70 (row,col,num)
+602 DotProd<2> is waiting on C<0>.answer line 105 (2,8,0)
+603 C<0> is running, treturned  (0)
+605 C<0> is accepting answer from DotProd<2> line 70 (row,col,num)
+607 DotProd<1> is running
+608 C<0> is running, treturned  (0)
+610 DotProd<1> is waiting on C<0>.answer line 105 (6,9,-14)
+611 DotProd<2> is running
+613 C<0> is accepting answer from DotProd<1> line 70 (row,col,num)
+614 DotProd<2> is waiting on C<0>.answer line 105 (3,8,0)
+616 C<0> is running, treturned  (0)
+617 C<0> is accepting answer from DotProd<2> line 70 (row,col,num)
+619 DotProd<1> is running
+620 C<0> is running, treturned  (0)
+622 DotProd<1> is dead
+623 C<0> is wait accept
+625 DotProd<2> is running
+627 DotProd<2> is waiting on C<0>.answer line 105 (1,9,-9)
+629 C<0> is accepting answer from DotProd<2> line 70 (row,col,num)
+631 C<0> is running, treturned  (0)
+633 C<0> is wait accept
+634 DotProd<2> is running
+636 DotProd<2> is waiting on C<0>.answer line 105 (2,9,-10)
+639 C<0> is accepting answer from DotProd<2> line 70 (row,col,num)
+640 C<0> is running, treturned  (0)
+642 C<0> is wait accept
+643 DotProd<2> is running
+645 DotProd<2> is waiting on C<0>.answer line 105 (3,9,-11)
+648 C<0> is accepting answer from DotProd<2> line 70 (row,col,num)
+649 C<0> is running, treturned  (0)
+651 DotProd<2> is running
+653 DotProd<2> is dead
+654 C<0> is dying
+690 C<0> is dead
+690 main is dead

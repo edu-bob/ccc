@@ -1,0 +1,15 @@
+#!/bin/sh
+ccc -K -c $1.cc
+cc=/tmp/,cc$$
+c=/tmp/,c$$
+longest=`expand <  $1.cc|awk 'BEGIN{m=0}length($0)>m{m=length($0)}END{print m}'`
+lines=`wc -l $1.c`
+cat -n $1.cc|sed 's/^ *\([0-9]*\)	/\10@/'|expand > $cc
+cat -n $1.c |sed 's/^ *\([0-9]*\)	/\11@/'|expand |
+cat - $cc |
+sort -n -t@ |
+awk -F@ '$1%2==0{printf("%s",$2);len=length($2)}
+	 $1%2==1{for(i=len;i<'$longest';i++)printf(" ")
+		 printf("  |  %s\n",$2);len=0}' |
+qprint -p -h
+

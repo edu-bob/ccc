@@ -1,0 +1,544 @@
+.po 1.25i
+.sz 12
+.nr sp 12
+.nr pp 12
+.fo ''-%-''
+.(b C
+An Owner's Guide for \fBcdb\fR, a Concurrent C Debugger
+William L. Lynch
+\*(td
+.)b
+
+.sh 1 Introduction
+
+.pp
+.b cdb
+was designed to be a low-overhead graphical monitor of executing Concurrent
+C programs.  This document is the technical reference manual for
+.b cdb .
+A companion document,
+"A User's Manual for \fBcdb\fR, a Concurrent C Debugger," teaches use of 
+.b cdb ;
+this one does not.
+
+.sh 1 Overview
+.pp
+RIACS' Concurrent C currently runs on a Sequent multcomputer.  
+.b cdb
+runs on any Unix 4.2 machine it is compiled for, although its present form
+requires a BitGraph terminal for a display device.  Extensive use is made of
+the mouse and functionality of the BitGraph through a BitGraph user-interface
+package (written by Robert L. Brown).
+
+.pp
+The overall structure of 
+.b cdb
+comprises three major parts.  The first part is the interface with the
+Concurrent C run-time system (called the 
+.i monitor ),
+the second deals with buffering and communication,
+and the third handles the front-end graphics.  There are three main sets of
+processes during the execution of a Concurrent C program under 
+.b cdb ,
+corresponding to these three major parts.
+
+.pp
+The first set of processes is the monitor, a small piece of code
+attached to each user processes which attempts to summarize an event in the
+user code as quickly as possible and dispatch a buffer containing that summary
+to the communication
+process.  The second process is the communication process, which receives
+these buffers from the monitor processes, does some conversion and
+formatting, and sends the resulting packets over the socket to the front
+end.  This front end is the third process.  It receives the packets from the
+communication process, updates its own concept of he
+state of the concurrent computation, and displays updates on
+the terminal screen.  The front-end process can be executed on a different
+machine from the other processes.
+
+.pp
+The compilation of a Concurrent C program with the
+.b -G 
+option links the program with the
+.b cdb
+run-time library, rather than the normal run-time library.  The
+.b cdb
+run-time library contains the extra code for the monitor, as well as the
+proper start-up procedure to fork of the communication process if the
+program is started under
+.b cdb .
+Also, code is added which converts 
+.i tblocks
+(transaction call parameter blocks), and create parameter blocks into
+strings suitable for passing over the socket to the front end.  The
+communication process will call these conversion routines during execution.
+
+.sh 1 Implementation
+.pp
+This section deals more directly with specific details of the implementation
+of 
+.b cdb .
+A source listing of the
+.b cdb
+and debugging run-time programs could be useful in understanding this section.
+
+.sh +1 "Symbolic Information"
+
+.pp
+There are three basic types of information added to a Concurrent C program
+when compiled with the 
+.b -G
+option.  
+
+.pp
+The first type of information is contained in functions associated with each 
+.b "process spec"
+which converts the parameters of any transaction or creation specified in
+the spec (a potential creation of
+.i foo
+is specified by the inclusion of
+.b "process spec"
+.i foo ).
+Abitrarily complex parameters are converted, including pid
+parameters.  However, pointers are merely expressed as their value; no
+de-referencing is done, even for 
+.i "char *"
+values.
+
+.pp
+The second type of added information concerns
+the occurrence of a Concurrent C artefact
+in the user's source code. These 
+.i occurences
+are kept for accepts, creates,
+transaction calls, delays, selects, treturns, and terminates.  A structure
+is created which gives information about the occurrence as necessary, such
+as line number (always included), formal parameters (for accepts and
+creates), the size of the tblock which needs to be copied by the monitor
+(for transactions and treturns), and the parameter conversion routine to be
+used by the communication process.
+These structures are stored in an array, and
+all occurrence arrays are stored in one structure per process body.
+Each type of occurrence has a unique (per process body) integer
+passed as a parameter during the run time system call which uniquely
+specifies that occurrence by indexing into the occurrence array.
+
+.pp
+The third type of information is
+the symbol table of the program, pared down to those entries necessary
+for the front end to add tags to structure fields.
+
+.pp
+There is one other small addition for create parameters.  The
+current implementation of Concurrent C does not actually use
+tblocks for create parameters.  Instead, the create is actually converted to
+a regular C function call which then forks.  So,
+.b -G
+compiled programs have code added in which defines structures and
+copies the parameters (if there are any to copy) into them between
+the function formals and the fork, essentially creating a create tblock.
+This structure is accessed by the run
+time system by linking to a global variable, 
+.b DD_createArgs ,
+which is assigned to be the pointer to the structure right before the fork.!
+
+.pp
+These conversion routines are made
+available to the monitor and communication processes
+through their inclusion in the global array 
+.b DD_globalOccurTable ,
+which is linked to the debug run time system.  The occurrence arrays are
+made available to the monitor (which needs the size of tblock information)
+by setting a global variable, 
+.b DD_processTable 
+to the correct table in the first line of the new process.  
+
+.pp
+Complex statically intialized structures and arrays are used to store all of this
+information in the C program output of
+.b ccc .
+For more details on the exact naming and initializing, look at the output of 
+.b ccc
+(use the 
+.b -K
+option), and the include file
+.b DD_kernel.h .
+
+.sh + Monitor
+
+.pp
+The monitor consists of code in the run time system which gets executed
+whenever a concurrency event occurs in the user program.  These events almost
+exclusively pertain to blocking and unblocking of processes.  (One of the few
+exceptions is the 
+.i exiting
+event.)
+Therefore, the hooks for the monitor are in 
+.b CC_block ,
+and 
+.b CC_unblock ,
+in the form of calls to 
+.b DD_event .
+.b DD_event 
+is called with source and destination (if an unblock) process
+ids, the type of event, and the event id.  The monitor requests a buffer
+from the buffers system, fills in the event type, the event id, a time stamp
+from 
+.i gettimeofday ,
+the unix pid of the sending process (itself), the destination unix pid (if
+necessary), and a binary image of the tblock and a pointer to the
+conversion function for creates, transactions, and treturns.  The monitor
+then places the buffer in the queue to go to the communication process.
+
+.pp
+There are a couple of unusual cases for events.  The first is for
+transaction calls, where the buffer is actually sent before the
+.b CC_block 
+is called, while the queues of the server process are still locked.  This is
+to prevent the accept and treturn buffers of the server process from
+preceding the transaction call buffer, which confuses the front end and is
+not an accurate representation of what happened.  The other unusual case is 
+another is DD_ISbORN, which uses CC_pid rather than unix pid.  This exception is
+necessary because 
+conversion in the monitor routine would be too expensive, particularly as
+all process parameters use CC_pids.
+
+.pp
+The normal (non-debugging) run time system is created by defining
+.b DD_event
+to be a stub function.  
+
+.sh + Buffers
+
+.pp
+The buffer system has control distributed among the communciation and user
+processes.  It is conceptually a pair of queues, one for empty
+buffers, and one for full buffers.
+The user processes extract empty buffers from the empty queue and place
+them, filled, on the full queue.  The communication process extracts full
+buffers, sends the information to the front end, and places the empty
+buffers empty queue.  The system is actually slightly more sophisticated,
+as placement on the full queue is preserved in the same
+order as removal from the empty queue.  This order preservation is
+accomplished without holding up any process; essentially a blank is placed
+in the full queue, but not marked full until actually filled.
+
+.pp
+The buffer implementation is actually an array (in shared
+memory).  Full and empty pointers circle the array, indicating where the
+next buffer of that type is to come from.  Each buffer entry has two
+semaphores associated with it;  one for full, and one for empty.  A request
+for a buffer consists of reading the proper pointer, and 
+.i ask ing
+on the
+semaphore for the indicated buffer.  A return of a buffer is accomplished by
+.i tell ing
+on the proper semaphore associated with that buffer.  There is a
+potential race condition here, where if all buffers are empty, and there are
+more processes than buffers, the requests could race completely around the
+buffers and compete on asking the semaphore.  It is unlikely that the race
+could occur before the first process actually asked on the semaphore, and is
+impossible as long as there are more buffers  (not necessarily available,
+just in existence) than requesting processes.
+
+.pp
+The semaphores are implemented with waiting queues and blocking through
+.i sigpause .
+The
+.b SIGUSR1
+signal is used for the unblocking.  If the Concurrent C program uses 
+.b SIGUSR1 ,
+then unpredictable, and almost certainly wrong, results will occur.  This
+.i sigpause
+mask is the existing mask without 
+.b SIGUSR1 ,
+so any other signalling done in the Concurrent C program may be affected.
+Normally, however, things which are not real-time critical will still 
+work just as before.
+
+.sh + Communication
+
+.pp
+.b cdb
+uses a separate process to handle communication between the user processes
+and the front end.  This communication process has two functions:  to
+receive buffers from the user processes, convert them to packets, and send
+them over sockets to the front end, and to receive signals from the front
+end and exercise those commands on the user processes.  It is necessary that
+the communication functions be a separate process so that Concurrent C
+processes are not held up waiting on the socket.
+
+.pp
+The conversion to packets has two primary features:  the conversion of the
+time stamp, and the conversion of the parameters.  The time stamp is
+converted from a time-of-day value to a delta-time value;  that is, the time
+stamp of this buffer is subtracted from the time stamp of the previous
+buffer.  This results in a significant compaction of the data to be sent
+over the socket.  The front end re-creates total-time values.  
+
+.pp
+The conversion of the parameters occurs here because the front end may be
+residing on a different machine, where the format of data (e.g., packing of
+structures, byte ordering) could be different.  The parameters are converted
+using the convert function created by compilation with the
+.b -G
+option (see the 
+.b "Symbolic Information" 
+section), and placed in the buffer by the process experiencing the event.
+
+.pp
+The packets are sent over as shorts, longs, and null-terminated strings.  To
+allow the front end to reside on a different machine, values are converted
+to and from network byte order.  Unfortunately, on the Sequent, this means
+that two conversions are done per non-string transfer.
+
+.pp
+A close interlocking of sending and receiving is required, as there are no
+packet headers.  If something goes wrong, the chances of getting the sender and
+receiver back in sync are fairly small.  Fortunately, this loss of synchronization
+almost never happens unless something is broken.
+
+.pp
+There are six kinds of packets used for communication.  Each type contains
+an event specifier, a time, a source pid, and various combinations of
+destination pid, event id, paramter string, and CC_pid.  The event specifier
+is always delivered first, and defines what type of packet is to follow.
+
+.sh + "Starting Up"
+
+.pp
+As 
+.b cdb
+can reside on a different machine, starting the user program on the host is
+necessary.  The method 
+.b cdb
+uses is essentially a slightly modified
+.i rexec .
+The main modification deals with the opening of the extra socket used for packet
+transmission.  Obviously, the remote host must be running the
+.b rcdbd 
+daemon if starting the remote program is to work.
+
+.pp
+After the
+.rcdbd
+daemon starts up and established connection, it forks off the remote
+process.   The remote process checks to
+see if file descriptor three to see if the file type is regular.  If the
+type is regular, then the program is just executed as if not compiled with
+the 
+.b -G
+option.  If descriptor 3 is not regular, then the program presumes it is started
+under 
+.b cdb ,
+the Concurrent C program is forked off (and immediately pauses itself), and the 
+.b rcdbd 
+started process becomes the communication process.
+
+.pp
+The communication process first initializes the buffers and the clock, 
+then sends over
+the symbol and occurrence tables to the front end, and
+then waits for the first buffer from the monitors.
+
+.pp
+Meanwhile, the daemon process goes into a loop which looks
+for integers coming back from the front end over stderr, which it interprets 
+as signal integers, and signals the communication process.  By this
+mechanism, Command signals from the front end are sent over
+the stderr to the communication process.  The user
+processes changes their group id, and the communication process signals all
+of these processes at once with
+.b killpg .
+Currently, only stop and continue commands to the user processes are
+implemented.
+
+.sh + "Front End"
+
+.pp
+The 
+.b cdb
+front end is driven by events from the remote processes.  It first, as
+explained previously, tries to execute the remote programs with
+.b rcdb .
+If successful, it then executes one of two tight loops.  For tracing only,
+it executes a loop which merely transfers stdin, stdout, and stderr, and
+writes the packets into the specified file.  The other loop puts stdout and
+stderr to the proper windows, transfers stdin to the program (if the
+characters are not a command), and interprets the packets onto the screen.
+
+.pp
+Both of these loops use select statements.  In order to put a
+.b cdb
+in the background, which you might want to do particularily with a 
+.b "cdb -t" ,
+you have to first close the stdin with 
+.b ^D 
+or supply some input 
+(e.g., < /dev/null), or the process will stop for tty input.  The first choice
+allows you to type some initial input to the program, and still put it in the
+background.
+
+.sh +1 Static
+
+.pp
+The first "packets" from the communication process
+are tables of information.  These tables are
+managed by the
+.i static
+portion of
+.b cdb .
+First, the symbol table is received and simply stored.  All of the rest of
+the static information corresponds to particular process specs.  An entry is
+created for each spec which contains the information about the occurrences
+of each type (accept, create, etc.).
+.b cdb
+refers to this information to interpret tblock strings, determine the name
+of named events, and display the source location of the events.
+
+.sh + Dynamic
+
+.pp
+The dynamic portion of 
+.b cdb
+maintains a version of what the state of the Concurrent C program is.  There
+is one entry for each Concurrent C process.  (Contrast this with the static
+information, where there is one entry per process
+.i spec .)
+Each entry contains the tag associated with the process, the Unix and
+Concurrent C pids, the state of the process, the id of the last event
+involving the process, the process last interacted with, pointers into the
+static symbol table and information areas, and points for this process (a
+description of points follows).  The entries in the dynamic state of a
+process are changed whenever an packet affecting them arrives.
+
+.sh + Points
+
+.pp
+.b cdb
+has break and trace points to control display of the trace.  Each point
+corresponds to a menu entry (attached to the tag in the display window) as
+well as an occurrence in the occurrence tables.  Each dynamic entry has
+arrays of the same size as the occurrence arrays for that process type which
+indicate if the trace or break point is turned on.  Trace points are
+initialized on, break points are not.  After a packet is received and the
+states of the affected process uptdated, trace and break routines are called
+which lookup the trace and break points to determine if the display should
+be updated or stopped.
+
+.sh + "Flow Control"
+
+.pp
+The controls for starting, stopping, and stepping are implemented in a
+straighforward manner, complicated only by the addition of the throttle.
+
+.pp
+When
+.b cdb 
+is stopped, the select statement does not read the packet socket.  A
+step command allows the receipt of a packet, which is turned off again as
+soon as a packet arrives.  Running is slightly more complicated than stepping.
+Packets
+are only read after a timer has expired, which turns on reading 
+of the packet socket.  This timer is set to a minimum
+value for full speed, but when set at longer durations, allows slowing of
+the receipt of packets, therebye implementing the throttle.  The timer is
+restarted after the receipt of a packet if
+.b cdb
+is in running mode.
+
+.pp
+The starting and stopping of the Concurrent C program is implemented with
+SIGTSTP and SIGCONT signals, sent back over the stderr socket (see the
+preceding explanation in the 
+.b Communication 
+section).
+
+.sh + Command
+
+.pp
+The command cycles, menus, and buttons are implemented with Robert L.
+Brown's user-interface package for the BitGraph terminal.  
+
+.pp
+The 
+.i print
+function uses
+.b newulbg .
+
+.pp
+Points are available through a series of menus and submenus
+attached to the process tags.  Arrays are
+stored in the dynamic structure of each process which contain the values of
+the various points.  When a menu item is selected, the value of that point
+is toggled.
+
+.sh + Display
+
+.pp
+The display of 
+.b cdb
+also uses the BitGraph user-interface package for its windows and lines.
+
+.pp
+A line is drawn when a transaction is actually accepted, and erased when the
+treturn occurs.  
+The direction of the arrows run from transacting process to accepting
+process.  Of course, these the waiting process will be waiting both
+before and after the acceptance.  Sometimes, parameters do not appear even
+though the state is shown to be waiting on a transaction.  These invisible
+paramaters happen when the accepting process was already waiting.  The
+transacting process has had an
+.i "immediate service"
+event, and will have a
+.i "waiting transaction" 
+event shortly, which will display the parameters.
+
+.pp
+Treturn values have no event which occurs to signify that they are no longer
+useful.  They are displayed for one step.
+
+.pp
+As arbitraily long parameters are accepted by 
+.b cdb ,
+something must be done with any excess.  The excess is placed in the status
+window.
+
+.pp
+Space in the display window is allocated at 2 lines per process.  If there
+are more processes than screen space, extra processes are allocated off the
+bottom of the screen.  This results in state and parameters for all of these
+processes appearing on the last line of the display.  All lines indicating
+acceptance are drawn right off the bottom of the screen, to the ficticious
+process locations.
+
+.sh 1 Bugs
+
+.pp
+The packets should not get out of order, but if they do, 
+.b cdb 
+often gets confused and may begin spitting out errors in the status window
+like "Can't find...."
+
+.pp
+If there are more processes than buffers, a race condition can develop,
+albeit unlikely.
+
+.pp
+There is a problem if the user program opens a file.  The descriptor for the
+file and the packet socket get confused, and writes to the file trash the
+packet socket.  
+.b cdb
+can lock up when this happens.  Quite possibly, as an intermediate fix, the
+packet socket should be set to some descriptor like 18 rather than 3.
+
+.sh + Conclusion
+
+.pp
+This document is intended as a high-level description of how
+.b cdb
+works.  If you want to know how to use 
+.b cdb ,
+or about the writing of 
+.b cdb ,
+you should see one of the two companion documents.

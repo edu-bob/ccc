@@ -1,0 +1,5292 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.1
+date     86.06.30.16.51.00;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@original.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@----cut here----
+: To unbundle, sh this file
+echo gram.h 1>&2
+cat >gram.h <<'@@@@@@ Fin de gram.h'
+#include "btree.h"
+#include "cctypes.h"
+
+#define YYDEBUG 1
+#define save(x)		strcpy(x,yytext)
+
+int casenum,argnum,procnum= -1,proccontext=0,callprocnum,maxargnum,istimed=0;
+int selectnum=0,transid,thead=0,boxnum,shtypedefnum=0,accept_in_select;
+yystring procname,argname={'\0'},alias,acceptname;
+yystring idname,transname,dotname,errorstring;
+unsigned context=0;
+unsigned transnum,acceptnum,acceptnumgenerator=0;
+
+char typetrap[128];
+int typetrap_i;
+
+int yyerror();
+extern char *cctext;
+extern FILE *Fshared;
+
+/* statement types for context sensitive statement restrictions */
+#define NORMALSTAT	0
+#define PROCSTAT	1
+#define ACCEPTSTAT	2
+int stattype=NORMALSTAT;
+
+/* for installing numbers as names */
+char *itoa(i)
+int i;
+{
+    static char value[10];
+
+    sprintf(value,"%d",i);
+    return value;
+}
+/*--------------------------------------------------------------------------------*/
+/* PRINTING AND TRAPPING */
+
+char tbuf[1024];
+char ntf[128];
+int tbuf_i=0;
+char *trap_t;
+char ps[]="%s",pss[]="%s ";
+int trapping=0;
+
+#define start_trapping	{tbuf_i=0;trapping=1;linesynch();}
+#define end_trapping	{tbuf[tbuf_i]=0;printf(ps,tbuf);trapping=0;linesynch();}
+#define TP(x)	tbuf[tbuf_i++]=x
+#define TPY	{trap_t=yytext;while(tbuf[tbuf_i++]= *trap_t++);tbuf[tbuf_i-1]=' ';}
+#define pri(x)	{sprintf x ;trap_t=ntf;while(tbuf[tbuf_i++]= *trap_t++);\
+		tbuf[tbuf_i-1]=' ';}
+
+#define P(x)	putchar(x)
+#define PY	printf(pss,yytext)
+#define P2(a,b)	{P(a);P(b);}
+#define PSN	{P(';'); P('\n');}
+
+tinsert(s,i)
+char *s;
+int i;
+{
+    int l=tbuf_i-i;
+    int k=strlen(s);
+    char *u= &tbuf[tbuf_i];
+    char *v=u+k;
+while(l--)
+    *--v = *--u;
+while(*s)
+    *u++ = *s++;
+tbuf_i+=k;
+}
+/*--------------------------------------------------------------------------------*/
+/* TYPE CHASING FUNCTIONS */
+
+t_type type;
+unsigned context;
+extern int blocknum;
+t_type basic = {0,{e_badtag,0}};
+/*--------------------------------------------------------------------------------*/
+/* PROCESS FORMAL PARAMETER NAME STORAGE AND DECLARATION */
+
+int null_parameter_list();
+int remember_first_parameter_name();
+int remember_another_parameter_name();
+int declare_parameters();
+/*--------------------------------------------------------------------------------*/
+/* SHARED VARIABLE DECLARATION HANDLING */
+
+int shinit_var(),sh_array(),shinit_array(),box();
+@@@@@@ Fin de gram.h
+echo gram.y 1>&2
+cat >gram.y <<'@@@@@@ Fin de gram.y'
+%token IDENTIFIER STRING_LITERAL SIZEOF CONSTANT X_ASSIGN A_ASSIGN PTR_OP INC_OP
+
+%token TYPEDEF SSC STRUCT UNION ENUM BTYPE VOID TYPE_NAME
+
+%token CASE DEFAULT IF ELSE SWITCH WHILE DO FOR GOTO CONTINUE BREAK RETURN
+
+%token ACCEPT BODY BY CREATE DELAY IMMEDIATE OR OTHERWISE PRIORITY
+%token PROCESS SELECT SPEC TERMINATE TRANS TRETURN WITH WITHIN
+
+%token LABEL SHARED IS_NEW C_COUNT
+
+%{
+#include "gram.h"
+#define  YYSTYPE yystype
+%}
+
+%type   <y_trap>	primary_expr primary_expr2 dot transaction_call
+%type	<y_trap>	primary_expr2_h1
+%type	<y_type>	declarator declarator2 abstract_declarator2_h1
+%type	<y_type>	t_declarator t_declarator2 t_declarator3 t_declarator4
+%type	<y_type>	abstract_declarator  opt_abstract_declarator
+%type	<y_type>	abstract_declarator2 opt_abstract_declarator2
+%type	<y_type>	postfix_expr conditional_expr timed_transaction_call
+%type	<y_type>	unary_expr unary_expr_h1 cast_expr binary_expr
+%type	<y_type>	assignment_expr_h1 expr_h1 create_expr type_name
+%type	<y_type>	timed_transaction_call function_declarator
+%type	<y_type>	shared_declarator shared_declarator2 opt_functor
+%type	<y_type>	expr_abdec  opt_expr_abdec expr_abdec2 opt_expr_abdec2
+%type	<y_type>	expr_type_name init_declarator_stub
+%type	<y_int>		struct_or_union transaction_dot tagged_thing
+
+%left OR_OP
+%left AND_OP
+%left '|'
+%left '^'
+%left '&'
+%left EQ_OP
+%left REL_OP
+%left SHIFT_OP
+%left '+' '-'
+%left '*' '/' '%'
+
+%start CC_file
+%%
+
+CC_file
+	:	{printf("#include \"CC_kernel.h\"\n");}
+	  file
+	;
+
+process_body
+	: PROCESS BODY IDENTIFIER
+		{$<y_type>$=lookup_tag(yytext,e_process);
+		save(procname);
+		procnum=contextof($<y_type>$);
+		printf("CC_pid CC_%s_body(",procname);
+		}
+	  '(' opt_param_list ')' '{'
+		{printf("CC_priority)\n");
+		linesynch();
+		declare_parameters();
+		printf("int CC_priority;\n{\n");
+		linesynch();
+		stattype=PROCSTAT;
+		enterblock();
+		declare_var("c_mypid",e_var,func($<y_type>4));
+		}
+	  opt_declaration_list
+		{printf("\nif (CC_fork(CC_%s_numtrans,CC_priority))\n",procname);
+		printf("    return CC_childpid;\n");
+		forcelinesynch();
+		}
+	  opt_statement_list '}'
+		{exitblock();
+		procnum= -1;
+		printf("CC_complete();\n}\n");
+		}
+	;
+
+opt_param_list
+	:
+		{null_parameter_list();}
+	| param_list
+		{P(',');}
+	;
+
+param_list
+	: IDENTIFIER
+		{PY;
+		remember_first_parameter_name();
+		}
+	| param_list ',' IDENTIFIER
+		{P(',');
+		PY;
+		remember_another_parameter_name();
+		}
+	;
+
+process_spec
+	: process_spec_head process_spec_tail
+	;
+
+process_spec_head
+	: PROCESS SPEC IDENTIFIER
+		{save(procname);}
+	;
+
+process_spec_tail
+	:  IS_NEW IDENTIFIER
+		{t_type type;
+		type=lookup_tag(yytext,e_process);
+		declare_var(procname,e_complex,type);
+		printf("\n#define CC_%s_numtrans CC_%s_numtrans\n",
+		    procname,yytext);
+		forcelinesynch();
+		}
+	  ';'
+	| '('
+		{proccontext=declare_tag(procname,e_process);
+		sprintf(argname,"CC_%d%s_arg%%d",proccontext,procname);
+		argnum=1;
+		transid=0;
+		}
+	  opt_proc_type_list ')' trans_decs
+		{printf("\n#define CC_%s_numtrans %d\n",procname,transid);
+		printf("CC_pid CC_%s_body();\n",procname);
+		proccontext=0;
+		forcelinesynch();
+		}
+	;
+
+opt_proc_type_list
+	:
+	| proc_type_list
+	;
+
+proc_type_list
+	: proc_type_name
+	| proc_type_list ',' proc_type_name
+	;
+
+proc_type_name
+	:	{printf("typedef ");}
+	type_name
+		{PSN;
+		declare_var(itoa(argnum++),proccontext,$2);
+		}
+	;
+
+trans_decs
+	: '{' trans_decl_list '}' ';'
+	| ';'
+	;
+
+trans_decl_list
+	: trans_decl
+	| trans_decl_list trans_decl
+		{yyerrok;}
+	| error
+	| trans_decl_list error
+	;
+
+trans_decl
+	: TRANS
+		{printf("typedef ");}
+	  trans_return_type_specifier
+		{printf("CC_headvalue%d;\n",++thead);
+		linesynch();
+		}
+	  trans_decl_tail
+	;
+
+trans_decl_tail
+	: trans_declarator ',' trans_decl_tail
+	| trans_declarator ';'
+	;
+
+trans_declarator
+	:	{$<y_type>$=type;
+		printf("typedef struct {\nCC_headvalue%d ",thead);
+		linesynch();
+		}
+	  t_declarator
+		{PSN;
+		transnum=newtag();
+		declare_var("=",transnum,$2);		
+		$2.typespec.num=transnum;
+		declare_var(transname,proccontext,$2);
+		strcpy(argname,"arg%d");
+		argnum=1;
+		}
+	  '(' trans_type_list ')'
+		{static t_type numtype={0,{0,0}};
+		numtype.typespec.num= argnum-1;
+		printf("} CC_%d%s;\n",proccontext,transname);
+		printf("#define CC_%d%s_id %d\n",proccontext,transname,transid++);
+		declare_var("0",transnum,numtype);		
+		*argname='\0';
+		type=$<y_type>1;
+		linesynch();
+		}
+	  ;
+
+trans_type_list
+	: nonempty_type_list
+	|
+	;
+
+nonempty_type_list
+	: nonempty_type_list ',' type_name
+		{declare_var(itoa(argnum++),transnum,$3);
+		PSN;
+		linesynch();
+		}
+	| type_name
+		{declare_var(itoa(argnum++),transnum,$1);
+		PSN;
+		linesynch();
+		}
+	;
+
+t_declarator
+	: P.star t_declarator
+		{$$=ref($2);}
+	| t_declarator2
+		{$$=$1;}
+	;
+
+t_declarator2
+	: IDENTIFIER
+		{save(transname);
+		printf("value");
+		$$=type;
+		}
+	| P.lparen t_declarator3 P.rparen
+		{$$=$2;}
+	| t_declarator2 P.lbrack opt_constant_expr P.rbrack
+		{$$=ref($1);}
+	;
+
+t_declarator3
+	: P.star t_declarator3
+		{$$=ref($2);}
+	| t_declarator4
+		{$$=$1;}
+	;
+
+t_declarator4
+	: IDENTIFIER
+		{save(transname);
+		printf("value");
+		$$=type;
+		}
+	| P.lparen t_declarator3 P.rparen
+		{$$=$2;}
+	| t_declarator4 P.lbrack opt_constant_expr P.rbrack
+		{$$=ref($1);}
+	| t_declarator4 P.lparen opt_identifier_list P.rparen
+		{$$=func($1);}
+	;
+
+opt_expr
+	:
+	| expr
+	;
+
+declaration
+	: unshared_declaration
+	| typedef_declaration
+	| shared_declaration
+	;
+
+unshared_declaration
+	: declaration_specifiers P.semi
+	| declaration_specifiers init_declarator_list P.semi
+	;
+
+typedef_declaration
+	: TYPEDEF
+		{PY;}
+	  type_specifier typedef_declarator_list P.semi
+	;
+
+typedef_declarator_list
+	: typedef_init_declarator
+	| typedef_declarator_list P.comma typedef_init_declarator
+		{yyerrok;}
+	| error
+	| typedef_declarator_list error
+	| typedef_declarator_list error typedef_init_declarator
+		{yyerrok;}
+	| typedef_declarator_list P.comma error
+	;
+
+typedef_init_declarator
+	: declarator
+		{declare_typedef(idname,$1);
+		linesynch();
+		}
+	;
+
+ssc
+	: SSC
+		{PY;}
+	;
+
+declaration_specifiers
+	: ssc type_specifier
+	| ssc
+		{type=basic;}
+	| type_specifier
+	;
+
+init_declarator_list
+	: init_declarator
+	| init_declarator_list P.comma init_declarator
+		{yyerrok;}
+	| error
+	| init_declarator_list error
+	| init_declarator_list error init_declarator
+		{yyerrok;}
+	| init_declarator_list P.comma error
+	;
+
+init_declarator
+	: init_declarator_stub P.equals initializer
+	| init_declarator_stub
+	;
+
+init_declarator_stub
+	: declarator
+		{declare_var(idname,e_var,$1);
+		linesynch();
+		$$=$1;
+		}
+	;
+
+trans_return_type_specifier
+	:	{printf("int "); type=basic;}
+	| type_specifier
+	;
+
+type_specifier
+	: struct_or_union_specifier
+	| process_type_specifier
+	| enum_specifier
+	| TYPE_NAME	{PY; type=$<y_type>1;}
+	| BTYPE		{PY; type=basic;}
+	| VOID		{printf("int "); type=basic;}
+	;
+
+process_type_specifier
+	: PROCESS IDENTIFIER
+		{printf("CC_pid ");
+		if (proccontext)
+		    type=half_declare_tag(yytext,e_process);
+		else
+		    type=lookup_tag(yytext,e_process);
+		}
+	;
+
+struct_or_union_specifier
+	: struct_or_union
+		{/* unnamed new structure (or union) */
+		$<y_type>$=basic;
+		$<y_type>$.typespec.obj=$1;
+		$<y_type>$.typespec.num=context;
+		context=declare_tag(0,$1);
+		}
+	  struct_or_union_declaration
+		{/* restore context */
+		type=$<y_type>2;
+		type.typespec.num=context;
+		context=$<y_type>2.typespec.num;
+		}
+	| struct_or_union IDENTIFIER
+		{PY;
+		save(idname);
+		$<y_int>$=$1;
+		}
+	  struct_or_union_specifier_h1
+	;
+
+struct_or_union_specifier_h1
+	:	{/* named new structure */
+		$<y_type>$=basic;
+		$<y_type>$.typespec.obj=$<y_int>0;
+		$<y_type>$.typespec.num=context;
+		context=declare_tag(idname,$<y_int>0);
+		}
+	  struct_or_union_declaration
+		{/* restore context */
+		type=$<y_type>1;
+		type.typespec.num=context;
+		context=$<y_type>1.typespec.num;
+		}
+	|	{/* non-defining occurence; mutual recursion or already declared */
+		if (context)
+		    type=half_declare_tag(idname,$<y_int>0);
+		else
+		    type=lookup_tag(idname,$<y_int>0);
+		}
+	;
+
+struct_or_union_declaration
+	: P.lbrace struct_declaration_list P.rbrace
+	;
+
+struct_or_union
+	: STRUCT
+		{PY;
+		$$=e_struct;
+		}
+	| UNION
+		{PY;
+		$$=e_union;
+		}
+	;
+
+struct_declaration_list
+	: struct_declaration
+	| struct_declaration_list struct_declaration
+		{yyerrok;}
+	| error
+	| struct_declaration_list error
+	;
+
+struct_declaration
+	: type_specifier struct_declarator_list P.semi
+	;
+
+struct_declarator_list
+	: struct_declarator
+	| struct_declarator_list P.comma struct_declarator
+		{yyerrok;}
+	| error
+	| struct_declarator_list error
+	| struct_declarator_list error struct_declarator
+		{yyerrok;}
+	| struct_declarator_list P.comma error
+	;
+
+struct_declarator
+	: declarator
+		{declare_var(idname,context,$1);}
+	  opt_width_doodad
+	| P.colon constant_expr
+	;
+
+opt_width_doodad
+	:
+	| P.colon constant_expr
+	;
+
+enum_specifier
+	: ENUM
+		{PY;}
+	  enum_specifier_h1
+		{type=basic;}
+	;
+
+enum_specifier_h1
+	: P.lbrace enumerator_list P.rbrace
+	| IDENTIFIER
+		{PY;}
+	  P.lbrace enumerator_list P.rbrace
+	| IDENTIFIER
+		{PY;}
+	;
+
+enumerator_list
+	: enumerator
+	| enumerator_list P.comma enumerator
+	;
+
+enumerator
+	: IDENTIFIER
+		{PY;
+		declare_var(yytext,e_var,e_basic);
+		}
+	  opt_enum_value_fixer
+	;
+
+opt_enum_value_fixer
+	:
+	| P.equals constant_expr /*%%% ENFORCE no trans in const expr! */
+	;
+
+declarator
+	: P.star declarator
+		{$$=ref($2);}
+	| declarator2
+		{$$=$1;}
+	;
+
+declarator2
+	: IDENTIFIER
+		{PY;
+		save(idname);
+		$$=type;
+		}
+	| P.lparen declarator P.rparen
+		{$$=$2;}
+	| declarator2 P.lbrack opt_constant_expr P.rbrack
+		{$$=ref($1);}
+	| declarator2 P.lparen opt_identifier_list P.rparen
+		{$$=func($1);}
+	;
+
+shared_declaration
+	: SHARED
+		{extern int blocknum,localsharedp;
+		if (blocknum)
+		    localsharedp=1;
+		printf("typedef ");
+		}
+	  type_specifier
+		{printf(" CC_shtypedef%d;\nCC_shtypedef%d ",
+		    shtypedefnum,shtypedefnum);
+		linesynch();
+		}
+	  shared_init_declarator_list P.semi
+		{shtypedefnum++;}
+	;
+
+shared_init_declarator_list
+	: shared_init_declarator
+	| shared_init_declarator_list P.comma shared_init_declarator
+		{yyerrok;}
+	| error
+	| shared_init_declarator_list error
+	| shared_init_declarator_list error shared_init_declarator
+		{yyerrok;}
+	| shared_init_declarator_list P.comma error
+	;
+
+shared_init_declarator
+	:	{typetrap_i=0;
+		boxnum=0;
+		}
+	  shared_declarator
+		{declare(idname,e_var,$2,(*alias ? alias : 0));
+		typetrap[typetrap_i]='\0';
+		switch(boxnum) {
+		    int j;
+		case 0:
+		    fprintf(Fshared,"%s = (CC_shtypedef%d %s) ",
+		        idname,shtypedefnum,typetrap);
+		    fprintf(Fshared,"shmalloc(sizeof(*%s));\n",idname);
+		    break;
+		case 1:
+		    fprintf(Fshared,"%s = (CC_shtypedef%d %s) ",
+		        idname,shtypedefnum,typetrap);
+		    fprintf(Fshared,"shmalloc(CC_c[1] * sizeof(*%s));\n",idname);
+		    break;
+		default:
+		    fprintf(Fshared,"CC_n=1;\n");
+		    fprintf(Fshared,"for (CC_j=1;CC_j<%d;CC_j++)\n",boxnum);
+		    fprintf(Fshared,"    CC_n *= CC_c[CC_j];\n");
+		    fprintf(Fshared,"CC_ss = CC_c[%d] * sizeof(",boxnum);
+		    for (j=1;j<=boxnum;j++)
+			fputc('*',Fshared);
+		    fprintf(Fshared,"%s);\n",idname);
+		    fprintf(Fshared,"CC_s = shmalloc(CC_n * CC_ss);\n");
+		    fprintf(Fshared,"for (CC_j=0;CC_j<CC_n;CC_j++,CC_s+=CC_ss)\n(");
+		    for (j=1;j<=boxnum-2;j++)
+			fputc('*',Fshared);
+		    fprintf(Fshared,"%s)[CC_j] = (CC_shtypedef%d %s) CC_s;\n",
+		        idname,shtypedefnum,typetrap);
+		    break;
+		} /* end of switch */
+		linesynch();
+		}
+	;
+
+shared_declarator
+	: F.star shared_declarator
+		{$$=ref($2);}
+	| shared_declarator2
+		{$$=$1;}
+	;
+
+shared_declarator2
+	: lookahead_identifier
+		{sprintf(alias,"(*%s)",idname);
+		printf(alias);
+		typetrap[typetrap_i++]='*';
+		$$=type;
+		}
+	  opt_functor
+		{$$=$3;}
+	| lookahead_identifier '['
+		{*alias='\0';
+		printf("*%s",idname);
+		typetrap[typetrap_i++]='*';
+		}
+	  boxes
+		{int j=boxnum;
+		$$=type;
+		while (j--)
+		    $$=ref($$);
+		}
+	| F.lparen shared_declarator F.rparen
+		{$$=$2;}
+	  opt_functor
+		{$$=$5;}
+	;
+
+opt_functor
+	:	{$$=$<y_type>0;}
+	| F.lparen F.rparen
+		{$$=func($<y_type>0);}
+	;
+
+boxes
+	: box '['
+		{P('[');
+		end_trapping;
+		P(']');
+		}
+	  boxes
+	| box
+		{*tbuf=0;
+		end_trapping;
+		}
+	;
+
+box
+	:
+		{start_trapping;}
+	  expr_h1 ']'
+		{tbuf[tbuf_i]='\0';
+		fprintf(Fshared,"CC_c[%d] = %s;\n",++boxnum,tbuf);
+		}
+	;
+
+F.star
+	: '*'
+		{P('*'); typetrap[typetrap_i++]='*';}
+	;
+
+F.lparen
+	: '('
+		{P('('); typetrap[typetrap_i++]='(';}
+	;
+
+F.rparen
+	: ')'
+		{P(')'); typetrap[typetrap_i++]=')';}
+	;
+
+opt_constant_expr
+	:
+	| constant_expr
+	;
+
+opt_identifier_list
+	:
+	| identifier_list
+	;
+
+identifier_list
+	: IDENTIFIER
+		{PY;}
+	| identifier_list P.comma IDENTIFIER
+		{PY; yyerrok;}
+	| error
+	| identifier_list error
+	| identifier_list error IDENTIFIER
+		{PY; yyerrok;}
+	| identifier_list P.comma error
+	;
+
+type_name
+	: type_specifier opt_abstract_declarator
+		{$$=$2;}
+	;
+
+abstract_declarator
+	: P.star opt_abstract_declarator
+		{$$=ref($2);}
+	| abstract_declarator2
+		{$$=$1;}
+	;
+
+opt_abstract_declarator
+	: P.star opt_abstract_declarator
+		{$$=ref($2);}
+	| opt_abstract_declarator2
+		{$$=$1;}
+	;
+
+opt_abstract_declarator2
+	:	{printf(argname,argnum);
+		$$=type;
+		}
+	| abstract_declarator2
+		{$$=$1;}
+	;
+
+abstract_declarator2
+	: opt_abstract_declarator2 P.lbrack opt_constant_expr P.rbrack
+		{$$=ref($1);}
+	| abstract_declarator2 P.lparen P.rparen
+		{$$=func($1);}
+	| P.lparen abstract_declarator2_h1
+		{$$=$2;}
+	;
+
+abstract_declarator2_h1
+	: ')'
+		{printf(argname,argnum);
+		P(')');
+		P('(');
+		P(')');
+		$$=func(type);
+		}
+	| abstract_declarator P.rparen
+		{$$=$1;}
+	;
+
+initializer
+	: assignment_expr
+	| P.lbrace initializer_list initializer_h1
+	;
+
+initializer_h1
+	: P.rbrace
+	| P.comma P.rbrace
+	;
+
+initializer_list
+	: initializer
+	| initializer_list P.comma initializer
+	;
+
+statement
+	: compound_statement
+	| return_statement
+	| labeled_statement
+	| expression_statement
+	| switch_statement
+	| if_statement
+	| iteration_statement
+	| jump_statement
+	| delay_statement
+	| process_only_statement
+		{if (stattype == NORMALSTAT)
+		    yyerror("statement illegal outside process body");
+		}
+	| treturn_statement
+		{if (stattype != ACCEPTSTAT)
+		    yyerror("statement illegal outside accept statement");
+		}
+	;
+
+process_only_statement
+	: select_statement
+	| terminate_statement
+	| accept_statement
+	;
+
+compound_statement
+	: P.lbrace compound_statement_h1 P.rbrace
+	;
+
+compound_statement_h1
+	: opt_statement_list
+	|	{enterblock();}
+	  declaration_list opt_statement_list
+		{exitblock();}
+	;
+
+opt_statement_list
+	: 
+	| opt_statement_list statement
+	;
+
+opt_declaration_list
+	:
+	| declaration_list
+	;
+
+declaration_list
+	: declaration_list_h1
+		{includeshared();}
+	;
+
+declaration_list_h1
+	: declaration
+	| declaration_list_h1 declaration
+		{yyerrok;}
+	| error
+	| declaration error
+	;
+
+treturn_statement
+	: TRETURN ';'
+		{printf("goto CC_treturn%d;\n",acceptnum);}
+	| TRETURN
+		{printf("{\n((CC_%d%s *)CC_tblock%d)->value = ",
+			procnum,acceptname,acceptnum);
+		}
+	  expr ';' 
+		{printf(";\ngoto CC_treturn%d;\n}\n",acceptnum);
+		linesynch();
+		}
+	;
+
+delay_statement
+	: DELAY
+	 	{printf("CC_delay((double)(");}
+	  expr ';'
+		{printf("));\n");}
+	;
+
+select_statement
+	: SELECT '{'
+		{casenum=0; /* BUG: THIS WILL NOT WORK FOR NESTED SELECTS... */
+		selectnum++;
+		printf("{\nCC_selectinit();\n");
+		printf("goto CC_guard%d_1; CC_choose%d: switch(CC_choose()) {",
+		    selectnum,selectnum);
+		forcelinesynch();
+		}
+	  alternative opt_ors opt_other '}'
+		{printf("\n}\ngoto CC_endselect%d;\nCC_guard%d_%d: ",
+		    selectnum,selectnum,casenum+1);
+		printf("goto CC_choose%d;\nCC_endselect%d:;\n}\n",
+		    selectnum,selectnum);
+		forcelinesynch();
+		}
+	;
+
+alternative
+	:
+		{printf("CC_guard%d_%d :",selectnum,++casenum);
+		linesynch();
+		}
+	  opt_guard alternative_stat
+		{printf("break; ");
+		linesynch();
+		}
+	;
+
+opt_guard
+	: '('
+		{printf("if ((");}
+	  expr ')' ':'
+		{printf(") && ");}
+	|	{printf("if (");}
+	;
+
+alternative_stat
+	: TERMINATE ';'
+		{printf("1) CC_terminate_exists=1; goto CC_guard%d_%d;\n",
+		    selectnum,casenum+1);
+		forcelinesynch();
+		}
+	| IMMEDIATE
+		{printf("!CC_ichoice) CC_ichoice=%d; goto CC_guard%d_%d;\ncase %d:",
+		    casenum,selectnum,casenum+1,casenum);
+		forcelinesynch();
+		}
+	  statement opt_statement_list
+	| DELAY
+		{printf("(CC_trydelay=(");}
+	  expr ';'
+		{printf("))>=0)\nif (!CC_dchoice || CC_bestdelay>CC_trydelay) {\n");
+		printf("CC_dchoice=%d;\nCC_bestdelay=CC_trydelay;\n}\n",casenum);
+		printf("goto CC_guard%d_%d;\ncase %d:",selectnum,casenum+1,casenum);
+		forcelinesynch();
+		}
+	  opt_statement_list
+	| accept_head
+		{printf("(CC_accept_exists=1,CC_tryaccept(CC_%d%s_id,%d)))\n",
+		    procnum,acceptname,casenum);
+		printf("goto CC_choose%d;\n",selectnum);
+		printf("goto CC_guard%d_%d;\ncase %d:",selectnum,casenum+1,casenum);
+		accept_in_select=1;
+		forcelinesynch();
+		}
+	  accept_tail opt_statement_list
+	;
+
+opt_ors
+	:
+	| OR alternative opt_ors
+	;
+
+opt_other
+	: OTHERWISE
+		{printf("CC_guard%d_%d :",selectnum,++casenum);
+		printf("CC_ochoice=%d; goto CC_guard%d_%d;\ncase %d:",
+		    casenum,selectnum,casenum+1,casenum);
+		forcelinesynch();
+		}
+	  statement opt_statement_list
+		{printf("break; ");
+		forcelinesynch();
+		}
+	|
+	;
+
+terminate_statement
+	: TERMINATE ';'
+		{printf("c_abort(CC_mypid);\n");
+		linesynch();
+		}
+	;
+
+accept_statement
+	: accept_head accept_tail
+	;
+
+accept_head
+	: ACCEPT IDENTIFIER
+		{t_type type;
+		save(acceptname);
+		type=lookup_var(acceptname,procnum,
+		    "%s is not a transaction of this process",acceptname);
+		transnum=contextof(type);
+		accept_in_select=0;
+		}
+	;
+
+accept_tail:
+		{enterblock();
+		$<y_int>$=acceptnum;
+		acceptnum=acceptnumgenerator++;
+		printf("{\nCC_tblock CC_tblock%d;\n",acceptnum);
+		argnum=0;
+		maxargnum=contextof(internal_lookup("0",transnum));
+		linesynch();
+		}
+	  '(' opt_accept_identifier_list ')'
+		{if (argnum<maxargnum)
+		    yyerror("too few parameters in accept statement");
+		$<y_int>$=stattype;
+		stattype=ACCEPTSTAT;
+		forcelinesynch();
+		}
+	  opt_by opt_compound_statement
+		{exitblock();
+		printf("CC_treturn%d: CC_treturn();\n}\n",acceptnum);
+		acceptnum=$<y_int>1;
+		stattype=$<y_int>5;
+		forcelinesynch();
+		}
+	;
+
+opt_accept_identifier_list
+	:
+	| accept_identifier_list
+	;
+
+accept_identifier_list
+	: accept_identifier
+	| accept_identifier_list ',' accept_identifier
+	;
+
+accept_identifier
+	: IDENTIFIER
+		{sprintf(alias,"((CC_%d%s *)CC_tblock%d)->arg%d",
+			procnum,acceptname,acceptnum,++argnum);
+		if (argnum <= maxargnum)
+		    declare(yytext,e_var,internal_lookup(itoa(argnum),transnum),
+			alias);
+		else if (argnum == maxargnum+1)
+		    yyerror("too many parameters in accept statement");
+		linesynch();
+		}
+opt_by
+	:	{printf("CC_accept(CC_%d%s_id,&CC_tblock%d,0,%d);\n",
+			procnum,acceptname,acceptnum,accept_in_select);
+		linesynch();
+		}
+	| BY	{printf("CC_accept(CC_%d%s_id,&CC_tblock%d,1,%d);\n",
+			procnum,acceptname,acceptnum,accept_in_select);
+		printf("while(CC_acceptby((double)(");
+		linesynch();
+		}
+	  expr
+		{printf(")));\n");
+		linesynch();
+		}
+	;
+
+opt_compound_statement
+	: ';'
+	| compound_statement
+	;
+
+labeled_statement
+	: LABEL
+		{PY;}
+	  the_labeled_statement
+	| DEFAULT
+		{PY;}
+	  the_labeled_statement
+	| CASE
+		{PY;}
+	  constant_expr the_labeled_statement
+	;
+
+the_labeled_statement
+	: P.colon statement
+	;
+
+expression_statement
+	: opt_expr P.semi
+	;
+
+switch_statement
+	: SWITCH {PY;} P.lparen expr P.rparen statement
+	;
+
+if_statement
+	: IF {PY;} P.lparen expr P.rparen statement else_statement
+	;
+
+else_statement
+	:
+	| ELSE {PY;} statement
+	;
+
+iteration_statement
+	: while_part statement
+	| DO {PY;} statement while_part
+	| FOR {PY;} P.lparen
+	  opt_expr  P.semi
+	  opt_expr  P.semi
+	  opt_expr  P.rparen
+	;
+
+while_part
+	: WHILE {PY;} P.lparen expr P.rparen
+	;
+
+jump_statement
+	: GOTO {PY;} IDENTIFIER {PY;} P.semi
+	| CONTINUE {PY;} P.semi
+	| BREAK {PY;} P.semi
+	;
+
+return_statement
+	: RETURN
+		{if (stattype==NORMALSTAT)
+		    PY;
+		}
+	  return_opt_expr ';'
+		{switch (stattype) {
+		case NORMALSTAT:
+		    PSN;
+		    break;
+		case ACCEPTSTAT:
+		    yyerror("return not allowed in accept statement body");
+		    break;
+		case PROCSTAT:
+		    puts("CC_complete();");
+		    break;
+		}
+		linesynch();
+		}
+	;
+
+return_opt_expr
+	:
+	| expr
+		{if (stattype != NORMALSTAT) {
+		    yyerror("illegally supplied return value in process body");
+		    PSN;
+		    }
+		}
+	;
+
+file
+	:	{type=basic;}
+	  external_definition
+	| file
+		{type=basic;}
+	  external_definition
+		{yyerrok;}
+	| error
+	| file error
+	;
+
+external_definition
+	: function_definition
+	| declaration
+	| process_body
+	| process_spec
+	;
+
+function_definition
+	: function_declarator
+		{stattype=NORMALSTAT;}
+	  function_body
+	;
+
+function_declarator
+	: declaration_specifiers init_declarator_stub
+		{$$=$2;}
+	| init_declarator_stub
+		{$$=$1;}
+	;	
+
+function_body
+	: compound_statement
+	|	{enterblock();}
+	  declaration_list compound_statement
+		{exitblock();}
+	;
+
+lookahead_identifier
+	: IDENTIFIER
+		{strcpy(idname,yytext);
+		if (cctext==yytext)
+		    cctext=idname;
+		}
+	;
+
+P.lbrack
+	: '[' {P('[');}
+	;
+P.rbrack
+	: ']' {P(']');}
+	;
+P.lparen
+	: '(' {P('(');}
+	;
+P.rparen
+	: ')' {P(')');}
+	;
+P.star
+	: '*' {P('*');}
+	;
+P.comma
+	: ',' {P(',');}
+	;
+P.equals
+	: '=' {P('=');}
+	;
+P.lbrace
+	: '{' {P('{');}
+	;
+P.colon
+	: ':' {P(':');}
+	;
+P.rbrace
+	: '}' {P('}');}
+	;
+P.semi
+	: ';' {P(';');}
+	;
+expr
+	: {start_trapping;} expr_h1 {end_trapping;}
+	;
+
+assignment_expr
+	: {start_trapping;} assignment_expr_h1 {end_trapping;}
+	;
+
+constant_expr
+	: {start_trapping;} conditional_expr {end_trapping;}
+	;
+
+  /*******************************************************************/
+ /* the following, and only the following, participate in trapping. */
+/*******************************************************************/
+
+create_expr
+	: CREATE IDENTIFIER
+		{$<y_type>$=lookup_tag(yytext,e_process);
+		pri((ntf,"CC_%s_body",yytext));
+		TP('(');
+		}
+	  '(' create_opt_argument_expr_list ')' opt_with_clause
+		{TP(')');
+		$$=$<y_type>3;
+		}
+	;
+
+opt_with_clause
+	:
+		{TP('0');}
+	| WITH PRIORITY '('
+		{TP('(');}
+	  expr_h1 ')'
+		{TP(')');}
+	;
+
+create_opt_argument_expr_list
+	:
+	| argument_expr_list {TP(',');}
+	;
+
+primary_expr
+	: primary_expr2
+		{$$=$1;}
+	| dot
+		{TP('.');
+		pri((ntf,"%s ",dotname));
+		$$.a=$1.a;
+		$$.z=tbuf_i;
+		$$.t=$1.t;
+		}
+	;
+
+dot
+	: primary_expr '.' IDENTIFIER
+		{save(dotname);
+		callprocnum=contextof($1.t);
+		$$.t=lookup_var(dotname,callprocnum,
+		    "nonexistent field or transaction %s",dotname);
+		$$.a=$1.a;
+		$$.z=$1.z;
+		}
+	;
+
+primary_expr2
+	: lookahead_identifier
+		{$$.a=tbuf_i;
+		pri((ntf,cctext));
+		$$.z=tbuf_i;
+		$$.t=lookup_last(idname);
+		}
+	| primary_expr2_h1
+		{$$=$1;}
+	;
+
+primary_expr2_h1
+	: CONSTANT
+		{$$.a=tbuf_i;
+		TPY;
+		$$.z=tbuf_i;
+		$$.t=basic;
+		}
+	| STRING_LITERAL
+		{$$.a=tbuf_i;
+		TPY;
+		$$.z=tbuf_i;
+		$$.t=ref(basic);
+		}
+	| '('
+		{$$.a=tbuf_i;
+		TP('(');
+		}
+	  expr_h1 ')'
+		{TP(')');
+		$$.z=tbuf_i;
+		$$.t=$3;
+		}
+	| primary_expr '['
+		{TP('[');}
+	  expr_h1 ']'
+		{TP(']');
+		$$.a=$1.a;
+		$$.z=tbuf_i;
+		$$.t=array($1.t,$4);
+		}
+	| primary_expr PTR_OP IDENTIFIER
+		{pri((ntf,"->%s",yytext));
+		$$.t=lookup_var(yytext,contextof(deref($1.t)),
+		    "nonexistent field or transaction %s",yytext);
+		$$.a=$1.a;
+		$$.z=tbuf_i;
+		}
+	| primary_expr2_h1 '('
+		{TP('(');}
+	  opt_argument_expr_list ')'
+		{TP(')');
+		$$.a=$1.a;
+		$$.z=tbuf_i;
+		$$.t=defunc($1.t);
+		}
+	| lookahead_identifier
+		{$<y_trap>$.t=half_declare_func(idname);
+		$<y_trap>$.a=tbuf_i;
+		pri((ntf,cctext));
+		TP('(');
+		}
+	  '(' opt_argument_expr_list ')'
+		{TP(')');
+		$$.a=$<y_trap>2.a;
+		$$.z=tbuf_i;
+		$$.t=defunc($<y_trap>2.t);
+		}
+	| C_COUNT '('
+		{$<y_int>$=tbuf_i;
+		pri((ntf,"c_count("));
+		}
+	  assignment_expr_h1 ',' IDENTIFIER
+		{$<y_int>$=contextof($4);
+		pri((ntf,"CC_%d%s_id)",$<y_int>$,yytext));
+		lookup_var(yytext,$<y_int>$,"nonexistent transaction %s",yytext);
+		}
+	  ')'
+		{$$.a=$<y_int>3;
+		$$.z=tbuf_i;
+		$$.t=basic;
+		}
+	| transaction_call
+		{$$=$1;}
+	;
+
+opt_argument_expr_list
+	:
+	| argument_expr_list
+	;
+
+argument_expr_list
+	: assignment_expr_h1
+	| argument_expr_list ',' {TP(',');} assignment_expr_h1
+	;
+
+postfix_expr
+	: primary_expr
+		{$$=$1.t;}
+	| primary_expr INC_OP
+		{TPY;
+		$$=inc($1.t);
+		}
+	;
+
+unary_expr
+	: postfix_expr
+		{$$=$1;}
+	| INC_OP
+		{TPY;}
+	  unary_expr
+		{$$=inc($3);}
+	| '*'
+		{TP('*');}
+	  cast_expr
+		{$$=deref($3);}
+	| '&'
+		{TP('&');}
+	  cast_expr
+		{$$=addr($3);}
+	| unary_op
+		{TPY;}
+	  cast_expr
+		{$$=basic;}
+	| SIZEOF
+		{TPY;}
+	  unary_expr_h1
+		{$$=basic;}
+	| create_expr
+		{$$=$1;}
+	;
+
+unary_expr_h1
+	: unary_expr
+	| '('
+		{$<y_int>$=argnum;
+		argnum=0;
+		TP('(');
+		}
+	  expr_type_name ')'
+		{argnum=$<y_int>2;
+		TP(')');
+		}
+	;
+
+unary_op
+	: '!'
+	| '~'
+	| '+'
+	| '-'
+	;
+
+cast_expr
+	: unary_expr
+		{$$=$1;}
+	| '('
+		{$<y_int>$=argnum;
+		argnum=0;
+		TP('(');
+		}
+	  expr_type_name ')'
+		{argnum=$<y_int>2;
+		TP(')');
+		}
+	  cast_expr
+		{$$=$3;
+		}
+	;
+
+binary_expr
+	: cast_expr
+		{$$=$1;}
+	| binary_expr '+'
+		{TP('+');}
+	  binary_expr
+		{$$=add($1,$4);}
+	| binary_expr '-'
+		{TP('-');}
+	  binary_expr
+		{$$=subtract($1,$4);}
+	| binary_expr OR_OP	{TPY;} binary_expr {$$=arith($1,$4);}
+	| binary_expr AND_OP	{TPY;} binary_expr {$$=arith($1,$4);}
+	| binary_expr '|'	{TPY;} binary_expr {$$=arith($1,$4);}
+	| binary_expr '^'	{TPY;} binary_expr {$$=arith($1,$4);}
+	| binary_expr '&'	{TPY;} binary_expr {$$=arith($1,$4);}
+	| binary_expr SHIFT_OP	{TPY;} binary_expr {$$=arith($1,$4);}
+	| binary_expr '*'	{TPY;} binary_expr {$$=arith($1,$4);}
+	| binary_expr '/'	{TPY;} binary_expr {$$=arith($1,$4);}
+	| binary_expr '%'	{TPY;} binary_expr {$$=arith($1,$4);}
+	| binary_expr EQ_OP	{TPY;} binary_expr {$$=compare($1,$4);}
+	| binary_expr REL_OP	{TPY;} binary_expr {$$=compare($1,$4);}
+	;
+
+conditional_expr
+	: binary_expr
+		{$$=$1;}
+	| binary_expr '?'
+		{TP('?');}
+	  binary_expr ':'
+		{TP(':');}
+	  conditional_expr
+		{$$=condition($4,$7,"type clash in conditional statement");}
+	| timed_transaction_call
+		{$$=$1;}
+	;
+
+transaction_call
+	: transaction_dot /* BUG: TRANSACTION CALLS WILL NOT NEST */
+		{if (argnum < maxargnum)
+		    yyerror("too few parameters in transaction call");
+		pri((ntf,"CC_tcall(),\n"));
+		pri((ntf,"((CC_%d%s *)CC_mytblock)->value)",
+		    callprocnum,transname));
+		$$.a=$1;
+		$$.z=tbuf_i;
+		$$.t=internal_lookup("=",transnum);	/* return type */
+		}
+	;
+
+transaction_dot
+	: dot
+		{/* nesting will not work: look at transnum, istimed, &c. */
+		strcpy(transname,dotname);
+		transnum=contextof($1.t);
+		argnum=0;
+		maxargnum=contextof(internal_lookup("0",transnum));
+		if (istimed)
+		    tinsert("CC_tcallinit(",$1.a);
+		else
+		    tinsert("(CC_tcallinit(",$1.a);
+		pri((ntf,",CC_%d%s_id),\n",callprocnum,transname));
+		}
+	  '(' opt_tcall_argument_expr_list ')'
+		{$$=$1.a;}
+	;
+
+opt_tcall_argument_expr_list
+	:
+	| tcall_argument_expr_list
+	;
+
+tcall_argument_expr_list
+	: tcall_assignment_expr
+	| tcall_argument_expr_list ',' tcall_assignment_expr
+	;
+
+tcall_assignment_expr
+	:	{argnum++;
+		if (argnum > maxargnum)
+		    yyerror("too many parameters in transaction call");
+		pri((ntf,"((CC_%d%s *)CC_mytblock)->arg%d=",
+		    callprocnum,transname,argnum));
+		$<y_type>$=internal_lookup(itoa(argnum),transnum);
+		}
+	  assignment_expr_h1
+		{TP(',');
+		TP('\n');
+		assign($<y_type>1,$2,"type clash in transaction call");
+		}
+	;
+
+timed_transaction_call
+	: WITHIN
+		{pri((ntf,"(CC_remember_time("));}
+	  binary_expr '?'
+		{pri((ntf,"),\n"));
+		istimed=1;
+		}
+	  transaction_dot ':'
+		{istimed=0;
+		if (argnum < maxargnum)
+		    yyerror("too few parameters in transaction call");
+		pri((ntf,"(CC_timedtcall() ?\n"));
+		pri((ntf,"((CC_%d%s *)CC_mytblock)->value :\n(",
+		    callprocnum,transname));
+		}
+	  conditional_expr
+		{pri((ntf,")))"));
+		$$=condition($9,internal_lookup("=",transnum),
+		    "type clash in timed transaction call alternative");
+		}
+	;
+
+assignment_expr_h1
+	: conditional_expr
+		{$$=$1;}
+	| unary_expr '='
+		{TPY;}
+	  assignment_expr_h1
+		{$$=assign($1,$4,"type clash in assignment statement");}
+	| unary_expr X_ASSIGN
+		{TPY;}
+	  assignment_expr_h1
+		{$$=arithassign($1,$4);}
+	| unary_expr A_ASSIGN
+		{TPY;}
+	  assignment_expr_h1
+		{$$=addassign($1,$4);}
+	;
+
+expr_h1
+	: ignoreable_commas assignment_expr_h1
+		{$$=$2;}
+	;
+
+ignoreable_commas
+	:
+	| ignoreable_commas assignment_expr_h1 ','
+		{TP(',');
+		TP('\n');
+		}
+	;
+
+expr_type_name
+	: expr_type_specifier opt_expr_abdec
+		{$$=$2;}
+	;
+
+expr_type_specifier
+	: tagged_thing IDENTIFIER
+		{if ($1 != e_process)
+		    TPY;
+		if ($1 == e_basic)
+		    type=basic;
+		else
+		    type=lookup_tag(yytext,$1);
+		}
+	| TYPE_NAME	{TPY; type=$<y_type>1;}
+	| BTYPE		{TPY; type=basic;}
+	| VOID		{pri((ntf,"int ")); type=basic;}
+	;
+
+tagged_thing
+	: STRUCT
+		{TPY;
+		$$=e_struct;
+		}
+	| UNION
+		{TPY;
+		$$=e_union;
+		}
+	| PROCESS
+		{pri((ntf,"CC_pid "));
+		$$=e_process;
+		}
+	| ENUM
+		{TPY;
+		$$=e_basic;
+		}
+	;
+
+opt_expr_abdec
+	:	{$$=type;}
+	| expr_abdec
+		{$$=$1;}
+	;
+
+opt_expr_abdec2
+	:	{$$=type;}
+	| expr_abdec2
+		{$$=$1;}
+	;
+
+expr_abdec
+	: '*'
+		{TP('*');}
+	  opt_expr_abdec
+		{$$=ref($3);}
+	| expr_abdec2
+		{$$=$1;}
+	;
+
+expr_abdec2
+	: '(' ')'
+		{$$=func(type);
+		TP('(');
+		TP(')');
+		}
+	| expr_abdec2 '(' ')'
+		{$$=func($1);
+		TP('(');
+		TP(')');
+		}
+	| opt_expr_abdec2 '['
+		{TP('[');}
+	  expr_abdec2_h1
+		{TP(']');
+		$$=ref($1);
+		}
+	| '('
+		{TP('(');}
+	  expr_abdec ')'
+		{TP(')');
+		$$=$3;
+		}
+	;
+
+expr_abdec2_h1
+	: conditional_expr ']'
+	| ']'
+	;
+
+%%
+@@@@@@ Fin de gram.y
+echo scan.l 1>&2
+cat >scan.l <<'@@@@@@ Fin de scan.l'
+D	[0-9]
+L	[a-zA-Z_]
+H	[a-fA-F0-9]
+E	[Ee][+-]?{D}+
+LS	(l|L)
+US	(u|U)
+W	[ \t\v\f]
+ASP	(">>"|"<<"|"*"|"/"|"%"|"&"|"^"|"|")
+ID	{L}({L}|{D})*
+PR	("pragma"{W}+)
+SEMI	({W}*\;)
+
+%{
+#include <stdio.h>
+#include "y.tab.h"
+
+/* routines and variables defined in aux.c */
+typedef char yystring[YYLMAX];
+int ident(),label(),count(),fix_CC(),comment(),linesynch(),nextline();
+extern int linenum;
+extern yystring filename;
+
+/* external variables for pragmas */
+extern int yydebug;
+extern int map;
+extern int linesynchp;
+
+/* export of input() */
+int exportinput()
+{
+    return input();
+}
+
+%}
+%p 6000
+%n 1250
+%e 1250
+
+%%
+"/*"			{ comment(); }
+^"# "{D}+.*$		{ sscanf(yytext+2,"%d%s",&linenum,filename);
+			  forcelinesynch();
+			}
+^"#"$|^"#"[^ ].*$	{ count(); /* ignore other preprocessor commands */ }
+{PR}yydebug{SEMI}	{ yydebug=1; count(); }
+{PR}noyydebug{SEMI}	{ yydebug=0; count(); }
+{PR}map{SEMI}		{ map=1; count(); }
+{PR}nomap{SEMI}		{ map=0; count(); }
+{PR}linesynch{SEMI}	{ linesynchp=1; count(); }
+{PR}nolinesynch{SEMI}	{ linesynchp=0; count(); }
+{PR}linesynch{W}*{D}+{SEMI} { sscanf(yytext+6,"%*s%d",&linesynchp); count(); }
+"accept"		{ count(); return(ACCEPT); }
+"body"			{ count(); return(BODY); }
+"break"			{ count(); return(BREAK); }
+"by"			{ count(); return(BY); }
+"c_count"		{ count(); return(C_COUNT); }
+"c_transcount"		{ count(); return(C_COUNT); }
+"case"			{ count(); return(CASE); }
+"continue"		{ count(); return(CONTINUE); }
+"create"		{ count(); return(CREATE); }
+"default"		{ count(); return(DEFAULT); }
+"delay"			{ count(); return(DELAY); }
+"do"			{ count(); return(DO); }
+"else"			{ count(); return(ELSE); }
+"enum"			{ count(); return(ENUM); }
+"for"			{ count(); return(FOR); }
+"goto"			{ count(); return(GOTO); }
+"if"			{ count(); return(IF); }
+"is"{W}+"new"		{ count(); return(IS_NEW); }
+"immediate"		{ count(); return(IMMEDIATE); }
+"or"			{ count(); return(OR); }
+"otherwise"		{ count(); return(OTHERWISE); }
+"priority"		{ count(); return(PRIORITY); }
+"process"		{ count(); return(PROCESS); }
+"return"		{ count(); return(RETURN); }
+"select"		{ count(); return(SELECT); }
+"shared"		{ count(); return(SHARED); }
+"sizeof"		{ count(); return(SIZEOF); }
+"spec"			{ count(); return(SPEC); }
+"switch"		{ count(); return(SWITCH); }
+"terminate"		{ count(); return(TERMINATE); }
+"trans"			{ count(); return(TRANS); }
+"treturn"		{ count(); return(TRETURN); }
+"typedef"		{ count(); return(TYPEDEF); }
+"void"			{ count(); return(VOID); }
+"while"			{ count(); return(WHILE); }
+"with"			{ count(); return(WITH); }
+"within"		{ count(); return(WITHIN); }
+
+struct			{ count(); return(STRUCT); }
+union			{ count();  return(UNION); }
+
+auto|extern		|
+static|register		{ count(); return(SSC); }
+
+unsigned({W}+(int|char|(short|long)({W}+int)?))? |
+long({W}+(int|float))?	|
+short({W}+int)?		|
+char|double		|
+float|int		{ count(); return(BTYPE); }
+
+"main"/{W}*:		{ count(); fixCC_(); return(label()); }
+"main"			{ count(); fixCC_(); return(ident()); }
+CC_{ID}/{W}*:		{ count(); fixCC_(); return(label()); }
+CC_{ID}			{ count(); fixCC_(); return(ident()); }
+{ID}/{W}*:		{ count(); return(label()); }
+{ID}			{ count(); return(ident()); }
+
+0[xX]{H}+{LS}?{US}?	{ count(); return(CONSTANT); }
+0[xX]{H}+{US}?{LS}?	{ count(); return(CONSTANT); }
+0{D}+{LS}?{US}?		{ count(); return(CONSTANT); }
+0{D}+{US}?{LS}?		{ count(); return(CONSTANT); }
+{D}+{LS}?{US}?		{ count(); return(CONSTANT); }
+{D}+{US}?{LS}?		{ count(); return(CONSTANT); }
+'[^'\n]*'		{ count(); return(CONSTANT); }
+
+{D}+{E}{LS}?		{ count(); return(CONSTANT); }
+{D}*"."{D}+({E})?{LS}?	{ count(); return(CONSTANT); }
+{D}+"."{D}*({E})?{LS}?	{ count(); return(CONSTANT); }
+
+\"(\\\"|[^"])*\"	{ count(); return(STRING_LITERAL); }
+
+{ASP}"="		{ count(); return(X_ASSIGN); }
+("+"|"-")"="		{ count(); return(A_ASSIGN); }
+(">>"|"<<")		{ count(); return(SHIFT_OP); }
+("++"|"--")		{ count(); return(INC_OP); }
+"->"			{ count(); return(PTR_OP); }
+"&&"			{ count(); return(AND_OP); }
+"||"			{ count(); return(OR_OP); }
+("<"|">")("=")?		{ count(); return(REL_OP); }
+("="|"!")"="		{ count(); return(EQ_OP); }
+{W}			{ count(); }
+"\n"			{ ECHO; nextline(); }
+.			{ count(); return(*yytext); }
+%%
+@@@@@@ Fin de scan.l
+echo main.c 1>&2
+cat >main.c <<'@@@@@@ Fin de main.c'
+main()
+{
+    int yyparse();
+    int status;
+gram_init();
+status=yyparse();
+gram_end();
+flusherrors();
+return status;
+}
+@@@@@@ Fin de main.c
+echo btree.c 1>&2
+cat >btree.c <<'@@@@@@ Fin de btree.c'
+#include <stdio.h>
+/*
+**
+**	btree - B-tree maintenance routines
+**
+**   These routines are from N. Wirth, Algorithms + Data
+**   Structures = Programs
+**
+**   Translated to C by Bob Brown, Purdue CS Department.
+**
+**  USAGE:
+**  ------
+**	These routines allow their user to define and use symbol
+**	tables with different record formats and different b-tree
+**	orders.	 The user should define his record format,
+**	typically (though not necessarily) a structure containing
+**	at least a key and value part.	Here is a typical
+**	declaration:
+**		struct userentry {
+**			char *key;
+**			int value;
+**		};
+**	Before any symbol table can be used, it must be defined
+**	with "btnew".  Declare a generic pointer, say, "table",
+**	and then call btnew, giving it the name of your routine
+**	for comparing table entries and the desired B-tree order.
+**
+**		char *table;
+**		int compare();
+**		table = btnew ( 12, compare );
+**
+**	Now, to insert entries, build an instance of an entry,
+**	insert the "key" part, and call "btinsert".  This routine
+**	returns a pointer to the entry as it exists in the table.
+**	Hence, if this returned pointer does not match your instance,
+**	the record already existed in the table.
+**
+**		struct userentry *entry, *oldentry;
+**		entry = (struct userentry *)malloc(sizeof (struct ...));
+**		entry.key = "some value"
+**		if ((oldentry = btinsert(table,entry)) == entry )
+**			{ new entry in the table }
+**		else
+**			{ entry already existed }
+**			free ( entry );
+**
+**	Then, to delete an entry, again build an entry record with
+**	at least a key part and call btdelete:
+**
+**		entry.key = "value to be deleted"
+**		if ( (oldentry=btdelete ( table, entry )) == NULL )
+**			{  entry didn't exist  }
+**		else
+**			{  entry deleted, release storage  }
+**			free ( oldentry );
+**
+**	Next, to print or traverse the table, write a routine of
+**	two arguments where the first is a pointer to the userentry
+**	and the second is a level.  After calling btprint, your
+**	routine will be called once for each entry, in order, in
+**	the table.  The second argument will be the tree level of
+**	the record, starting with 0 for the root.
+**
+**		int print();
+**		btprint ( table, print );
+**
+**	If you just want to search for an entry, build a template
+**	for it as before and call btsearch.
+**
+**		if ((oldentry=btsearch(table, entry)) == NULL )
+**			{ not found }
+**		else
+**			{ entry found, oldentry points to it. }
+**
+** ENTRIES:
+** --------
+**   Create an entirely new tree...result is a typeless pointer to
+**   an object roughly denoted as a B-tree.  Declared (char *).
+**
+**	btnew ( order, compare )
+**		+----  +------
+**		|      |---> address of a procedure that can compare
+**		|	     the value of two entries, a and b. It
+**		|	     should return -1 if a<b; 0 if a==b;
+**		|	     +1 if a>b.
+**		|
+**		|--------> order of the tree.  From order to 2*order
+**			   entries will be stored in each node, except
+**			   the root, which may contain from 1 to
+**			   2*order entries.
+**
+**    Insert a new item into the tree.	Returns a pointer to the
+**    entry in the table.  If this doesn't match "entry", then
+**    the record already existed in the file.
+**
+**	btinsert ( table, entry )
+**		   +----  +----
+**		   |	  |--> pointer to a user-typed entry to be
+**		   |	       inserted into the table.	 Generically
+**		   |	       types as (char *) but may be any pointer
+**		   |
+**		   |------> the table reference, as returned by
+**			    btnew when the table was created.
+**			    This may be typed (char *) but is in
+**			    actuality (struct btree *).
+**
+**    Print the contents of the tree
+**
+**	btprint ( table, routine )
+**		  +----	 +------
+**		  |	 |--> pointer to routine that is called
+**		  |	      for each entry in the table.  This
+**		  |	      routine should be declared as in:
+**		  |	      routine ( entry, level )
+**		  |	      char *entry;  { ptr to table entry }
+**		  |	      int level;    { tree level: 0,1,... }
+**		  |
+**		  |------> the table reference, as returned by
+**			   "btnew".
+**
+**    Delete an entry from a tree.  Returns a pointer to the in-tree
+**    entry that was deleted, NULL if not found
+**
+**	btdelete ( table, entry )
+**		   +----  +----
+**		   |	  |---> pointer to user's entry.  This should
+**		   |		be a skeleton table-entry with at
+**		   |		least the key part significant.
+**		   |
+**		   |----> pointer to the tree to use, as returned
+**			  by btnew.
+**
+**    Search for and entry in a tree.  Return pointer the record
+**    in tree if found, otherwise NULL
+**
+**	btsearch ( table, entry )
+**		   +----  +----
+**		   |	  |----> pointer to skeleton entry to search
+**		   |		 for.  Only the key part is necessary.
+**		   |
+**		   |----> pointer to table returned by btnew.
+**
+**    Free all storage associated with a tree.
+**
+**	btfree ( table, routine )
+**		 +----  +------
+**		 |	|-----> routine that gets called for each entry
+**		 |		in the table.  It should free the user's
+**		 |		record.
+**		 |-----> table address.
+**
+*/
+
+/*
+ * TYPES
+ *	btree --- basic type for a B-tree.  initialized by btnew and
+ *		  "table" in this module is always a pointer to one of
+ *		  these
+ *	bt_page - one "index set" in the B-tree.  Contains storage
+ *		  for order*2 records and order*2+1 pointers.
+ *	bt_rec -- an array of these in contained in each bt_page.
+ *		  Each consists of a key and a link.  bt_rec[0].bt_key
+ *		  is not used in any instance of a bt_page.
+ */
+
+struct bt_rec {
+	char *bt_key;		/* pointer to user entry */
+	struct bt_page *bt_link;/* right-hand link */
+};
+struct bt_page {
+	int bt_load;			/* load order..2*order */
+	struct bt_rec *bt_rec;
+};
+struct btree {
+	struct bt_page *bt_root;	/* root node in tree */
+	int bt_order;			/* order of tree 1..2*order */
+	int (*bt_cmp)();		/* compare routine address */
+};
+#ifndef TRUE
+#define TRUE 1
+#define FALSE 0
+#endif
+
+/*
+ *  NON-INTEGER ROUTINES
+ */
+char *btnew(), *btinsert(), *btdelete(), *bt_pgsrc();
+int strcmp(), bttstout();
+int bttstpr();
+struct bt_page *bt_newpage();
+/*
+ *=======================================
+ * btnew - create and return a new tree
+ *=======================================
+ */
+
+char *
+btnew ( order, compare )
+int order;
+int (*compare)();
+{
+	struct btree *table;
+	table = (struct btree *) malloc ( sizeof (struct btree ) );
+	table->bt_order = order;
+	table->bt_cmp = compare;
+	table->bt_root = NULL;
+	return (char *) table;
+}
+
+/*
+ *=========================================
+ * btinsert - insert a new entry in table
+ *=========================================
+ */
+
+char *
+btinsert ( table, entry )
+struct btree *table;
+char *entry;
+{
+	struct bt_rec newrec;
+	struct bt_page *tmp;
+	char *rtnval;
+	int rebalance;
+	/*
+	 * Search from root of tree, return if no balancing needed
+	 */
+	if ( bt_pgins(table, table->bt_root, entry, &rebalance, &newrec ) )
+		rtnval = newrec.bt_key;
+	else
+		rtnval = entry;
+	if ( ! rebalance )
+		return rtnval;
+	/*
+	 * need to split root - make new one, set up first entry
+	 */
+	tmp = bt_newpage(table);
+	tmp->bt_load = 1;
+	tmp->bt_rec[0].bt_link = table->bt_root;
+	tmp->bt_rec[1] = newrec;
+	table->bt_root = tmp;
+	return rtnval;
+}
+
+/*
+ *=============================================
+ * btsearch - search for an element in a tree
+ *=============================================
+ */
+
+char *
+btsearch ( table, entry )
+struct btree *table;
+char *entry;
+{
+	return bt_pgsrc ( table, entry, table->bt_root ) ;
+}
+
+/*
+ *=========================================
+ *  bt_pgsrc - search a page for an entry
+ *=========================================
+ */
+
+char *
+bt_pgsrc ( table, entry, curpage )
+struct btree *table;
+char *entry;
+struct bt_page *curpage;
+{
+	int pos;
+	while ( curpage != NULL ) {
+		if ( bt_binsrc ( table, entry, curpage, &pos) )
+			return curpage->bt_rec[pos].bt_key;
+		curpage = curpage->bt_rec[pos].bt_link;
+	}
+	return NULL;
+}
+/*
+ *=====================================
+ * btdelete - external delete routine
+ *=====================================
+ *
+ * returns a pointer to the entry thaat was removed
+ */
+
+char *
+btdelete ( table, entry )
+struct btree *table;
+char *entry;
+{
+	int reduce;
+	struct bt_page *tmp;
+	struct bt_rec oldrec;
+	bt_pgdel ( table, table->bt_root, entry, &reduce, &oldrec);
+	if ( table->bt_root->bt_load == 0 ) {
+		tmp = table->bt_root;
+		table->bt_root = tmp->bt_rec[0].bt_link;
+		bt_freenode ( tmp );
+	}
+	return oldrec.bt_key ;
+}
+/*
+ *============================================
+ * bt_pgins - internal recursive page search
+ *============================================
+ *
+ * returns FALSE if record not found here or below, else TRUE
+ */
+
+bt_pgins ( table, curpage, entry, rebalance, newrec )
+
+struct btree *table;		/*  IN: table pointer		*/
+struct bt_page *curpage;	/*  IN: ptr to page to search	*/
+char *entry;			/*  IN: ptr to entry to find	*/
+int *rebalance;			/* OUT: FALSE0 => must rebalance*/
+struct bt_rec *newrec;		/* OUT: record to move up or	*/
+				/*	*.key if found record	*/
+{
+	struct bt_rec tmprec, belowrec;
+	struct bt_page *newpage;
+	int right, i, frombelow;
+	*rebalance = FALSE;
+	if ( curpage == NULL ) {
+		*rebalance = TRUE;
+		newrec->bt_key = entry;
+		newrec->bt_link = NULL;
+		return FALSE;
+	}
+	/*
+	 * search this page - if found, save and return
+	 */
+	if ( bt_binsrc ( table, entry, curpage, &right) ) {
+		*newrec = curpage->bt_rec[right];
+		return TRUE;
+	}
+	/*
+	 * not in this page, search down, return if found
+	 */
+	if ( bt_pgins ( table, curpage->bt_rec[right].bt_link, entry,
+	    &frombelow, &belowrec ) ) {
+		*newrec = belowrec;
+		return TRUE;
+	}
+	/*
+	 * if inserting and rebalancing needed - insert new node
+	 */
+	if ( frombelow ) {
+		/*
+		 * check if room in this page...
+		 */
+		if ( curpage->bt_load < table->bt_order*2 ) {
+			curpage->bt_load++;
+			*rebalance = FALSE;
+			for ( i=curpage->bt_load ; i>=right+2 ; i-- )
+				curpage->bt_rec[i] = curpage->bt_rec[i-1];
+			curpage->bt_rec[right+1] = belowrec;
+		} else {
+			/*
+			 * page is full - determine which half to put new one in.
+			 */
+			newpage = bt_newpage(table);
+			if ( right <= table->bt_order ) { /* insert in left page */
+				if ( right == table->bt_order )
+					tmprec = belowrec;
+				else {
+					tmprec = curpage->bt_rec[table->bt_order];
+					for ( i=table->bt_order ; i>=right+2 ; i-- )
+						curpage->bt_rec[i] = curpage->bt_rec[i-1];
+					curpage->bt_rec[right+1] = belowrec;
+				}
+				for ( i=1 ; i<=table->bt_order ; i++ )
+					newpage->bt_rec[i] = curpage->bt_rec[i+table->bt_order];
+			} else { /* insert in right page */
+				right -= table->bt_order;
+				tmprec = curpage->bt_rec[table->bt_order+1];
+				for ( i=1 ; i<right ; i++ )
+					newpage->bt_rec[i] = curpage->bt_rec[i+table->bt_order+1];
+				newpage->bt_rec[right] = belowrec;
+				for ( i=right+1 ; i<=table->bt_order ; i++ )
+					newpage->bt_rec[i] = curpage->bt_rec[i+table->bt_order];
+			}
+			curpage->bt_load = newpage->bt_load = table->bt_order;
+			newpage->bt_rec[0].bt_link = tmprec.bt_link;
+			tmprec.bt_link = newpage;
+			*rebalance = TRUE;
+			*newrec = tmprec;
+		}
+	}
+	return FALSE;
+}
+
+/*
+ *===================================================
+ * bt_binsrc - internal binary search ovey one page
+ *===================================================
+ */
+bt_binsrc ( table, entry, page, result )
+struct btree *table;
+struct bt_page *page;
+char *entry;
+int *result;
+{
+	int left, right, mid, cmp;
+	left = 1;
+	right = page->bt_load;
+	do {
+		mid = (right+left)/2;
+		cmp = (*table->bt_cmp)(entry,(char *)page->bt_rec[mid].bt_key);
+		if ( cmp == 0 ) {
+			*result = mid;
+			return TRUE;
+		} else if (cmp < 0 )		/* left <= entry < mid */
+			right = mid-1;
+		else				/* mid < entry <= right */
+			left = mid+1;
+	} while ( left <= right );
+	*result = right;
+	return FALSE;
+}
+
+/*
+ *===================================================================
+ * bt_newpage - allocate a new page (index set) from dynamic memory
+ *===================================================================
+ */
+struct bt_page *
+bt_newpage(table)
+struct btree *table;
+{
+	struct bt_page *page;
+	int i;
+	page = (struct bt_page *) malloc ( sizeof (struct bt_page) );
+	page->bt_load = 0;
+	page->bt_rec = (struct bt_rec *)calloc(table->bt_order*2+1, sizeof (struct bt_rec) );
+	for ( i=0 ; i<table->bt_order*2+1 ; i++ )
+		page->bt_rec[i].bt_link = NULL;
+	return page;
+}
+
+/*
+ *================================================
+ * bt_freenode - free storage associated with a page
+ *================================================
+ */
+
+bt_freenode ( page )
+struct bt_page *page;
+{
+	free ( page->bt_rec );
+	free ( page );
+}
+/*
+ *===============================
+ * btestpr - test print routine
+ *===============================
+ */
+
+btestpr ( table , routine)
+struct btree *table;
+int (*routine)();
+{
+	bt_estpr ( table, table->bt_root, routine, 0 );
+}
+
+bt_estpr ( table, page, routine, level )
+struct btree *table;
+struct bt_page *page;
+int (*routine)();
+int level;
+{
+	int i;
+	if ( page == NULL )
+		return;
+	for ( i=0 ; i<level ; i++ )
+		printf("  ");
+	for ( i=1 ; i<=page->bt_load ; i++ )
+		(*routine)(page->bt_rec[i].bt_key, level );
+	printf("\n");
+	for ( i=0 ; i<=page->bt_load ; i++ )
+		bt_estpr ( table, page->bt_rec[i].bt_link, routine, level+1);
+}
+
+/*
+ *========================================
+ *  bt_pgdel - internal delete from page
+ *========================================
+ */
+
+bt_pgdel ( table, curpage, entry, reduce, oldrec )
+struct btree *table;
+struct bt_page *curpage;
+struct bt_rec *oldrec;
+char *entry;
+int *reduce;
+{
+	struct bt_page *less;
+	int i, right;
+	oldrec->bt_key = NULL;
+	if ( curpage == NULL ) {
+		*reduce = FALSE;
+		return FALSE;
+	}
+	if ( bt_binsrc ( table, entry, curpage, &right )) { /* found=>delete */
+		oldrec->bt_key = curpage->bt_rec[right].bt_key;
+		less = curpage->bt_rec[right-1].bt_link;
+		if ( less == NULL ) { /* curpage is a leaf node */
+			*reduce = --curpage->bt_load < table->bt_order;
+			for ( i=right ; i<=curpage->bt_load ; i++ )
+				curpage->bt_rec[i] = curpage->bt_rec[i+1];
+		} else { /* not leaf, search for leaf */
+			bt_del ( table, curpage, less, right, reduce );
+			if ( *reduce )
+				bt_under ( table, curpage, less, right-1, reduce );
+		}
+	} else { /* not found => go down a level */
+		less = curpage->bt_rec[right].bt_link;
+		bt_pgdel ( table, less, entry, reduce, oldrec );
+		if ( *reduce )
+			bt_under ( table, curpage, less, right, reduce );
+	}
+}
+/*
+ *==============================================
+ *  bt_del - internal recursive delete routine
+ *==============================================
+ */
+bt_del ( table, curpage, delpage, item, reduce )
+struct btree *table;
+struct bt_page *curpage;
+struct bt_page *delpage;
+int *reduce, item;
+{
+	struct bt_page *nextpage;
+	if ( (nextpage=delpage->bt_rec[delpage->bt_load].bt_link) != NULL ) {
+		bt_del ( table, curpage, nextpage, item, reduce );
+		if ( *reduce )
+			bt_under ( table, delpage, nextpage, delpage->bt_load, reduce );
+	} else {
+		curpage->bt_rec[item].bt_key = delpage->bt_rec[delpage->bt_load].bt_key;
+		*reduce = --delpage->bt_load < table->bt_order;
+	}
+}
+
+/*
+ *==========================================
+ *  bt_under - handle underflows in a page
+ *==========================================
+ */
+bt_under ( table, parent, child, item, reduce )
+struct btree *table;
+struct bt_page *parent;
+struct bt_page *child;
+int item;
+int *reduce;
+{
+	int parload, i;
+	struct bt_page *rtpage, *lfpage;
+	int rtload, lfload;
+	int rtavail, lfavail;
+	parload = parent->bt_load;
+	if ( item < parload ) {
+		item++;
+		rtpage = parent->bt_rec[item].bt_link;
+		rtload = rtpage->bt_load;
+		rtavail = ( rtload-table->bt_order+1 ) / 2;
+		child->bt_rec[table->bt_order] = parent->bt_rec[item];
+		child->bt_rec[table->bt_order].bt_link = rtpage->bt_rec[0].bt_link;
+		if ( rtavail > 0 ) { /* move "rtavail" items from rtpage
+					to child */
+			for ( i=1 ; i<=rtavail-1 ; i++ )
+				child->bt_rec[i+table->bt_order] = rtpage->bt_rec[i];
+			parent->bt_rec[item] = rtpage->bt_rec[rtavail];
+			parent->bt_rec[item].bt_link = rtpage;
+			rtpage->bt_rec[0].bt_link = rtpage->bt_rec[rtavail].bt_link;
+			rtload -= rtavail;
+			for ( i=1 ; i<=rtload ; i++ )
+				rtpage->bt_rec[i] = rtpage->bt_rec[i+rtavail];
+			rtpage->bt_load = rtload;
+			child->bt_load = table->bt_order-1+rtavail;
+			*reduce = FALSE;
+		} else { /* merge pages "child" and "rtpage" */
+			for ( i=1 ; i<=table->bt_order ; i++ )
+				child->bt_rec[i+table->bt_order] = rtpage->bt_rec[i];
+			for ( i=item ; i<=parload-1 ; i++ )
+				parent->bt_rec[i] = parent->bt_rec[i+1];
+			child->bt_load = table->bt_order*2;
+			parent->bt_load = parload-1;
+			bt_freenode ( rtpage );
+		}
+	} else {
+		lfpage = parent->bt_rec[item-1].bt_link;
+		lfload = lfpage->bt_load+1;
+		lfavail = (lfload-table->bt_order) / 2;
+		if ( lfavail > 0 ) { /* move lfavail items from page
+					lfpage to child */
+			for ( i=table->bt_order ; i>=1 ; i-- )
+				child->bt_rec[i+lfavail] = child->bt_rec[i];
+			child->bt_rec[lfavail] = parent->bt_rec[item];
+			child->bt_rec[lfavail].bt_link = child->bt_rec[0].bt_link;
+			lfload -= lfavail;
+			for ( i=lfavail-1 ; i>=0 ; i-- )
+				child->bt_rec[i] = lfpage->bt_rec[i+lfload];
+			parent->bt_rec[item] = lfpage->bt_rec[lfload];
+			parent->bt_rec[item].bt_link = child;
+			lfpage->bt_load = lfload-1;
+			child->bt_load = table->bt_order-1+lfavail;
+			*reduce = 0;
+		} else { /* merge pages "child" and "lfpage" */
+			lfpage->bt_rec[lfload] = parent->bt_rec[item];
+			lfpage->bt_rec[lfload].bt_link = child->bt_rec[0].bt_link;
+			for ( i=1 ; i<table->bt_order ; i++ )
+				lfpage->bt_rec[i+lfload] = child->bt_rec[i];
+			lfpage->bt_load = table->bt_order * 2;
+			parent->bt_load = parload-1;
+			bt_freenode ( child );
+		}
+	}
+}
+/*
+ *=================================================
+ * btprint - process (print) contents of a B-tree
+ *=================================================
+ *
+ *  routine - pointer to user's routine to process each entry
+ */
+btprint(table, routine)
+struct btree *table;
+int (*routine)();
+{
+	bt_print(table, table->bt_root, routine, 0);
+}
+
+/*
+ *=========================================================
+ * bt_print - internal recursive version of print routine
+ *=========================================================
+ */
+
+bt_print ( table, page, routine, level )
+struct btree *table;
+struct bt_page *page;
+int (*routine)();
+int level;
+{
+	int i;
+	if ( page == NULL )
+		return;
+	bt_print(table, page->bt_rec[0].bt_link, routine, level+1 );
+	for ( i=1 ; i<=page->bt_load ; i++ ) {
+		(*routine) (page->bt_rec[i].bt_key, level);
+		bt_print(table, page->bt_rec[i].bt_link, routine, level+1 );
+	}
+}
+/*
+**===================================
+** btfree - free up an entire table
+**===================================
+*/
+
+btfree(table, routine)
+struct btree *table;
+int (*routine)();
+{
+	bt_free(table, table->bt_root, routine);
+}
+
+/*
+**==========================================================
+** bt_free - internal recursive version of destroy routine
+**==========================================================
+*/
+bt_free ( table, page, routine)
+struct btree *table;
+struct bt_page *page;
+int (*routine)();
+{
+	int i;
+	if ( page == NULL )
+		return;
+	bt_free(table, page->bt_rec[0].bt_link, routine);
+	for ( i=1 ; i<=page->bt_load ; i++ ) {
+		(*routine) (page->bt_rec[i].bt_key);
+		bt_free(table, page->bt_rec[i].bt_link, routine);
+	}
+	bt_freenode(page);
+}
+#ifdef TEST
+main(argc,argv)
+char *argv[];
+{
+	btest((argc==1?40:atoi(argv[1])));
+}
+/*
+ *===========================================
+ * btest - test program for B-tree routines
+ *===========================================
+ */
+#include <sys/types.h>
+#include <sys/times.h>
+
+btest(order)
+int order;
+{
+	char *table, buf[80], *word, cmd;
+	int count, timemod;
+
+	table = btnew(order, strcmp);
+	count = 0;
+	timemod = 0;
+	if ( isatty(0) ) printf(">> ");
+	while ( gets(buf) != NULL ) {
+		word = (char *)malloc(strlen(buf));
+		sscanf ( buf, "%c %s",&cmd, word);
+		switch ( cmd ) {
+		case 's':
+			if ( btsearch ( table, word ) == NULL )
+				printf ( "not found\n" );
+			else
+				printf ( "found\n" );
+			break;
+		case 'p':
+			btestpr ( table, bttstout );
+			break;
+		case 'a':
+		case 'i':
+			btinsert(table, word);
+			break;
+		case 'r':
+		case 'd':
+			btdelete ( table, word );
+			break;
+		case 'q':
+			btprint(table,bttstpr);
+			exit(0);
+		case 't':
+			timemod = atoi(word);
+			break;
+		default:
+			fprintf(stderr, "INvalid command\n");
+		}
+		if ( timemod>0 && (count%timemod)==0 ) {
+			struct tms tbuf;
+			times(&tbuf);
+			printf("%D\n",tbuf.tms_utime);
+		}
+		count++;
+		if ( isatty(0) ) printf(">> ");
+	}
+}
+
+bttstout(s,l)
+char *s;
+{
+	printf("%s ",s);
+}
+bttstpr(s,l)
+char *s;
+{
+	printf("%s\n",s);
+}
+
+#endif
+@@@@@@ Fin de btree.c
+echo btree.h 1>&2
+cat >btree.h <<'@@@@@@ Fin de btree.h'
+/*----------------------------------------------------------------------*/
+/*									*/
+/*	btree.h - B-tree maintenance routines				*/
+/*									*/
+/*   These routines are from N. Wirth, Algorithms + Data		*/
+/*   Structures = Programs						*/
+/*									*/
+/*   Translated to C by Bob Brown, Purdue CS Department.                */
+/*									*/
+/*----------------------------------------------------------------------*/
+
+struct bt_rec {
+	char *bt_key;		/* pointer to user entry */
+	struct bt_page *bt_link;/* right-hand link */
+};
+struct bt_page {
+	int bt_load;			/* load order..2*order */
+	struct bt_rec *bt_rec;
+};
+struct btree {
+	struct bt_page *bt_root;	/* root node in tree */
+	int bt_order;			/* order of tree 1..2*order */
+	int (*bt_cmp)();		/* compare routine address */
+};
+#ifndef TRUE
+#define TRUE 1
+#define FALSE 0
+#endif
+
+/*
+ *  NON-INTEGER ROUTINES
+ */
+char *btnew(), *btinsert(), *btdelete(), *bt_pgsrc();
+int strcmp(), bttstout();
+int bttstpr();
+struct bt_page *bt_newpage();
+@@@@@@ Fin de btree.h
+echo cctypes.c 1>&2
+cat >cctypes.c <<'@@@@@@ Fin de cctypes.c'
+/*--------------------------------------------------------------------------------*/
+/* TYPE CHASING FUNCTIONS */
+
+#include "cctypes.h"
+
+#define BTORDER 12
+
+#define B_ERROR		1
+
+#define b_index(a)	(a&31)
+#define b_full(a)	(b_index(a)==31)
+#define b_curbit(a)	(1<<b_index(a))
+#define b_isptr(a)	(a>4 && ~a&b_curbit(a))
+#define b_isfunc(a)	(a>4 && a&b_curbit(a))
+#define b_addr(a)	(a?(a++,a&=~b_curbit(a)):(a=5))
+#define b_ref(a)	(a?(a++,a+=a&~31):(a=5))
+#define b_func(a)	(a?(a++,a+=a&~31,a|=32):(a=37))
+#define b_de(a)		(a&=~(1<<(a&31)),a--,a=(b_index(a)>4?a:0))
+
+isptr(x)	t_type x; {return b_isptr(x.chain);}
+isfunc(x)	t_type x; {return b_isfunc(x.chain);}
+iserror(x)	t_type x; {return x.chain==B_ERROR;}
+
+char *tagtypetext[4]={
+    "???",
+    "struct",
+    "union",
+    "process"
+};
+
+int namespace=e_badtag+1; /* counter for generating new namespaces */
+
+/* global variables for yacc use */
+int map=0;
+int blocknum;
+char *cctext;
+
+t_type b_error = {B_ERROR,{e_badtag,0}};
+extern t_type basic;
+
+t_type addr(x)
+t_type x;
+{
+    if (b_full(x.chain)) {
+	yyerror("type too complex");
+	return b_error;
+    }
+    if (iserror(x))
+	return b_error;
+    b_addr(x.chain);
+    return x;
+}
+
+t_type ref(x)
+t_type x;
+{
+    if (b_full(x.chain)) {
+	yyerror("type too complex");
+	return b_error;
+    }
+    if (iserror(x))
+	return b_error;
+    b_ref(x.chain);
+    return x;
+}
+
+t_type func(x)
+t_type x;
+{
+    if (b_full(x.chain)) {
+	yyerror("declaration too complex");
+	return b_error;
+    }
+    if (iserror(x))
+	return b_error;
+    b_func(x.chain);
+    return x;
+}
+
+t_type deref(x)
+t_type x;
+{
+    if (!isptr(x) && !iserror(x)) {
+	yyerror("object is not a pointer");
+	return b_error;
+    }
+    if (!iserror(x))
+	b_de(x.chain);
+    return x;
+}
+
+t_type defunc(x)
+t_type x;
+{
+    if (!isfunc(x) && !iserror(x)) {
+	yyerror("object is not a function");
+	return b_error;
+    }
+    if (!iserror(x))
+	b_de(x.chain);
+    return x;
+}
+
+#define isbare(t)	(!t.chain)
+#define isbasic2(t,tt)	(isbasic(t) && isbasic(tt))
+#define isptr2(t,tt)	(isptr(t) && isptr(tt))
+
+iserror2(t,tt)
+t_type t,tt;
+{
+    return iserror(t) || iserror(tt);
+}
+
+int contextof(t)
+t_type t;
+{
+if (t.chain)
+    return e_badtag;
+else
+    return t.typespec.num;
+}
+
+isprocess(t)
+t_type t;
+{
+    return (isbare(t) && t.typespec.obj==e_process);
+}
+
+isbasic(t)
+t_type t;
+{
+    return(isbare(t) && t.typespec.obj==e_basic);
+}
+
+char aritherr[]="type clash in arithmetic expression";
+
+t_type inc(t)
+t_type t;
+{
+    if (isptr(t) || isbasic(t) || iserror(t))
+	return t;
+    yyerror(aritherr);
+    return b_error;
+}
+
+t_type add(t,tt)
+t_type t,tt;
+{
+    if ((isptr(t) || isbasic(t)) && isbasic(tt))
+	return t;
+    if (isbasic(t) && isptr(tt))
+	return tt;
+    if (!iserror2(t,tt))
+	yyerror(aritherr);
+    return b_error;
+}
+
+t_type subtract(t,tt)
+t_type t,tt;
+{
+    if((isptr(t) || isbasic(t)) && isbasic(tt))
+	return t;
+    if (!iserror2(t,tt))
+	yyerror(aritherr);
+    return b_error;
+}
+
+t_type arith(t,tt)
+t_type t,tt;
+{
+    if (isbasic2(t,tt))
+	return t;
+    if (!iserror2(t,tt))
+	yyerror(aritherr);
+    return b_error;
+}
+
+t_type array(t,tt)
+t_type t,tt;
+{
+    if (isbasic(t) || isptr(tt))
+	return deref(tt);
+    if (isbasic(tt) || isptr(t))
+	return deref(t);
+    if (!iserror2(t,tt))
+	yyerror("illegal array reference");
+    return b_error;
+}
+
+int typeeq(t,tt)
+t_type t,tt;
+{
+    return (t.chain==tt.chain && t.typespec.num==tt.typespec.num);
+}
+
+t_type compare(t,tt)
+t_type t,tt;
+{
+    if (typeeq(t,tt) || isbasic(t) && isptr(tt) || isptr(t) && isbasic(tt))
+	return basic;
+    if (isprocess(t) && isprocess(tt))
+	if (t.typespec.num==e_nullpid || tt.typespec.num==e_nullpid)
+	    return basic;
+    if (!iserror2(t,tt))
+	yyerror("type clash in comparison expression");
+    return b_error;
+}
+
+t_type condition(t,tt,s)
+t_type t,tt;
+char *s;
+{
+    if (isbasic(t) && (isbasic(tt) || isptr(tt)))
+	return t;
+    if (isptr(t) && isbasic(tt))
+	return t;
+    if (isprocess(t) && isprocess(tt)) {
+	register c1=t.typespec.num;
+	register c2=tt.typespec.num;
+	if (c1==c2 || c1==e_anytype || c2==e_nullpid)
+	    return t;
+	if (c2==e_anytype || c1==e_nullpid)
+	    return tt;
+	yyerror(s);
+	return b_error;
+    }
+    if (typeeq(t,tt))
+	return t;
+    if (!iserror2(t,tt))
+	yyerror(s);
+    return b_error;
+}
+
+t_type assign(t,tt,s)
+t_type t,tt;
+char *s;
+{
+    if (isbasic(tt) && (isbasic(t) || isptr(t)))
+	return t;
+    if (isfunc(tt) && isptr(t) && typeeq(deref(t),tt))
+	return t;
+    if (isprocess(t) && isprocess(tt)) {
+	register c1=t.typespec.num;
+	register c2=tt.typespec.num;
+
+	if (c1==c2 || c1==e_anytype || c2==e_nullpid)
+	    return t;
+	if (c2==e_anytype)
+	    yyerror("process type anytype is only assignable to another anytype");
+	else
+	    yyerror(s);
+	    return b_error;
+    }
+    if (typeeq(t,tt))
+	return t;
+    if (!iserror2(t,tt))
+	yyerror(s);
+    return b_error;
+}
+
+t_type arithassign(t,tt)
+t_type t,tt;
+{
+    if (isbasic(t) && isbasic(tt))
+	return t;
+    if (!iserror2(t,tt))
+	yyerror("type clash in assignment expression");
+    return b_error;
+}
+t_type addassign(t,tt)
+t_type t,tt;
+{
+    if ((isptr(t) || isbasic(t)) && isbasic(tt))
+	return t;
+    if (!iserror2(t,tt))
+	yyerror("type clash in assignment expression");
+    return b_error;
+}
+
+typedef struct {
+    char *name;			/* identifier name			*/
+    unsigned short num:14;	/* number which identifies namespace	*/
+    unsigned short typedefp:2;	/* is this a typedef declaration?	*/
+    short halfdec;		/* is this an incomplete declaration?	*/ 
+    t_type t;			/* type					*/
+    char *alias;		/* name printed on output		*/
+} symbol;
+
+struct table_tag {
+    struct btree *table;	/* table for a particular scope level	*/
+    struct table_tag *prev;	/* more global scope level		*/
+    struct table_tag *next;	/* more local scope level		*/
+} *tables;
+
+#define MAXHALF 20 /* number of recursive struct, etc. defs at one time */
+short lasthalf=0;
+symbol *halfthings[MAXHALF];
+symbol *lexer_symbol;
+
+t_type maketype(chain,num,obj)
+unsigned chain;
+unsigned short num;
+unsigned short obj;
+{
+    t_type t;
+
+    t.chain=chain;
+    t.typespec.num=num;
+    t.typespec.obj=obj;
+    return t;
+}
+
+int declare(name,num,t,alias)
+char *name;
+unsigned num;
+t_type t;
+char *alias;
+{
+    symbol *olds,*s;
+    short typedefp=0,halfdec=0;
+
+    switch (num) {
+	case e_badtag:
+	    return e_badtag;
+        case e_halfdec:
+	    halfdec=lasthalf+1;
+	    num=e_complex;
+	    break;
+	case e_typedef:
+	    typedefp++;
+	    num=e_var;
+	    break;
+    }
+    s=new(symbol);
+    s->name=name;
+    s->halfdec=halfdec;
+    s->num=num;
+    s->typedefp=typedefp;
+    s->t=t;
+    if (alias) {
+	s->alias=(char *)malloc(1+strlen(alias));
+	strcpy(s->alias,alias);
+    } else
+	s->alias=0;
+    if (s == (olds=(symbol *)btinsert(tables->table,s))) {
+	if (halfdec)
+	    halfthings[lasthalf++]=s;
+	s->name=(char *)malloc(1+strlen(name));
+	strcpy(s->name,name);
+	if (num==e_complex)
+	    return namespace++;
+	else
+	    return e_var;
+    }
+    /* <name> has already been declared in the namespace <num> */
+    free(s);
+    if (num==e_complex) {
+	if (halfdec)
+	    if (olds->t.typespec.obj == t.typespec.obj)
+		return contextof(olds->t);
+	    else {
+		yyerror("%s is not a %s tag",name,tagtypetext[t.typespec.obj]);
+		return e_badtag;
+	    }
+	if (!olds->halfdec || olds->t.typespec.obj != t.typespec.obj) {
+	    yyerror("%s has already been declared as a %s tag",
+		name,tagtypetext[olds->t.typespec.obj]);
+	    return e_badtag;
+	} else {
+	    /* definition of implicitly declared struct, union or process tag */
+	    short halfdec=olds->halfdec;
+	    olds->halfdec=0; /* now fully defined */
+	    if (halfdec != lasthalf--) /* remove from halfthings table */
+		halfthings[halfdec-1]=halfthings[lasthalf];
+	    return olds->t.typespec.num;
+	}
+    } else if (t.chain==olds->t.chain && t.typespec.num==olds->t.typespec.num)
+	return e_var; /* consistent redefinition */
+    yyerror("inconsistent redeclaration of %s",name);
+    return e_badtag;
+}
+
+t_type half_declare_func(name)
+char *name;
+{
+    t_type t;
+
+    t=lookup(name,e_var);
+    if (isfunc(t))
+        return t;
+    t=func(basic);
+    if (declare(name,e_var,t,0) == e_badtag)
+	return b_error;
+    return t;
+}
+
+t_type half_declare_tag(name,object)
+char *name;
+unsigned object;
+{
+    t_type t;
+
+    if (lasthalf==MAXHALF) {
+	yyerror("too many unresolved recursive types; %s tag %s looses",
+		tagtypetext[object],name);
+	return b_error;
+    }
+    t=maketype(0,namespace,object);
+    t.typespec.num=declare(name,e_halfdec,t,0);
+    return t;
+}
+
+int declare_tag(name,object)
+char *name;
+unsigned object;
+{
+    static char fakename[5];
+
+    if (!name) {
+	sprintf(fakename,"%-5d",namespace);
+	name=fakename;
+    }
+    return declare(name,e_complex,maketype(0,namespace,object),0);
+}
+
+int newtag()
+{
+    return namespace++;
+}
+
+symbol *slookup(name,context)
+char *name;
+unsigned context;
+{
+    symbol s,*olds;
+    struct table_tag *t=tables;
+
+    s.name=name;
+    s.num=context;
+    while (t) {
+	if (&s != (olds=(symbol *)btinsert(t->table,&s))) {
+	    if (olds->alias)
+		cctext=olds->alias;
+	    else
+		cctext=name;
+	    return olds;
+	}
+	btdelete(t->table,&s);
+	t = t->prev;
+    }
+    cctext=name;
+    return 0;
+}
+
+t_type lookup(name,context)
+char *name;
+unsigned context;
+{
+    symbol *s;
+
+    if(s=slookup(name,context))
+	return s->t;
+    return b_error;
+}
+
+t_type internal_lookup(name,context)
+char *name;
+unsigned context;
+{
+    symbol s,*olds;
+    struct table_tag *t=tables;
+
+    s.name=name;
+    s.num=context;
+    while (t) {
+	if (&s != (olds=(symbol *)btinsert(t->table,&s)))
+	    return olds->t;
+	btdelete(t->table,&s);
+	t = t->prev;
+    }
+    return b_error;
+}
+
+t_type lookup_tag(name,tagtype)
+char *name;
+unsigned tagtype;
+{
+    symbol *s;
+
+    if((s=slookup(name,e_complex)) && s->t.typespec.obj==tagtype)
+	return s->t;
+    yyerror("%s is not a %s tag",name,tagtypetext[tagtype]);
+    return b_error;
+}
+
+t_type lookup_var(name,context)
+char *name;
+unsigned context;
+{
+    symbol *s;
+
+    if(s=slookup(name,context))
+	return s->t;
+    yyerror("undeclared identifier %s",name);
+    declare(name,e_var,b_error,0);
+    return b_error;
+}
+
+t_type lookup_last(name)
+char *name;
+{
+    if(lexer_symbol)
+	return lexer_symbol->t;
+    yyerror("undeclared identifier %s",name);
+    declare(name,e_var,b_error,0);
+    return b_error;
+}
+
+#include "y.tab.h"
+int ident()
+{
+    extern yystype yylval;
+
+    lexer_symbol=slookup(yytext,e_var);
+    if (!lexer_symbol || !lexer_symbol->typedefp)
+	return IDENTIFIER;
+    yylval.y_type=lexer_symbol->t;
+    return TYPE_NAME;
+}
+
+int label()
+{
+    extern int trapping;
+    extern int context;
+
+    if (trapping || context)
+	return ident();
+    return LABEL;
+}
+
+int ident_compare(x,y)
+symbol *x,*y;
+/* btree.c spec requires -1,0,1 but will accept negative, zero, positive */
+{
+    int i;
+
+    if (i = (x->num - y->num))
+	return i;
+    return strcmp(x->name,y->name);
+}
+/*--------------------------------------------------------------------------------*/
+/* BLOCK ENTRANCE AND EXIT, INCLUDING SHARED VAR FILE SHUFFLING */
+char lshared[]="/tmp/,cccl_XXXXXX";
+char gshared[]="/tmp/,cccg_XXXXXX";
+FILE *Fshared,*Gshared,*Lshared;
+int localsharedp=0;
+
+includefile(F)
+FILE *F;
+{
+    register c;
+
+    rewind(F);
+    while ((c=fgetc(F)) != EOF)
+	putchar(c);
+    fclose(F);
+}
+
+includeshared()
+{
+    static char *vars="{\n    int CC_j,CC_n,CC_ss,CC_c[64];\n    char *CC_s;\n";
+
+    if (localsharedp) {
+	puts(vars);
+	includefile(Lshared);
+	Lshared=fopen(lshared,"w+");
+	Fshared=Lshared;
+	localsharedp=0;
+	puts("}");
+    } else if (Fshared==Gshared) {
+	puts("CC_shinit()");
+	puts(vars);
+	includefile(Gshared);
+	puts("}");
+    }
+}
+
+firstblock()
+{
+    tables=new(struct table_tag);
+    tables->prev=0;
+    tables->table = (struct btree *)btnew(BTORDER,ident_compare);
+    blocknum=0;
+    mktemp(lshared);
+    mktemp(gshared);
+    Lshared=fopen(lshared,"w+");
+    Gshared=fopen(gshared,"w+");
+    Fshared=Gshared;
+}
+
+enterblock()
+{
+    tables->next = new(struct table_tag);
+    tables->next->prev = tables;
+    tables = tables->next;
+    tables->table = (struct btree *)btnew(BTORDER,ident_compare);
+    blocknum++;
+    Fshared=Lshared;
+}
+
+exitblock()
+{
+    domap();
+    tables=tables->prev;
+    btfree(tables->next->table,free);
+    free(tables->next);
+    if (!--blocknum)
+	Fshared=Gshared;
+}
+
+finalexit()
+{
+    domap();
+    fclose(Lshared);
+    unlink(lshared);
+    includeshared();
+    unlink(gshared);
+}
+
+installpredefined()
+{
+    extern t_type basic;
+    t_type ftype;
+
+    ftype=func(basic);
+    declare_var("c_abort",	e_var,ftype);
+    declare_var("c_associate",	e_var,ftype);
+    declare_var("c_active",	e_var,ftype);
+    declare_var("c_completed",	e_var,ftype);
+    declare_var("c_invalid",	e_var,ftype);
+    declare_var("c_getpriority",e_var,ftype);
+    declare_var("c_changepriority",e_var,ftype);
+    declare_var("c_nullpid",	e_var,	  maketype(0,e_nullpid,e_process));
+    declare_var("anytype",	e_complex,maketype(0,e_anytype,e_process));
+
+/*  c_count() (a.k.a. c_transcount()) is hard-wired into the parser & lexer */
+
+}
+
+/*--------------------------------------------------------------------------------*/
+/* GRAM_INIT() -- CALLED FROM MAIN, HANDLES ALL INITIALIZATION CODE */
+
+printtree(s)
+symbol *s;
+{
+    t_type t;
+    t_typespec tt;
+
+    t=s->t;
+    tt=t.typespec;
+    printf(" *  |%-20s%-8d%-8x%-8d%-8d%-20s|\n",
+	s->name,s->num,t.chain,tt.num,tt.obj,(s->alias ? s->alias : " "));
+}
+
+domap()
+{
+    if (map) {
+	puts("\n/*\n *  exiting block in which the following were declared:");
+	printf(" *  |%-20s%-8s%-8s%-8s%-8s%-20s|\n",
+	    "name","context","chain","num","obj","alias");
+	btprint(tables->table,printtree);
+	puts(" */");
+	}
+}
+
+gram_init()
+{
+    firstblock();
+    installpredefined();
+}
+
+gram_end()
+{
+    finalexit();
+}
+
+@@@@@@ Fin de cctypes.c
+echo cctypes.h 1>&2
+cat >cctypes.h <<'@@@@@@ Fin de cctypes.h'
+/*--------------------------------------------------------------------------------*/
+/* TYPE CHASING FUNCTIONS */
+
+#include "aux.h"
+
+typedef struct {
+    unsigned short num:14;	/* namespace number			*/
+    unsigned short obj:2;	/* see defines below			*/
+} t_typespec;
+
+typedef struct {
+    unsigned chain;		/* pointer and function chain		*/
+    t_typespec typespec;	/* type specifier			*/
+} t_type;
+
+typedef struct {
+    short a,z;
+    t_type t;
+} t_trap;
+
+typedef union {
+    t_type y_type;
+    t_trap y_trap;
+    int y_int;
+} yystype;
+
+#define e_var     0		/* unfielded var and typedef namespace	*/
+#define e_complex 1		/* namespace for struct, etc. tags	*/
+#define e_typedef 2		/* used only by ident() and declare()	*/
+#define e_halfdec 3		/* used only by dec1/2tag and declare()	*/
+#define e_anytype 4		/* can be assigned any process type	*/
+#define e_nullpid 5		/* can be assigned to any process	*/
+#define e_badtag  6		/* illegal namespace, for bad tag	*/
+
+#define e_basic	  0		/* values for obj field in typespec	*/
+#define e_struct  1
+#define e_union	  2
+#define e_process 3
+
+t_type ref(),func(),deref(),defunc(),addr(),maketype();
+t_type arithassign(),add(),subtract(),inc();
+t_type assign(),compare(),internal_lookup(),lookup();
+t_type condition(),arith(),addassign(),array();
+t_type lookup_tag(),lookup_var(),lookup_last();
+t_type half_declare_tag(),half_declare_func();
+int declare_tag();
+
+#define declare_typedef(name,type)	declare(name,e_typedef,type,0)
+#define declare_var(name,num,t)		declare(name,num,t,0)
+@@@@@@ Fin de cctypes.h
+echo aux.c 1>&2
+cat >aux.c <<'@@@@@@ Fin de aux.c'
+/*--------------------------------------------------------------------------------*/
+#include "cctypes.h"
+
+/*--------------------------------------------------------------------------------*/
+/* PROCESS FORMAL PARAMETER NAME STORAGE AND DECLARATION */
+
+extern int procnum;
+extern char procname[];
+
+struct t_param {
+    char *name;
+    struct t_param *next;
+} *param_head,*param_tail;
+
+null_parameter_list()
+{
+param_head = 0;
+}
+
+remember_first_parameter_name()
+{
+    param_tail = new(struct t_param);
+    param_tail->name = (char *)malloc(strlen(yytext)+1);
+    strcpy(param_tail->name,yytext);
+    param_head = param_tail;
+    param_tail->next=0;
+}
+
+remember_another_parameter_name()
+{
+    param_tail = (param_tail->next = new(struct t_param));
+    param_tail->name = (char *)malloc(strlen(yytext)+1);
+    strcpy(param_tail->name,yytext);
+    param_tail->next=0;
+}
+
+declare_parameters()
+{
+    struct t_param *current=param_head,*trash;
+    int t_argnum=1;
+
+    while(current){
+	printf("CC_%d%s_arg%d %s; ",procnum,procname,t_argnum,current->name);
+	declare_var(current->name,e_var,lookup(itoa(t_argnum++),procnum));
+	trash=current;
+	current=current->next;
+	free(trash);
+    }
+}
+/*--------------------------------------------------------------------------------*/
+/* LEX FUNCTIONS */
+
+void fixCC_()
+{
+    int j;
+
+    for (j=strlen(yytext);j>=0;j--)
+	yytext[j+3]=yytext[j];
+    yytext[0]='C';
+    yytext[1]='C';
+    yytext[2]='_';
+}
+
+int linesynchp=1; /* resynch linenum on every linesynchp calls to linesynch */
+int linenum = 1;
+int column = 0;
+char lastline[800];
+#define MAXLINEERR 10
+int numerrors=0,toomanyerrors=0,toomanycolumn;
+yystring errors[MAXLINEERR];
+int errorcolumns[MAXLINEERR];
+yystring filename;
+
+nextline()
+{
+    if (numerrors)
+	doerror();
+    linenum++;
+    column=0;
+}
+
+nextchar(c)
+char c;
+{
+    if (c=='\n')
+        nextline();
+    else
+	lastline[column++]=c;
+}
+
+yywrap()
+{
+    return(1);
+}
+
+flusherrors()
+{
+    char c;
+
+    if (numerrors) {
+	do {
+	    nextchar(c=exportinput());
+	} while (c != '\n' && c);
+	if (!c) {
+	    column--;
+	    doerror();
+	}
+    }
+}
+
+comment() /* echo comments? don't store all this useless stuff? */
+{
+    char c;
+
+    column+=2;
+    do {
+	do {
+	    nextchar(c=exportinput());
+	} while (c != '*' && c);
+	nextchar(c=exportinput());
+    } while (c != '/' && c);
+}
+
+void count()
+{
+    int i;
+
+    for (i = 0; yytext[i] != '\0'; i++)
+	nextchar(yytext[i]);
+}
+
+yyerror(s,a1,a2,a3,a4,a5)
+char *s,*a1,*a2,*a3,*a4,*a5;
+{
+    if (numerrors==MAXLINEERR) {
+	toomanyerrors=1;
+	toomanycolumn=column;
+	return;
+    }
+    sprintf(errors[numerrors],s,a1,a2,a3,a4,a5);
+    errorcolumns[numerrors]=column-1;
+    numerrors++;
+}
+
+doerror()
+{
+    int j;
+
+    lastline[column]='\0';
+    fprintf(stderr,"\n%s, line %d:\n%s\n",filename,linenum,lastline);
+    for (j=0;j<numerrors;j++)
+	fprintf(stderr,"char %d: %s\n",errorcolumns[j]+1,errors[j]);
+    if (toomanyerrors)
+	fprintf(stderr,"char %d: too many errors on this line\n",toomanycolumn);
+    toomanyerrors=0;
+    numerrors=0;
+}
+
+/* YUCK!!! This is really ugly and ad-hoc... */
+forcelinesynch()
+{
+    if (linesynchp)
+	printf("\n# line %d %s\n",linenum,filename);
+}
+
+linesynch()
+{
+    static int neglect=0;
+
+    if (linesynchp && ++neglect>linesynchp) {
+	printf("\n# line %d %s\n",linenum,filename);
+	neglect=0;
+    }
+}
+@@@@@@ Fin de aux.c
+echo aux.h 1>&2
+cat >aux.h <<'@@@@@@ Fin de aux.h'
+#include <stdio.h>
+
+extern char yytext[];
+#define new(t) (t *)malloc(sizeof(t))
+#define YYLMAX 200	/* as in lex.yy.c	*/
+typedef char yystring[YYLMAX];
+@@@@@@ Fin de aux.h
+echo Makefile 1>&2
+cat >Makefile <<'@@@@@@ Fin de Makefile'
+CFLAGS = -g
+CC_OBJ = CC_accept.o CC_death.o CC_signal.o CC_queue.o CC_tcall.o CC_fork.o
+
+all	: cccom libccc.a
+
+libccc.a : $(CC_OBJ)
+	ar r libccc.a $(CC_OBJ)
+	ranlib libccc.a
+
+CC_accept.o :  CC_include.h CC_accept.c
+
+CC_death.o : CC_include.h CC_death.c
+
+CC_signal.o : CC_include.h CC_signal.c
+
+CC_queue.o : CC_include.h CC_queue.c
+
+CC_tcall.o : CC_include.h CC_tcall.c
+
+CC_fork.o : CC_include.h CC_fork.c
+
+cccom	: gram.o scan.o main.o btree.o cctypes.o aux.o
+	cc gram.o scan.o main.o btree.o cctypes.o aux.o -o cccom
+
+gram.o	: gram.c gram.h cctypes.h aux.h
+	cc -c -g gram.c
+
+scan.o	: scan.c
+	cc -c -g scan.c
+
+main.o	: main.c
+	cc -c -g main.c
+
+btree.o	: btree.c
+	cc -c -g btree.c
+
+cctypes.o : cctypes.c
+	cc -c -g cctypes.c
+
+aux.o : aux.c aux.h
+	cc -c -g aux.c
+
+gram.c	: gram.y gram.h
+	yacc -vd gram.y
+	mv y.tab.c gram.c
+
+scan.c	: scan.l
+	lex scan.l
+	mv lex.yy.c scan.c
+
+ccc.shar : gram.y scan.l main.c btree.[ch] cctypes.[ch] aux.[ch] \
+	   Makefile CC_accept.c CC_death.c CC_signal.c CC_queue.c CC_tcall.c \
+	   CC_fork.c CC_include.h CC_kernel.h
+	shar gram.[yh] scan.l main.c btree.[ch] cctypes.[ch] aux.[ch] \
+	Makefile CC_accept.c CC_death.c CC_signal.c CC_queue.c CC_tcall.c \
+	CC_fork.c CC_include.h CC_kernel.h ccc.def > ccc.shar
+
+clean	:
+	rm -f a.out y.tab.h y.output aux.o btree.o cctypes.o gram.c gram.o \
+	main.o scan.c scan.o $(CC_OBJ)
+@@@@@@ Fin de Makefile
+echo CC_accept.c 1>&2
+cat >CC_accept.c <<'@@@@@@ Fin de CC_accept.c'
+/* Qaccept.c -- routines for accept and select statements */
+
+#include "CC_include.h"
+
+
+int the_transaction;
+int first;
+char **tblock_ptr;
+int client_on_queue;
+
+int CC_achoice,CC_dchoice,CC_ichoice,CC_ochoice;
+float CC_bestdelay,CC_trydelay;
+int CC_accept_exists,CC_terminate_exists;
+
+/*
+ *  This routine is called at the begining of the execution of a select statement.
+ *  It initializes the CC_?choice variables, checks the caling process out,
+ *  and freezes the transaction queues.
+ */
+CC_selectinit()
+{
+    CC_achoice=0;
+    CC_dchoice=0;
+    CC_ichoice=0;
+    CC_ochoice=0;
+    CC_bestdelay=0.0;
+    CC_accept_exists=0;
+    CC_terminate_exists=0;
+    CC_checkout(mypid);
+    p_lock(me->queuelock);
+    client_on_queue=1;
+}
+
+/*
+ *  This routine is called when something other than an accept is selected.
+ *  It undoes the unwanted effects of CC_selectinit and of the evaluation
+ *  pass, such as leaving garbage in selectcase, leaving queuelock locked, etc.
+ */
+CC_select_cleanup()
+{
+    int j;
+
+    for (j=0;j<CC_numtrans;j++)
+	me->selectcase[j]=0;
+    p_unlock(me->queuelock);
+    CC_checkin(me);
+}
+
+/*
+ *  CC_choose() does the actual selection if rules 1 to 4 apply. If rule
+ *  5 must be used, the result from CC_select() is used. Note that if
+ *  CC_terminateifokay() does not return if it is okay to terminate --
+ *  it takes care of calling CC_select_cleanup() by itself.
+ */
+int CC_choose()
+{
+    if (CC_achoice)
+	return CC_achoice;
+    if (CC_ichoice) {
+	CC_select_cleanup();
+	return CC_ichoice;
+    }
+    if (CC_terminate_exists)
+	CC_terminateifokay();
+    if (CC_ochoice) {
+	CC_select_cleanup();
+	return CC_ochoice;
+    }
+    if (!CC_achoice && !CC_terminate_exists && !CC_dchoice)
+	CC_perror("no valid choices in select");
+    return CC_select();
+}
+
+/*
+ *  This routine is used during the alternative evaluation pass.
+ *  If there are clients waiting on this accept alternative,
+ *  it is chosen immediately, and selectcase is cleaned out
+ *  before jumping to the switch statement. If there are no clients
+ *  waiting on this accept, then the case label is stored in selectcase
+ *  and the next alternative is examined.
+ */
+int CC_tryaccept(n,casenum)
+int n;
+int casenum;
+{
+    int j,empty;
+
+    if (empty=!CC_queuecount(me,n))
+	me->selectcase[n]=casenum;
+    else {
+	for (j=0;j<n;j++)
+	    me->selectcase[j]=0;
+	CC_achoice=casenum;
+    }
+    return !empty;
+}
+
+CC_accept(n,local_tblock_ptr,by,accept_in_select)
+int n;
+char **local_tblock_ptr;
+int by;
+int accept_in_select;
+{
+    the_transaction=n;
+    tblock_ptr = local_tblock_ptr;
+    if (!accept_in_select) {
+	CC_checkout(mypid);
+	p_lock(me->queuelock);
+	client_on_queue=(CC_queuecount(me,n) > 0);
+	if (!client_on_queue) {
+	    me->selectedtrans=NOTRANS;
+	    me->selectcase[n]=1;
+	    p_unlock(me->queuelock);
+	    CC_block();
+	    me->selectcase[n]=0;
+	}
+    }
+    if (client_on_queue) {
+	me->newclient=CC_topqueue(n);
+	if (by) {
+	    *tblock_ptr=me->newclient->tblock;
+	    first=1;
+	    return;
+	}
+	CC_dequeue(n,me->newclient);
+	p_unlock(me->queuelock);
+    }
+    CC_accept_postlude();
+}
+
+/*
+ *  As explained above, CC_acceptby() is used to implement non-fifo
+ *  acceptance policies. Note the use of static variables to achieve
+ *  a coroutine-like behavior.
+ */
+int CC_acceptby(ae)
+double ae;
+{
+    static task candidate,winner;
+    static double lowest;
+
+/*
+ *  Return if there was only one client, who we have already accepted.
+ */
+    if (!client_on_queue)
+	return 0;
+/*
+ *  Update lowest and winner.
+ */
+    if (first) {
+	first=0;
+	lowest=ae;
+	winner=me->newclient;
+	candidate=winner;
+    } else if (ae<lowest) {
+	lowest=ae;
+	winner=candidate;
+    }
+/*
+ *  If there are any more tasks, do another evaluation;
+ *  otherwise, pick a winner, unlock the queue lock, and
+ *  stop evaluating.
+ */
+    if ((candidate=CC_queuesucc(the_transaction,candidate)) != nulltask) {
+	*tblock_ptr=candidate->tblock;
+	return 1;
+    } else {
+	CC_dequeue(the_transaction,winner);
+	me->newclient=winner;
+	p_unlock(me->queuelock);
+	CC_accept_postlude();
+	return 0;
+    }
+}
+
+/*
+ *  This is the clean up routine called after a client has been accepted,
+ *  called either from CC_accept() or CC_acceptby(). It tells the client
+ *  that he has been accepted, if the client is executing a timed transaction
+ *  call. It then makes the newly accepted client the current client, and
+ *  pushes the client onto a client stack which is used by CC_treturn().
+ */
+CC_accept_postlude()
+{
+    if (me->newclient->waiting)
+	CC_unblock(me->newclient);
+    me->newclient->prevclient=me->client;
+    me->client=me->newclient;
+    *tblock_ptr = me->client->tblock;
+    CC_checkin(me);
+}
+
+/*
+ *  The treturn statement is used inside an accept statement to transfer
+ *  control out of the innermost accept statement and to release the client
+ *  from the rendezvous, supplying him with a return value in his tblock
+ *  if one is expected. It is translated into an assignment to the
+ *  the value field of the suitably casted tblock, followed by a goto
+ *  to a CC_treturn() call which is the last statement in the compound
+ *  statement generated for the accept statement. (This placement ensures
+ *  that a treturn is implicitly executed by "falling off" the accept
+ *  statement.) CC_treturn() thus deals with waking up the blocked client,
+ *  and popping the client stack so that the next CC_treturn will wake up
+ *  the proper client.
+ */
+CC_treturn()
+{
+    me->client->tsuccess=1;
+    CC_unblock(me->client);
+    me->client=me->client->prevclient;
+}
+
+/*
+ *  CC_select is called from within CC_choose() when no choices are immediately
+ *  availible. 
+ */
+int CC_select()
+{
+    int j,choice;
+/*
+ *  First prepare to handle signals in message mode.
+ *  This allows us to determine the type of message that we are receiving.
+ */
+    CC_message_mode();
+/*
+ *  Invite messages of type TERMINATE...
+ */
+    if (CC_terminate_exists)
+	CC_preparedtoterm();
+/*
+ *  and ACCEPT...
+ */
+    me->selectedtrans=NOTRANS;
+    p_unlock(me->queuelock);
+/*
+ *  and DELAY.
+ */
+    if (CC_dchoice)
+	CC_settimer(CC_bestdelay);
+/*
+ *  Sit and wait for a message.
+ */
+    CC_block();
+/*
+ *  Either by explicit protocol or by the nature of the message senders,
+ *  we will recieve at most one message of any particular type.
+ *  However, different types of messages will not block each other and
+ *  thus we must flush spurious messages. CC_flush_TERMINATE() and CC_flush_ACCEPT()
+ *  will return a 0 if they actually found a message, which in some contexts
+ *  means that they should still be acted upon. There is an implicit priority
+ *  attached to messages, with TERMINATE as the highest priority message,
+ *  
+ *  There is an implicit priority attached to messages due to the order
+ *  in which we are willing to flush them. TERMINATE messages have the highest
+ *  priority, so that we can be sure that the ready-to-terminate conditions
+ *  are not violated. (See Qdeath.c for details.) Thus if we received
+ *  a TERMINATE message, or if we received some other message, but a TERMINATE
+ *  message is sent before we can tell our siblings via CC_flush_TERMINATE() that
+ *  we are no longer prepared to terminate, then we flush all other messages
+ *  and act upon the TERMINATE message.
+ */
+    if (message==TERMINATE || (CC_terminate_exists && !CC_flush_TERMINATE())) {
+	CC_flush_DELAY();
+	CC_flush_ACCEPT();
+	CC_block_mode(); /* need to do this for selfabort to be called */
+	CC_select_cleanup();
+	c_abort(mypid);
+    }
+/*
+ *  Otherwise, the only messages that have been or will be sent are DELAY
+ *  and ACCEPT. If we received an ACCEPT message, or an ACCEPT message is sent 
+ *  before we can mark ourselves as timed out (via CC_flush_ACCEPT), then we
+ *  flush any DELAY messages and prepare to accept the client.
+ */
+    if (message==ACCEPT || (CC_achoice && !CC_flush_ACCEPT())) {
+	CC_flush_DELAY();
+	choice=me->selectcase[me->selectedtrans];
+	for (j=0;j<CC_numtrans;j++)
+	    me->selectcase[j]=0;
+	client_on_queue=0;
+/*
+ *  Otherwise, we must have received a DELAY message...
+ */
+    } else {
+	CC_select_cleanup();
+	choice=CC_dchoice;
+    }
+/*
+ *  Return to using signals for blocking and unblocking processes,
+ *  ie as a simple form of semaphore mechanism (with queues one process big).
+ */
+    CC_block_mode();
+/*
+ *  Return our choice for the proper case label.
+ */
+    return choice;
+}
+@@@@@@ Fin de CC_accept.c
+echo CC_death.c 1>&2
+cat >CC_death.c <<'@@@@@@ Fin de CC_death.c'
+/*  Qdeath.c -- functions concerning aborts, termination, and completion. */
+
+#include "CC_include.h"
+
+
+/*
+ *  should I use a variant of memory marking here?
+ *  we should probably do something like that because c_invalid() uses this
+ *  routine and would die on a pid value like ((pid)17), which a check
+ *  for validity should not do.
+ */
+
+/*
+ *  if checking out self and already aborted, then we wait here to die.
+ *  ((I hope [not checked out] => [in block mode]))!
+ *  otherwise nulltask on checking out already aborted pid.
+ */
+task CC_checkout(p)
+pid p;
+{
+    task t;
+
+    if (p==nullpid)
+	return nulltask;
+    p_lock(p->life);
+    t=p->task;
+    if (!t) {
+	p_unlock(p->life);
+	if (p==mypid)
+	    CC_block(); /* wait to be aborted */
+	else
+	    return nulltask;
+    }
+    p_lock(t->statelock);
+    if (t->completed || t->aborted)
+	t=nulltask;
+    else
+	t->numloans++;
+    p_unlock(p->task->statelock);
+    p_unlock(p->life);
+    if (!t && p==mypid)
+	CC_block(); /* wait to be aborted */
+    else
+	return t;
+}
+
+CC_checkin(t)
+task t;
+{
+    int shouldkill;
+
+    p_lock(t->statelock);
+    shouldkill=(!--t->numloans && t->aborted);
+    p_unlock(t->statelock);
+    if (!shouldkill)
+	return;
+    else if (t==me)
+	CC_selfabort();
+    else
+	CC_kill(t);
+}
+
+CC_children_select_terminate(t)
+task t;
+{
+    task ch;
+
+    if (t->numchildren)
+	for (ch=t->firstchild;ch!=nulltask;ch=ch->nextsibling) {
+	    ch->choseterm=1;
+	    if (ch != me)
+		CC_kill(ch);
+	}
+}
+
+CC_terminateifokay()
+{
+    int selected;
+
+    p_lock(pp->statelock);
+    p_lock(me->statelock);
+    if (selected=(pp->completed && pp->numchildren==pp->numprepared+1
+    && !pp->numgrandchildren)) {
+	me->prepared=1;
+	pp->numprepared++;
+	CC_children_select_terminate(pp);
+    }
+    p_unlock(me->statelock);
+    p_unlock(pp->statelock);
+    if (selected) {
+	CC_select_cleanup();
+	c_abort(mypid);
+	CC_block();
+    }
+}
+
+/*
+ *  CC_preparedtoterm() is called only by CC_select(), while in message mode.
+ *  Thus the CC_kill() sends a message rather than actually forcing an abort.
+ */
+CC_preparedtoterm()
+{
+    int selected;
+
+    p_lock(pp->statelock);
+    p_lock(me->statelock);
+    me->prepared=1;
+    pp->numprepared++;
+    if (selected=(pp->completed && pp->numchildren==pp->numprepared
+    && !pp->numgrandchildren))
+	CC_children_select_terminate(pp);
+    p_unlock(me->statelock);
+    p_unlock(pp->statelock);
+    if (selected)
+	CC_kill(me);
+}
+
+/*
+ *  CC_selfabort() is called by a process when it receives an abort signal.
+ *  At this point I am all checked in.
+ *
+ *  things like the following indicate that there should be an anonymous
+ *  parent ... and grandparent!... for "main" (the initial process).
+ */
+
+
+CC_selfabort()
+{
+    task ch;
+
+    if (me == main_task) {
+	p_lock(me->statelock);
+	if (me->numchildren) {	/* abort any children */
+	    for (ch=me->firstchild;ch!=nulltask;ch=ch->nextsibling)
+		CC_abort(ch);
+	    CC_block();		/* wait for last child to die */
+	}
+	p_unlock(me->statelock);
+	exit();
+    }
+    CC_flushqueues();
+    CC_flushclients();
+    p_lock(pp->statelock);
+    p_lock(me->statelock);
+    me->completed=1;		/* force completion */
+    if (me != main_task)
+	p_unlock(pp->statelock);
+    if (me->numchildren) {	/* abort any children */
+	for (ch=me->firstchild;ch!=nulltask;ch=ch->nextsibling)
+	    CC_abort(ch);
+	CC_block();		/* wait for last child to die */
+    }
+    p_unlock(me->statelock);
+    p_lock(gp->statelock);	/* order is important to prevent deadlock */
+    p_lock(pp->statelock);
+    p_lock(me->statelock);
+    
+    /* remove ourselves from child list. */
+    if (pp->firstchild==me)
+	pp->firstchild=me->nextsibling;
+    else
+	me->prevsibling->nextsibling=me->nextsibling;
+
+    /* detach our task from our pid */
+    mypid->task=nulltask;
+
+    /* update various counts */
+    gp->numgrandchildren--;
+    pp->numchildren--;
+    if (me->choseterm)
+	pp->numprepared--;
+
+    /* inform anyone who is interested of our death and release locks */
+    if ((pp->completed || pp->sickofkids) && !pp->numchildren)
+	CC_unblock(pp);
+    else if (pp->completed && pp->numchildren==pp->numprepared
+	&& !pp->numgrandchildren)
+	CC_children_select_terminate(pp);
+    p_unlock(me->statelock);
+    p_unlock(pp->statelock);
+    p_unlock(gp->statelock);
+
+    /* deallocate storage bound to our task and exit */
+    CC_free(me);
+    exit();
+}
+
+CC_flushclients()
+{
+    task t;
+
+    for (t=me->client;t!=nulltask;t=t->prevclient) {
+	t->tsuccess=0;
+	CC_unblock(t);
+    }
+}
+
+c_abort(p)
+pid p;
+{
+    task t;
+    int shouldkill;
+
+    p_lock(p->life);
+    t=p->task;
+    if (!t) {
+	p_unlock(p->life);
+	return;
+    }
+    p_lock(t->statelock);
+    shouldkill=(!t->aborted && !t->numloans);
+    t->aborted=1;
+    p_unlock(t->statelock);
+    p_unlock(p->life);
+    if (shouldkill)
+	if (t==me)
+	    CC_selfabort();
+	else
+	    CC_kill(t);
+}
+
+CC_abort(t)
+task t;
+{
+    int shouldkill;
+
+    p_lock(t->statelock);
+    shouldkill=(!t->aborted && !t->numloans);
+    t->aborted=1;
+    p_unlock(t->statelock);
+    if (shouldkill)
+	if (t==me)
+	    CC_selfabort();
+	else
+	    CC_kill(t);
+}
+
+CC_complete()
+{
+    /* shouldn't we use checkout/checkin? */
+
+    p_lock(pp->statelock);
+    p_lock(me->statelock);
+    me->completed=1;
+    if (me->numchildren) {	/* if there are any children, notify them */
+	if (me->numchildren==me->numprepared && !me->numgrandchildren)
+	    CC_children_select_terminate(me);
+	p_unlock(me->statelock);
+	p_unlock(pp->statelock);
+	CC_block();		/* wait for last child to say all are dead */
+    } else {
+	p_unlock(me->statelock);
+	p_unlock(pp->statelock);
+    }
+    c_abort(mypid);		/* selfabort() when all checked out */
+    CC_block();			/* wait to be aborted */
+}
+
+c_wait()
+{
+    CC_checkout(mypid);
+    p_lock(pp->statelock);
+    p_lock(me->statelock);
+    if (me->numchildren) {	/* if there are any children */
+	me->sickofkids=1;
+	p_unlock(me->statelock);
+	p_unlock(pp->statelock);
+	CC_block();		/* wait for last child to say all are dead */
+	me->sickofkids=0;
+    } else {
+	p_unlock(me->statelock);
+	p_unlock(pp->statelock);
+    }
+    CC_checkin(me);
+}
+@@@@@@ Fin de CC_death.c
+echo CC_signal.c 1>&2
+cat >CC_signal.c <<'@@@@@@ Fin de CC_signal.c'
+/* Qpause.c -- message and signal handling facilities */
+
+#include "CC_include.h"
+#include <sys/time.h>
+
+int timer_going=0;
+
+/*
+ *  (explain modes?)
+ *
+ *  handler bindings, in block_mode:
+ *
+ *	CC_null()         -> SIGUNBLOCK   (blocked)
+ *	CC_selfabort()    -> SIGTERMINATE (unblocked)
+ *	...               -> SIGALRM      (ignored)
+ *
+ *  handler bindings, in message_mode:
+ *
+ *	CC_SIGACCEPT()    -> SIGUNBLOCK   (blocked)
+ *	CC_SIGTERMINATE() -> SIGTERMINATE (blocked)
+ *	CC_SIGDELAY()     -> SIGALRM      (blocked)
+ *
+ *  handler routines:
+ *  (CC_selfabort() can be found in Qdeath.c)
+ */
+
+CC_message_handler(sig)
+int sig;
+{
+    if (signal_mode==MESSAGE_MODE)
+	switch (sig) {
+	    case SIGUNBLOCK:
+		message=RENDEZVOUS;
+		break;
+	    case SIGTERMINATE:
+		message=TERMINATE;
+		break;
+	    case SIGALRM:
+		message=DELAY;
+		timer_going=0;
+		break;
+	}
+    else if (sig==SIGTERMINATE)
+	CC_selfabort();
+	/* do we have to fiddle with signal mask? probably... */
+}
+
+CC_install_handler()
+{
+    struct sigvec sv;
+
+    sigblock(SIGBIT(SIGALRM) | SIGBIT(SIGUNBLOCK));
+    signal_mode=BLOCK_MODE;
+    sv.sv_handler=CC_message_handler;
+    sv.sv_mask=SIGBIT(SIGALRM) | SIGBIT(SIGUNBLOCK) | SIGBIT(SIGTERMINATE);
+    sv.sv_onstack=0;
+    sigvec(SIGALRM,&sv,0);
+    sigvec(SIGUNBLOCK,&sv,0);
+    sigvec(SIGTERMINATE,&sv,0);
+}
+
+CC_message_mode()
+{
+    int currentmask;
+
+    signal_mode=MESSAGE_MODE;
+    currentmask=sigblock(0);
+    sigsetmask(currentmask & ~SIGBIT(SIGTERMINATE));
+}
+
+CC_block_mode()
+{
+    sigblock(SIGBIT(SIGTERMINATE));
+    signal_mode=BLOCK_MODE;
+}
+
+/*
+ *  Flushing routines.
+ *  These routines prevent any messages of a particular type from being sent.
+ *  If no such message has been sent yet, a 1 is returned; otherwise,
+ *  a 0 is returned. In some contexts this return value is used to determine
+ *  whether the flushing process may ignore the flushed message.
+ *  (A better word than flush should be used -- perhaps "close"?)
+ */
+
+CC_flush_DELAY()
+{
+    static struct itimerval zero={{0,0},{0,0}};
+    struct itimerval timewas;
+
+    if (!timer_going)
+	return;
+    setitimer(ITIMER_REAL,&zero,&timewas);
+    if (!timewas.it_value.tv_sec && !timewas.it_value.tv_usec)
+	CC_block(); /* if it already went off */
+    timer_going=0;
+}
+
+int CC_flush_ACCEPT()
+{
+    int j;
+
+    if (me->selectedtrans != NOTRANS) {
+	CC_block();
+	return 0;
+    }
+    me->selectedtrans=DUMMYTRANS;
+    return 1;
+}
+
+int CC_flush_TCALL(t,n)
+task t;
+int n;
+{
+    int success;
+
+    p_lock(t->queuelock);
+    if (success=CC_remqueue(t,n))
+	me->waiting=0;
+    p_unlock(t->queuelock);
+    return success;
+}
+
+CC_flush_TERMINATE()
+{
+    int selected;
+
+    p_lock(pp->statelock);
+    p_lock(me->statelock);
+    if (!(selected = me->choseterm)) {
+	pp->numprepared--;
+	me->prepared=0;
+    }
+    p_unlock(me->statelock);
+    p_unlock(pp->statelock);
+    if (selected)
+	CC_block();
+    return !selected;
+}
+
+/*
+ *  CC_block() and CC_unblock() are used to wait for an event and to
+ *  signal a process that the event has occured.
+ *
+ *  CC_kill() is used to force a process to terminate itself.
+ *  CC_kill() should be used in this way only when a process is completedly
+ *  checked out.
+ *
+ *  CC_unblock() and CC_kill() are also used to send messages when the
+ *  destination process is in message_mode:
+ *
+ *	CC_unblock()	sends a RENDEZVOUS message, and
+ *	CC_kill()	sends a TERMINATE message.
+ */
+
+CC_block()
+{
+    sigpause(0);
+}
+
+CC_unblock(t)
+task t;
+{
+    kill(t->unixpid,SIGUNBLOCK);
+}
+
+CC_kill(t)
+task t;
+{
+    kill(t->unixpid,SIGTERMINATE);
+}
+
+/*
+ *  CC_settimer() sets a timer going which will send a DELAY message
+ *  when it goes off. We handle zero delays as a special case since
+ *  a call to setitimer with a time of 0 is treated as a request to
+ *  shut the timer off.
+ */
+
+struct itimerval *float_to_itvp(f)
+double f;
+{
+    static struct itimerval itv;
+    double dsec,modf();
+
+    if (f<0.0)
+	f=0.0;
+    itv.it_interval.tv_usec = 0;
+    itv.it_interval.tv_sec = 0;
+    itv.it_value.tv_usec = (long)(1.0e6 * modf(f,&dsec));
+    itv.it_value.tv_sec = (long)dsec;
+    return &itv;
+}
+
+CC_settimer(time)
+float time;
+{
+    timer_going=1;
+    if (time==0.0) {
+	kill(me->unixpid,SIGALRM);
+	return;
+    }
+    setitimer(ITIMER_REAL,float_to_itvp(time),0);
+}
+
+/*
+ *  A call to CC_delay() is generated by a delay statement outside of
+ *  a select statement. It sets a timer and waits for a DELAY message
+ *  from the clock. If it gets a TERMINATE message instead, it sends
+ *  itself a kill signal, AND this code is probably flakey!!!
+ */
+CC_delay(time)
+float time;
+{
+    CC_message_mode();
+    CC_settimer(time);
+    CC_block();
+    CC_block_mode();
+    if (message==TERMINATE) {
+	CC_flush_DELAY();
+	CC_kill(me);
+    }
+}
+@@@@@@ Fin de CC_signal.c
+echo CC_queue.c 1>&2
+cat >CC_queue.c <<'@@@@@@ Fin de CC_queue.c'
+/* Qqueue.c -- transaction queue handling facilities */
+
+#include "CC_include.h"
+
+static queue_remove(qp,t)
+queue *qp;
+task t;
+{
+    if (--qp->count)
+	if (qp->head == t)
+	    qp->head=t->next;
+	else if (qp->tail == t)
+	    qp->tail=t->prev;
+	else {
+	    t->next->prev=t->prev;
+	    t->prev->next=t->next;
+	}
+    t->next=t->prev;
+}
+
+task CC_queuesucc(n,t)
+int n;
+task t;
+{
+    if (t==me->tqueue[n].tail)
+	return nulltask;
+    else
+	return t->next;
+}
+
+CC_dequeue(n,t)
+int n;
+task t;
+{
+    queue_remove(&me->tqueue[n],t);
+}
+
+int CC_remqueue(t,n)
+task t;
+int n;
+{
+    int success;
+
+    if (success=(me->next!=me->prev))
+	queue_remove(&t->tqueue[n],me);
+    return success;
+}
+
+task CC_topqueue(n)
+int n;
+{
+    return me->tqueue[n].head;
+}	
+
+CC_enqueue(t,n)
+task t;
+int n;
+{
+    queue *qp= &t->tqueue[n];
+
+    if (qp->count++) {
+	qp->tail->next=me;
+	me->prev = qp->tail;
+    } else {
+	qp->head=me;
+	me->prev=0;
+    }
+    qp->tail=me;
+    me->next=me;	/* we want me->next != me->prev */
+}
+
+CC_flushqueues()
+{
+    task t,tail;
+    int n;
+    queue *qp;
+
+    p_lock(me->queuelock);
+    for (n=CC_numtrans-1;n>=0;n--) {
+	qp= &me->tqueue[n];
+	if (!qp->count)
+	    continue;
+	qp->count=0;
+	tail=qp->tail;
+	for (t=qp->head;t!=nulltask;t=(t==tail ? nulltask : t->next)) {
+	    t->tsuccess=0;
+	    t->prev=t->next;
+	    if (t->waiting)
+		CC_unblock(t);
+	    CC_unblock(t);
+	}
+    }
+    p_unlock(me->queuelock);
+}
+
+int CC_queuecount(t,n)
+task t;
+int n;
+{
+    return t->tqueue[n].count;
+}	
+@@@@@@ Fin de CC_queue.c
+echo CC_tcall.c 1>&2
+cat >CC_tcall.c <<'@@@@@@ Fin de CC_tcall.c'
+/* Qtcall.c -- functions for making timed and untimed transaction calls. */
+
+#include "CC_include.h"
+#include <errno.h>
+
+static pid    the_pid;
+static task   t;
+static int    n;
+static float  the_time;
+static int    timed;
+
+/*
+ *  CC_remember_time() is used to store the time and to remember the fact that
+ *  this is a timed transaction call.
+ */
+
+CC_remember_time(time)
+float time;
+{
+    the_time = time;
+    timed = 1;
+}
+
+/*
+ *  CC_tcallinit() remembers the server pid and the transaction number
+ *  for later use by CC_timedtcall() (and thus CC_tcall).
+ */
+
+CC_tcallinit(p,transnum)
+pid p;
+int transnum;
+{
+    the_pid = p;
+    n = transnum;
+}
+
+/*
+ *  A normal transaction call is treated as a special case of a timed transaction
+ *  call, since so much logic is common to both (in particular, the case
+ *  where there is an accept, either by itself or in a select statement,
+ *  which is ready to accept the client process immediately). Thus
+ *  CC_tcall() is simply a call to CC_timedtcall() but with no specified time.
+ */
+
+CC_tcall()
+{
+    timed=0;
+    CC_timedtcall();
+}
+
+/*
+ *  CC_timedtcall() does the work for both timed and nontimed transaction calls.
+ *  If someone is waiting for us, we notify them. Otherwise, if we need to
+ *  know whether we have been accepted within a certain time, we wait
+ *  for notification that we have been accepted. If this doesn't arive soon
+ *  enough, we time out and the server looses the chance to serve us.
+ *  Except in case of timeout, we will block waiting for transaction completion
+ *  (even if we already slept waiting for acceptance notification).
+ *  The accept call will normally place return status in our tsuccess@@@@@@@@@@ field;
+ *  If we time out, CC_tcall_sleep() (see below) takes care of tsuccess.
+ */
+
+int CC_timedtcall()
+{
+/*
+ *  First we need to check out both our task and the server task.
+ *  If we can't check out our own task, then block and wait for termination.
+ *  If we can't check out the server task, then return and report failure.
+ *  If all goes well, we grab queuelock so we can see if anyone is waiting for us.
+ */
+    CC_checkout(mypid);
+    if ((t=CC_checkout(the_pid))==nulltask) {
+	CC_checkin(me);
+	errno=ESRCH;
+	CC_perror("failed transaction call");
+	return 0;
+    }
+    p_lock(t->queuelock);
+    me->waiting=0;
+
+/*
+ *  If an accept (or select) statement is blocked waiting for our
+ *  transaction call, we sieze the right to wake up the sleeping accept,
+ *  and block on completion of the transaction call. We do not allow
+ *  ourselves to time out in this case as we know we will be serviced
+ *  as soon as possible and it makes the code cleaner at the accept end
+ *  if we can guarantee the server that we will still be here when it wakes up.
+ */
+    if (t->selectedtrans==NOTRANS && t->selectcase[n]) {
+	t->selectedtrans=n;
+	t->newclient=me;
+	p_unlock(t->queuelock);
+	CC_unblock(t);
+	CC_block();
+/*
+ *  otherwise, no one is blocked waiting for our transaction call; thus we
+ *  get to wait to be accepted. If this is a timed transaction call, then
+ *  we wait for acceptance with CC_tcall_sleep(), which takes care of
+ *  detecting timeouts. Otherwise, we simply block on transaction completion.
+ */
+    } else {
+	CC_enqueue(t,n);
+	p_unlock(t->queuelock);
+	if (timed)
+	    CC_tcall_sleep(the_time);
+	else
+	    CC_block();
+    }
+/*
+ *  @@@@@@@@@@@@@@@@@@@@@@
+ */
+    CC_checkin(t);
+    CC_checkin(me);
+    if (!me->tsuccess)
+	errno=ESRCH;
+    return me->tsuccess;
+}
+
+/*
+ *  CC_tcall_sleep() is used to wait for a specified time for word from
+ *  an accept statement that we have been accepted. If time runs out,
+ *  we retract our request if we can and report a timeout...
+ */
+
+CC_tcall_sleep(time)
+float time;
+{
+/*
+ *  First prepare to handle signals in message mode.
+ */
+    CC_message_mode();
+/*
+ *  Invite messages of type TCALL...
+ */
+    me->waiting=1;
+    p_unlock(t->queuelock);
+/*
+ *  ...and of type DELAY.
+ */
+    CC_settimer(time);
+/*
+ *  Sit and wait for a message.
+ */
+    CC_block();
+/*
+ *  If we receive a TCALL message, or if a TCALL message is sent before we
+ *  can mark ourselves as timed out (via CC_flush_TCALL), then we flush any
+ *  DELAY messages and wait for the server to execute a treturn.
+ *  Otherwise, we report transaction failure and return.
+ */
+    if (CC_message==TCALL || !CC_flush_TCALL(t,n)) {
+	CC_flush_DELAY();
+	CC_block();
+    } else
+	me->tsuccess=0;
+/*
+ *  Return to using signals for blocking and unblocking processes.
+ */
+    CC_block_mode();
+}
+@@@@@@ Fin de CC_tcall.c
+echo CC_fork.c 1>&2
+cat >CC_fork.c <<'@@@@@@ Fin de CC_fork.c'
+/* CC_fork.c -- concurrent c intrinsic functions, plus CC_fork() and main() */
+
+#include "CC_include.h"
+#include <stdio.h>
+
+#define shfree()
+#define p_destroylock(l)
+
+/*
+ *  Priorities are currently ignored. Problems to be addressed:
+ *	(1) What should the default priority be?
+ *	(2) How do we allow users to better their priorities?
+ *  A straightforward implementation would make starting priority zero,
+ *  and users could only worsen their priorities. Maybe some smarter person
+ *  can think of something better. Or maybe the same sort of person can
+ *  add something so that we can bump our priorities up (to 0).
+ */
+
+int CC_core_dump_on_error=0;
+
+c_core_dump_on_error(whether)
+int whether;
+{
+    CC_core_dump_on_error=whether;
+}
+
+CC_perror(s)
+char *s;
+{
+    fprintf(stderr,"\n*** [unixpid=%d] CC runtime error : %s!!!\n",getpid(),s);
+    if (CC_core_dump_on_error) {
+	printf("*** core dump follows ***\n");
+	kill(getpid(),3);
+    }
+}
+
+lock makelock()
+{
+    lock templock;
+
+    templock=(lock)p_shmalloc(sizeof(*templock));
+    p_init_lock(templock);
+    return templock;
+}
+
+CC_fork(number_of_transactions,prio)
+int number_of_transactions;
+int prio;
+{
+    pid newborn;
+    int j,unixpid;
+
+    newborn = (pid)p_shmalloc(sizeof(*newborn));
+    newborn->life=makelock();
+    p_lock(pp->statelock);
+    p_lock(me->statelock);
+    if ((unixpid=fork())== -1) {
+	CC_perror("failed fork");
+	p_unlock(pp->statelock);
+	p_unlock(me->statelock);
+	CC_childpid=nullpid;
+	p_destroylock(newborn->life);
+	shfree(newborn);
+	return 1;
+    } else if (unixpid) {
+	CC_childpid=newborn;
+	CC_block();
+	return 1;
+    } else {
+	mypid=newborn;
+	gp=pp;
+	pp=me;
+	me=(task)p_shmalloc(sizeof(*me));
+	mypid->task=me;
+	numtrans=number_of_transactions;
+
+	me->queuelock=makelock();
+	me->client=nulltask;
+	me->tblock=(char *)p_shmalloc(CC_maxtblocksize);
+	me->selectcase=(int *)p_shmalloc(numtrans * sizeof(int));
+
+	me->unixpid=getpid();
+	me->statelock=makelock();
+	me->firstchild=nulltask;
+	me->completed=0;
+	me->aborted=0;
+	me->choseterm=0;
+	me->prepared=0;
+	me->numloans=0;
+	me->numchildren=0;
+	me->numprepared=0;
+	me->numgrandchildren=0;
+
+	me->tqueue=(queue *)p_shmalloc(numtrans * sizeof(queue));
+
+	for (j=0;j<numtrans;j++) {
+	    me->tqueue[j].count=0;
+	    me->selectcase[j]=0;
+	}
+
+	gp->numgrandchildren++;
+	if (pp->numchildren++) {
+	    pp->firstchild->prevsibling=me;
+	    me->nextsibling=pp->firstchild;
+	} else
+	    me->nextsibling=nulltask;
+	pp->firstchild=me;
+	
+	mytblock=me->tblock;
+	p_unlock(gp->statelock);
+	p_unlock(pp->statelock);
+	CC_unblock(pp);
+	return 0;
+    }
+}
+
+CC_make_elder_tasks()
+{
+
+    me=(task)p_shmalloc(sizeof(*me));
+    me->statelock=makelock();
+    me->firstchild=nulltask;
+    me->nextsibling=nulltask;
+    me->completed=0;
+    me->numloans=0;
+    me->numchildren=0;
+    me->numprepared=0;
+    me->numgrandchildren=0;
+    me->unixpid=getpid();
+    me->tblock=(char *)p_shmalloc(CC_maxtblocksize);
+    mytblock=me->tblock;
+
+    pp=(task)p_shmalloc(sizeof(*pp));
+    pp->statelock=makelock();
+    pp->firstchild=me;
+    pp->nextsibling=nulltask;
+    pp->completed=0;
+    pp->numloans=0;
+    pp->numchildren=1;
+    pp->numprepared=0;
+    pp->numgrandchildren=0;
+
+    mypid=(pid)p_shmalloc(sizeof(*main_pid));
+    main_task=me;
+    main_pid=mypid;
+    main_pid->task=main_task;
+    main_pid->life=makelock();
+}
+
+CC_free(t)
+task t;
+{
+    p_destroylock(t->statelock);
+    p_destroylock(t->queuelock);
+    shfree(t->tblock);
+    shfree(t->selectcase);
+    shfree(t->tqueue);
+    shfree(t);
+}
+
+int c_unixpid(p)
+pid p;
+{
+    return p->task->unixpid; /* NOT very safe! */
+}
+
+int c_getpriority(p,prio)
+pid p;
+int prio;
+{
+    /* not implemented */
+    return 0;
+}
+
+c_changepriority(p,prio)
+pid p;
+int prio;
+{
+    /* not implemented */
+}
+
+c_associate()
+{
+    /* not implemented */
+}
+
+/*
+int c_count(p,n)
+pid p;
+int n;
+{
+    task t;
+    int count;
+
+    if ((t=CC_checkout(p)) == nulltask)
+	return 0;
+    p_lock(t->queuelock);
+    count=CC_queuecount(t,n);
+    p_unlock(t->queuelock);
+    CC_checkin(t);
+    return count;
+}
+
+int c_active(p)
+pid p;
+{
+    task t;
+    int active;
+
+    if ((t=CC_checkout(p)) == nulltask)
+	return 0;
+    p_lock(t->statelock);
+    active= !t->aborted && !t->completed;
+    p_unlock(t->statelock);
+    CC_checkin(t);
+    return active;
+}
+
+int c_completed(p)
+pid p;
+{
+    task t;
+    int completed;
+
+    if ((t=CC_checkout(p)) == nulltask)
+	return 0;
+    p_lock(t->statelock);
+    completed= !t->aborted && t->completed;
+    p_unlock(t->statelock);
+    CC_checkin(t);
+    return completed;
+}
+
+int c_invalid(p)
+pid p;
+{
+    task t;
+    int terminated;
+
+    if ((t=CC_checkout(p)) == nulltask)
+	return 1;
+    p_lock(t->statelock);
+    terminated= t->aborted;
+    p_unlock(t->statelock);
+    CC_checkin(t);
+    return terminated;
+}
+*/
+
+pid c_mypid()
+{
+    return mypid;
+}
+
+main(argc, argv, envp)
+int argc;
+char **argv, **envp;
+{
+
+/*
+ *  CC_maxtblocksize should really be calculated from sizeof()s of trans structs.
+ */
+    CC_maxtblocksize=512;
+    CC_install_handler();
+    p_init(0,0);
+    CC_make_elder_tasks();
+    CC_shinit();
+    CC_main(argc, argv, envp);
+    CC_complete();
+}
+@@@@@@ Fin de CC_fork.c
+echo CC_include.h 1>&2
+cat >CC_include.h <<'@@@@@@ Fin de CC_include.h'
+/* CC_include.h -- include file for Concurrent C kernel modules */
+
+/*
+ *  Definitions for using the parallel processing library locks, etc.
+ */
+#include <pp.h>
+typedef p_LOCK *lock;
+
+/*
+ *  Some definitions which allow us to drop the CC_ prefix that is
+ *  used to prevent clashes with user's external symbols.
+ */
+#define	me		CC_me
+#define mypid		CC_mypid
+#define pp		CC_myparent
+#define gp		CC_mygrandparent
+#define mytblock	CC_mytblock
+#define	message		CC_message
+#define numtrans	CC_numtrans
+#define signal_mode	CC_signal_mode
+
+/*
+ *  Definitions of null objects.
+ */
+#define nullpid		0
+#define nulltask	0
+
+/*
+ *  Definition of signals used by synchronization primitives in terms
+ *  of standard unix signals.
+ */
+#define SIGUNBLOCK	SIGHUP
+#define SIGTERMINATE	SIGTERM
+
+/*
+ *  Definitions for the two-mode signal handling capability in the CC kernel.
+ *  Signal_mode is one of BLOCK_MODE or MESSAGE_MODE. The definitions
+ *  following are codes for messages when in MESSAGE_MODE.
+ */
+#define BLOCK_MODE	0
+#define MESSAGE_MODE	1
+
+#define DELAY		0
+#define	TERMINATE	1
+#define	RENDEZVOUS	2
+#define TCALL		RENDEZVOUS
+#define ACCEPT		RENDEZVOUS
+
+/*
+ *  For use with "selectedtrans" field. NOTRANS means that no transaction has yet
+ *  claimed the right to wake up the sleeping server. Since transaction
+ *  numbers start at zero, when a client claims wakeup rights by setting
+ *  "selectedtrans" to his transaction number, it will no longer be NOTRANS.
+ *  DUMMYTRANS is used by flush_ACCEPT() to fool potential clients into
+ *  thinking that someone else has already woken up the server.
+ */
+#define	NOTRANS		(-1)
+#define	DUMMYTRANS	(-2)
+
+/*
+ *  There are several places when a process needs to know how
+ *  many transactions there are in its process type. This value is
+ *  availible in the (unshared) global variable "numtrans".
+ */
+int numtrans;
+
+/*
+ *  I have not really used the following typedef in the CC kernel code, but I
+ *  have introduced it here to make the purpose of the fields in the following
+ *  structure declarations a little clearer.
+ */
+typedef int bool;
+
+/*
+ *  Forward declaration of task.
+ *  (The following structure declarations are mutually recursive.)
+ */
+typedef struct task_struct *task;
+
+/*
+ *  The type queue is used to hold waiting transaction calls.
+ *  The only routines that use the actual queue fields are in CC_queue.c.
+ */
+typedef struct {
+    int count;
+    task head,tail;
+} queue;
+
+/*
+ *  A pid corresponds to a process variable in Concurrent C.
+ *  All the interesting stuff is kept in the field "task".
+ *  When a process is terminated, this field is set to nulltask.
+ *  The lock "life" controls access to task (ie, anyone accessing
+ *  task must first do a lock on "task".) Deadlock is prevented
+ *  through the use of CC_checkout() and CC_checkin(), which
+ *  release the lock after marking the fact that the pid is in use.
+ */
+typedef struct {
+    task	task;
+    lock	life;
+} *pid;
+
+/*
+ *  This is the task structure. This space is released when a task terminates.
+ */
+struct task_struct {
+/*
+ *  The first four fields are for the transaction queues, which clients wait on
+ *  when they cannot be accepted immediately. One queue is provided for
+ *  each transaction; thus there are "numtrans" queues. One lock is
+ *  provided for all queues of a task; it might be better to have seperate
+ *  locks for each queue as well, but there are some operations,
+ *  mostly involving select statements with multiple accepts, which
+ *  require varying degrees of mutual exclusion among several queues.
+ *
+ *  An important observation about the rendezvous mechanism is that
+ *  a process can block waiting for no more than one server to accept him.
+ *  This allows the task itself to be used as a queue element, instead of a
+ *  structure with a task field. Thus the fields "next" and "prev" point
+ *  to the tasks ahead and behind the given task, if it is on a transaction
+ *  queue. When a task has been removed from a queue, "next" and "prev"
+ *  are set equal to each other to mark the fact that they are not on a queue.
+ */
+    queue	*tqueue;	/* array[numtrans] of queues for blocked clients */
+    lock	queuelock;	/* mutex for queue operations */
+    task	next;		/* my sucessor in the queue I'm in */
+    task	prev;		/* my predecessor */
+
+/*
+ *  The next eight fields are used for transaction call synchronization
+ *  and communication. Mutual exclusion to many of these fields is
+ *  provided via "queuelock" (above). When a client makes a transaction call,
+ *  it first places its parameters in its transaction block ("tblock"), which
+ *  the server can access when it has accepted the client. The client
+ *  then checks to see if the server is sleeping waiting for a transaction
+ *  call. A server indicates that it is waiting for a transaction
+ *  call on transaction "n" by setting "selectedtrans" to NOTRANS and
+ *  "selectcase[n]" to some nonzero value. When the server is exeuting a select
+ *  statement, this nonzero value is the case label for the accept alternative
+ *  corresponding to that transaction, and several elements of "selectcase"
+ *  may be so used. If the server is waiting, the client sets the server's
+ *  "newclient" field to point to the client, and wakes the server up.
+ *  If the server is not waiting, the client places himself on a queue;
+ *  if the client is executing a timed transaction call, he will set
+ *  "waiting" true, which tells the server to signal the client when he has been
+ *  accepted. The server sets the clients "tsuccess" field true on successful
+ *  completion of the transaction call, or false on abnormal completion,
+ *  and supplies the return value for the transaction call (if there is one)
+ *  through the client's transaction block. The "client" field in the
+ *  server names the most recently accepted task; the "prevclient"
+ *  field in a client task names the task accepted just before the server
+ *  accepted the client task in question. (This is to allow a server to
+ *  handle nested accept statements, which requires that the server remember
+ *  several clients at once.)
+ */
+    task	newclient;	/* task to be accepted when server is woken up */
+    task	client;		/* last accepted client */
+    task	prevclient;	/* task accepted before my by my server */
+    bool	waiting;	/* signal me when you accept so I won't time out */
+    bool	tsuccess;	/* successful transaction call if true */
+    char	*tblock;	/* where I place my parameters when I call server */
+    int		selectedtrans;	/* which transaction was the server woken up for? */
+    int		*selectcase;	/* array[numtrans], see big comment above */
+
+/*
+ *  These last 13 fields are used to synchronize the various forms of
+ *  process death, including selecting a terminate alternative, being aborted,
+ *  and terminating after completion when all children have terminated.
+ *  The lock "statelock" protects most of these fields. The field "unixpid"
+ *  stores the unix pid of the actual process in which the task is running.
+ *  "Firstchild", "nextsibling", and "prevsibling" are used to represent
+ *  the family tree. (A task's parent and grandparent are accessible through
+ *  the global variables "pp" and "gp", respectively.) "Completed" tells
+ *  whether a task has completed; if "aborted" is true, then an abort
+ *  was attempted on the task but it was checked out at the time
+ *  (but when it is all checked in, it will be aborted.) When "choseterm"
+ *  is true, a task must terminate; "prepared" means that a process is
+ *  in a select statement with a terminate alternative and is ready
+ *  to choose that alternative if the termination conditions become true.
+ *  "Numloans" is used by the checkin/checkout routines. "Numprepared"
+ *  holds the number of children who have "prepared" set true; and
+ *  "numchildren" and "numgrandchildren" are self-explanatory.
+ */
+    int		unixpid;	/* unix pid, for kill & other unix calls */
+    lock	statelock;	/* lock for most of following fields */
+    task	firstchild;	/* first task in my child list */
+    task	nextsibling;	/* next task in parent's child list */
+    task	prevsibling;	/* previous task in parent's child list */
+    bool	completed;	/* true if task is not active */
+    bool	aborted;	/* true if an abort is pending */
+    bool	choseterm;	/* must choose termination, can't back out */
+    bool	prepared;	/* willing to select terminate alternative */
+    bool	sickofkids;	/* used for c_wait; last kid must wake me */
+    int		numloans;	/* number of tasks who have checked me out */
+    int		numprepared;	/* number of children prepared to terminate */
+    int		numchildren;	/* number of children */
+    int		numgrandchildren; /* number of grandchildren */
+};
+
+int message;
+pid CC_childpid,mypid,main_pid;
+task me,pp,gp,main_task;
+char *mytblock;
+int signal_mode;
+int CC_maxtblocksize;
+
+task CC_checkout();
+task CC_topqueue();
+task CC_queuesucc();
+
+#include <signal.h>
+#define SIGBIT(s) (1<<(s-1))
+
+int errno;
+@@@@@@ Fin de CC_include.h
+echo CC_kernel.h 1>&2
+cat >CC_kernel.h <<'@@@@@@ Fin de CC_kernel.h'
+/*
+ *  Declarations for the bits of the Concurrent C kernel that are visible
+ *  in the generated C code.
+ */
+
+typedef char *CC_tblock;
+typedef int CC_void;
+typedef struct CC_pid_struct *CC_pid;
+typedef struct CC_task_struct *CC_task;
+
+#define c_nullpid ((CC_pid)0)
+
+extern float CC_bestdelay,CC_trydelay;
+extern int CC_achoice,CC_dchoice,CC_ichoice,CC_ochoice;
+extern int CC_terminate_exists,CC_accept_exists;
+
+extern CC_pid CC_mypid,CC_childpid;
+extern CC_task CC_me;
+extern CC_tblock CC_mytblock;
+
+#define shmalloc p_shmalloc
+char *shmalloc();
+
+/*
+ *  note that CC_delay() should include a cast to double...
+ */
+@@@@@@ Fin de CC_kernel.h
+echo ccc.def 1>&2
+cat >ccc.def <<'@@@@@@ Fin de ccc.def'
+#
+if (! $?cccpath) then
+    set cccpath="/u1/joe/cccpath"
+endif
+alias	ccc	'/lib/cpp \!:1:r.cc | $cccpath/cccom > /tmp/,;cb </tmp/, >\!:1:r.c'
+alias	link	'cc -g -w -o \!:1:r \!:1:r.c $cccpath/libccc.a -lpp -I$cccpath'
+alias	mlink	'cc -g -w -o \!:1:r \!:1:r.c $cccpath/libccc.a -lm -lpp -I$cccpath'
+@@@@@@ Fin de ccc.def
+@

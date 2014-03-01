@@ -1,0 +1,11 @@
+inherit.cc, line 22: syntax error
+inherit.cc, line 22: warning: old-fashioned initialization: use =
+inherit.cc, line 22: unknown size
+inherit.cc, line 22: operands of = have incompatible types
+inherit.cc, line 22: unknown size
+inherit.cc, line 26: redeclaration of CC_print_string
+inherit.cc, line 27: warning: illegal combination of pointer and integer, op RETURN
+inherit.cc, line 25: illegal indirection
+inherit.cc, line 27: illegal indirection
+inherit.cc, line 41: warning: statement not reached
+inherit.cc, line 59: warning: statement not reached

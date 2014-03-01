@@ -1,0 +1,92 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    lynch:1.1; strict;
+comment  @@;
+
+
+1.1
+date     86.06.30.16.51.35;  author lynch;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@lousy, but more readable that DOC
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@A common construct for a server in concurrent C is while ( 1 )  {
+        select     {                     accept     _f_o_o(_b_a_r)    {
+                        ...                               treturn
+_r_e_s_u_l_t;                  }          or                 terminate;
+        } } If this construct appears at the  end  of  a  process
+body  (which  is  the  only place that makes sense), the compiler
+will generate warning messages of the  form  _m_y_p_r_o_g.cc,  line  _N:
+warning:  statement not reached These can be disregarded, because
+the concurrent C translator places statements at the end of  each
+process body to handle the process terminating by falling out its
+bottom.  All shared memory (storage class in concurrect C is  al-
+located  at  run time.  However, if you need to dynamically allo-
+cate shared memory, you can do it in the same way you would allo-
+cate non-shared memory, except that you must change calls to into
+calls to The single argument is the number of bytes to  allocate.
+The pointer to this peice of shared memory need not be shared it-
+self if the memory is allocated before any processes are created.
+Otherwise, the pointer must be shared and it is up to the user to
+synchronize processes properly so that no process  tries  to  use
+that  pointer  before  it is assigned a value.  Concurrent C pro-
+grams should be named with a suffix.  A new command is  supplied,
+called which translates the files into object files.  In actuali-
+ty, this command is a shell script that filters the files through
+the C preprocessor, then through the concurrent C translator, and
+then through the C compiler.  behaves much like in that if it  is
+given  only  files ending in it will not try to compile anything.
+Rather, it will only invoke the linker (via to link  the  modules
+with the appropriate libraries.  The best way to use the transla-
+tor is the The following three lines at the top of your will tell
+how   to  translate  files  into  files:          ccc  $(CCFLAGS)
+$(CFLAGS) -c $< Then, if your concurrent C program is  named  you
+shold  add  the  following  lines  to  your foo:foo.o         ccc
+$(CFLAGS) -o foo foo.o supports  all  the  options  that  can  be
+passed  to  plus  one  new one, which means to keep a copy of the
+concurrent C program, translated into standard C, in the  current
+directory (see BUGS below).  If you intend to read this file with
+any degree of success, you should  use  the  statement  described
+above.   The Sequent Manual entitled contains the following warn-
+ing:
+                             CAUTION
+
+If you ise the -O (optimize) of the  C  compiler  when  compiling
+code  that  accesses shared memory or ALM, be sure to specify the
+-i flag as well.  Otherwise, incorrect optimizations  may  result
+from  the  compiler's  assumption  that  variables  do not change
+values spontaneously.  The shell script adds the option  whenever
+is specified.  This way, the concurrent C programmer need no give
+it explicitly.  When in doubt, use the option to turn  on  debug-
+ging in the shell script.
+
+If you compile a concurrent C program with the -K option so  that
+you can look at the generates .c file, you absolutely must remove
+that .c file before you next use make  with  the  Makefile  rules
+given above.  Otherwise, make will see the .c file in the current
+directory and, instead of recompiling the .cc file, it will  take
+a shortcut and recompile the .c file instead.  Hence, any changes
+you may have made in the .cc file will not  exist  in  the  newly
+compiled  and  linked program.  This can be very confusing.  When
+the concurrent C translator reports an error,  it  usually  shows
+the  line number as one greater than where the error actually oc-
+curs.  This bug will be fixed in a future release.
+
+
+
+
+
+@
